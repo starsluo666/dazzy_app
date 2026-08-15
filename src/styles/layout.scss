@@ -1,0 +1,43 @@
+@use './tokens.scss' as *;
+
+.dz-page {
+  width: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
+  color: $dz-text-primary;
+  background: $dz-surface-card;
+  box-sizing: border-box;
+}
+
+.dz-page--with-tabbar {
+  padding-bottom: calc(128rpx + env(safe-area-inset-bottom));
+}
+
+.dz-safe-top {
+  height: var(--status-bar-height);
+  min-height: env(safe-area-inset-top);
+  box-sizing: border-box;
+}
+
+.dz-container {
+  width: 100%;
+  margin-right: auto;
+  margin-left: auto;
+  padding-right: 28rpx;
+  padding-left: 28rpx;
+  box-sizing: border-box;
+}
+
+@media screen and (min-width: 768px) {
+  .dz-container {
+    max-width: 720px;
+    padding-right: 24px;
+    padding-left: 24px;
+  }
+}
+
+@media screen and (orientation: landscape) and (max-height: 600px) {
+  .dz-page--with-tabbar {
+    padding-bottom: calc(104rpx + env(safe-area-inset-bottom));
+  }
+}

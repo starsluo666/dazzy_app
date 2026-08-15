@@ -1,0 +1,14 @@
+{
+  "pages": [
+    {
+      "path": "pages/index/index",
+      "style": { "navigationStyle": "custom" }
+    }
+  ],
+  "globalStyle": {
+    "navigationBarTextStyle": "black",
+    "navigationBarTitleText": "DAZZY",
+    "navigationBarBackgroundColor": "#FFFFFF",
+    "backgroundColor": "#F5F7F8"
+  }
+}
