@@ -20,6 +20,7 @@ export interface BookingDraft {
   contactName: string
   contactPhone: string
   note: string
+  routeDistanceKm: number | null
 }
 
 function dateKey(offset = 0) {
@@ -50,6 +51,7 @@ export function createBookingDraft(provider: ProviderDetail, service: ProviderSe
     contactName: '',
     contactPhone: '',
     note: '',
+    routeDistanceKm: 6.8,
   }
   saveBookingDraft(draft)
   return draft

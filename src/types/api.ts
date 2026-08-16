@@ -82,3 +82,47 @@ export interface HomeCardAssets {
 export interface DataResponse<T> {
   data: T
 }
+
+export interface ProviderOrderQuote {
+  provider: { public_id: string; nickname: string; avatar_url: string | null; verified: boolean }
+  service: { id: number; name: string; billing_type: 'hourly' | 'per_session'; unit_price_amount: number }
+  starts_at: string
+  ends_at: string
+  duration_minutes: number
+  meeting_address: string
+  service_fee_amount: number
+  transport_fee_amount: number
+  other_fee_amount: number
+  discount_amount: number
+  payable_amount: number
+  pricing_snapshot: Record<string, unknown>
+}
+
+export interface ProviderOrder {
+  public_id: string
+  order_no: string
+  status: string
+  status_label: string
+  provider_public_id: string
+  provider_name: string
+  provider_avatar_url: string | null
+  service_name: string
+  billing_type_snapshot: 'hourly' | 'per_session'
+  unit_price_amount: number
+  starts_at: string
+  ends_at: string
+  duration_minutes: number
+  meeting_address: string
+  contact_name: string
+  contact_phone_masked: string
+  note: string
+  service_fee_amount: number
+  transport_fee_amount: number
+  other_fee_amount: number
+  discount_amount: number
+  payable_amount: number
+  pricing_snapshot: Record<string, unknown>
+  payment_expires_at: string
+  paid_at: string | null
+  created_at: string
+}
