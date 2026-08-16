@@ -1,4 +1,12 @@
-import type { ActivityListItem, ListResponse, ProviderListItem } from '@/types/api'
+import type {
+  ActivityDetail,
+  ActivityListItem,
+  DataResponse,
+  HomeCardAssets,
+  ListResponse,
+  ProviderDetail,
+  ProviderListItem,
+} from '@/types/api'
 
 import { request } from './http'
 
@@ -7,14 +15,38 @@ const DEMO_LOCATION = {
   latitude: '39.9150010',
 }
 
-export function getRecommendedProviders() {
+interface ProviderQuery {
+  category?: string
+  ordering?: 'recommended' | 'distance' | 'rating' | 'price'
+  page_size?: number
+}
+
+interface ActivityQuery {
+  category?: string
+  ordering?: 'recommended' | 'distance' | 'time' | 'latest'
+  page_size?: number
+}
+
+export function getRecommendedProviders(query: ProviderQuery = {}) {
   return request<ListResponse<ProviderListItem>>('/providers/', {
-    query: { ...DEMO_LOCATION, city_code: '110100', page_size: 8 },
+    query: { ...DEMO_LOCATION, city_code: '110100', page_size: 8, ...query },
   })
 }
 
-export function getNearbyActivities() {
+export function getNearbyActivities(query: ActivityQuery = {}) {
   return request<ListResponse<ActivityListItem>>('/activities/', {
-    query: { ...DEMO_LOCATION, ordering: 'distance', page_size: 3 },
+    query: { ...DEMO_LOCATION, ordering: 'distance', page_size: 3, ...query },
   })
+}
+
+export function getHomeCardAssets() {
+  return request<DataResponse<HomeCardAssets>>('/content/home-cards/')
+}
+
+export function getProviderDetail(publicId: string) {
+  return request<DataResponse<ProviderDetail>>(`/providers/${publicId}/`)
+}
+
+export function getActivityDetail(id: number) {
+  return request<DataResponse<ActivityDetail>>(`/activities/${id}/`)
 }

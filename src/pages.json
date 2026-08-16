@@ -3,6 +3,54 @@
     {
       "path": "pages/index/index",
       "style": { "navigationStyle": "custom" }
+    },
+    {
+      "path": "pages/providers/list",
+      "style": { "navigationStyle": "custom" }
+    },
+    {
+      "path": "pages/providers/detail",
+      "style": { "navigationStyle": "custom" }
+    },
+    {
+      "path": "pages/booking/service",
+      "style": { "navigationStyle": "custom" }
+    },
+    {
+      "path": "pages/booking/time",
+      "style": { "navigationStyle": "custom" }
+    },
+    {
+      "path": "pages/booking/location",
+      "style": { "navigationStyle": "custom" }
+    },
+    {
+      "path": "pages/booking/confirm",
+      "style": { "navigationStyle": "custom" }
+    },
+    {
+      "path": "pages/activities/index",
+      "style": { "navigationStyle": "custom" }
+    },
+    {
+      "path": "pages/activities/list",
+      "style": { "navigationStyle": "custom" }
+    },
+    {
+      "path": "pages/activities/detail",
+      "style": { "navigationStyle": "custom" }
+    },
+    {
+      "path": "pages/publish/index",
+      "style": { "navigationStyle": "custom" }
+    },
+    {
+      "path": "pages/messages/index",
+      "style": { "navigationStyle": "custom" }
+    },
+    {
+      "path": "pages/profile/index",
+      "style": { "navigationStyle": "custom" }
     }
   ],
   "globalStyle": {

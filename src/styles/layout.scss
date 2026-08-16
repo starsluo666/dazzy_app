@@ -19,6 +19,12 @@
   box-sizing: border-box;
 }
 
+/* #ifdef H5 */
+.dz-safe-top {
+  min-height: max(8px, env(safe-area-inset-top));
+}
+/* #endif */
+
 .dz-container {
   width: 100%;
   margin-right: auto;
@@ -26,6 +32,14 @@
   padding-right: 28rpx;
   padding-left: 28rpx;
   box-sizing: border-box;
+}
+
+@media screen and (min-width: 480px) {
+  .dz-container {
+    max-width: 430px;
+    padding-right: 16px;
+    padding-left: 16px;
+  }
 }
 
 @media screen and (min-width: 768px) {
