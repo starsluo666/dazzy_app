@@ -37,7 +37,7 @@
             <view class="service-icon">✈</view>
             <view class="service-copy"><strong>{{ selectedService.category }}</strong><text>{{ serviceDescription(selectedService.category) }}</text></view>
             <view class="service-cost"><strong>¥{{ money(selectedService.price_amount) }}<small>{{ selectedService.billing_type==='hourly'?'/小时':'/次' }}</small></strong><text>{{ durationHint(selectedService) }}</text></view>
-            <view class="availability" @tap.stop="openServiceSheet"><text>◷　最早可约：<strong>{{ availabilityLoading?'查询中…':earliestSlot?`${earliestSlot.label} ${earliestSlot.time}`:'暂无档期' }}</strong></text><text>更换　›</text></view>
+            <view class="availability" @tap.stop="openServiceSheet"><text>◷　最早可约：<strong>{{ availabilityLoading?'查询中…':earliestSlot?`${earliestSlot.label} ${earliestSlot.time}`:'暂无档期' }}</strong></text><text>选择服务　›</text></view>
           </button>
         </section>
 
