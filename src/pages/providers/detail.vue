@@ -37,7 +37,7 @@
             <view class="service-icon">✈</view>
             <view class="service-copy"><strong>{{ selectedService.category }}</strong><text>{{ serviceDescription(selectedService.category) }}</text></view>
             <view class="service-cost"><strong>¥{{ money(selectedService.price_amount) }}<small>{{ selectedService.billing_type==='hourly'?'/小时':'/次' }}</small></strong><text>{{ durationHint(selectedService) }}</text></view>
-            <view class="availability" @tap.stop="bookEarliest"><text>◷　最早可约：<strong>{{ earliestSlot.label }} {{ earliestSlot.time }}</strong></text><text>更换　›</text></view>
+            <view class="availability" @tap.stop="bookEarliest"><text>◷　最早可约：<strong>{{ availabilityLoading?'查询中…':earliestSlot?`${earliestSlot.label} ${earliestSlot.time}`:'暂无档期' }}</strong></text><text>更换　›</text></view>
           </button>
         </section>
 
@@ -69,12 +69,12 @@
 
 <script setup lang="ts">
 import { onLoad } from '@dcloudio/uni-app'
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 
 import NetworkState from '@/components/NetworkState.vue'
 import { createBookingDraft } from '@/services/bookingDraft'
-import { getProviderDetail } from '@/services/discovery'
-import type { ProviderDetail, ProviderServiceSummary } from '@/types/api'
+import { getProviderAvailability, getProviderDetail } from '@/services/discovery'
+import type { ProviderAvailabilitySlot, ProviderDetail, ProviderServiceSummary } from '@/types/api'
 import { formatAmount, getErrorMessage } from '@/utils/formatters'
 
 const provider = ref<ProviderDetail | null>(null)
@@ -85,6 +85,8 @@ const heroImageFailed = ref(false)
 const selectedServiceId = ref(0)
 const pendingServiceId = ref(0)
 const serviceSheetOpen = ref(false)
+const earliest = ref<ProviderAvailabilitySlot | null>(null)
+const availabilityLoading = ref(false)
 
 const selectedService = computed(() => provider.value?.services.find(item=>item.id===selectedServiceId.value) || provider.value?.services[0] || null)
 const age = computed(() => {
@@ -100,7 +102,7 @@ const profileTags = computed(() => {
   const interest = category.replace('陪玩', '').replace('陪伴', '')
   return [category, '健谈开朗', `${interest}爱好者`, `${provider.value?.service_city_name || ''}达人`]
 })
-const earliestSlot = computed(()=>{const now=new Date();const slot=new Date(now.getTime()+60*60*1000);slot.setSeconds(0,0);slot.setMinutes(Math.ceil(slot.getMinutes()/30)*30);let offset=0;if(slot.getHours()<9)slot.setHours(9,0,0,0);if(slot.getHours()>=18){slot.setDate(slot.getDate()+1);slot.setHours(9,0,0,0);offset=1}return{label:offset?'明天':'今天',time:`${String(slot.getHours()).padStart(2,'0')}:${String(slot.getMinutes()).padStart(2,'0')}`,offset}})
+const earliestSlot = computed(()=>{if(!earliest.value)return null;const slot=new Date(earliest.value.starts_at);const today=new Date();const tomorrow=new Date();tomorrow.setDate(today.getDate()+1);const date=localDateKey(slot);const label=date===localDateKey(today)?'今天':date===localDateKey(tomorrow)?'明天':`${slot.getMonth()+1}月${slot.getDate()}日`;return{label,time:`${String(slot.getHours()).padStart(2,'0')}:${String(slot.getMinutes()).padStart(2,'0')}`,date}})
 
 const money = formatAmount
 function serviceDescription(name:string){return name.includes('摄影')?'拍照打卡，创意构图，记录美好时刻':'一起出行，陪伴游玩，景点打卡'}
@@ -111,10 +113,13 @@ function openServiceSheet(){pendingServiceId.value=selectedService.value?.id||0;
 function confirmService(){selectedServiceId.value=pendingServiceId.value;serviceSheetOpen.value=false}
 function bookEarliest(){startBooking()}
 function startBooking() {
-  if (!provider.value || !selectedService.value) return
-  createBookingDraft(provider.value, selectedService.value, earliestSlot.value.offset, earliestSlot.value.time)
+  if (!provider.value || !selectedService.value || !earliestSlot.value) { uni.showToast({title:'当前暂无可预约时间',icon:'none'});return }
+  const today=new Date();const target=new Date(`${earliestSlot.value.date}T00:00:00`);const offset=Math.round((target.getTime()-new Date(today.getFullYear(),today.getMonth(),today.getDate()).getTime())/86400000)
+  createBookingDraft(provider.value, selectedService.value, offset, earliestSlot.value.time)
   uni.navigateTo({ url: '/pages/booking/confirm' })
 }
+function localDateKey(value:Date){return `${value.getFullYear()}-${String(value.getMonth()+1).padStart(2,'0')}-${String(value.getDate()).padStart(2,'0')}`}
+async function loadAvailability(){if(!provider.value||!selectedService.value)return;availabilityLoading.value=true;earliest.value=null;try{earliest.value=(await getProviderAvailability(provider.value.public_id,selectedService.value.id,selectedService.value.billing_type==='hourly'?120:undefined)).data.earliest}catch{}finally{availabilityLoading.value=false}}
 async function loadDetail() {
   if (!publicId.value) return
   loading.value = true; error.value = ''
@@ -132,6 +137,7 @@ onLoad((query) => {
     loadDetail()
   }
 })
+watch(selectedServiceId,()=>loadAvailability())
 </script>
 
 <style lang="scss" scoped>

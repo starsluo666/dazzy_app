@@ -5,6 +5,7 @@ import type {
   HomeCardAssets,
   ListResponse,
   ProviderDetail,
+  ProviderAvailability,
   ProviderListItem,
 } from '@/types/api'
 
@@ -45,6 +46,16 @@ export function getHomeCardAssets() {
 
 export function getProviderDetail(publicId: string) {
   return request<DataResponse<ProviderDetail>>(`/providers/${publicId}/`)
+}
+
+export function getProviderAvailability(
+  publicId: string,
+  serviceId: number,
+  durationMinutes?: number,
+) {
+  return request<DataResponse<ProviderAvailability>>(`/providers/${publicId}/availability/`, {
+    query: { service_id: serviceId, days: 4, duration_minutes: durationMinutes },
+  })
 }
 
 export function getActivityDetail(id: number) {

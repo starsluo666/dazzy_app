@@ -41,6 +41,19 @@ export interface ProviderDetail extends ProviderListItem {
   max_service_radius_km: number
 }
 
+export interface ProviderAvailabilitySlot {
+  starts_at: string
+  ends_at: string
+}
+
+export interface ProviderAvailability {
+  service_id: number
+  duration_minutes: number
+  time_grain_minutes: number
+  earliest: ProviderAvailabilitySlot | null
+  dates: Array<{ date: string; slots: ProviderAvailabilitySlot[] }>
+}
+
 export interface ActivityListItem {
   id: number
   title: string
