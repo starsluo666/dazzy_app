@@ -37,7 +37,7 @@
             <view class="service-icon">✈</view>
             <view class="service-copy"><strong>{{ selectedService.category }}</strong><text>{{ serviceDescription(selectedService.category) }}</text></view>
             <view class="service-cost"><strong>¥{{ money(selectedService.price_amount) }}<small>{{ selectedService.billing_type==='hourly'?'/小时':'/次' }}</small></strong><text>{{ durationHint(selectedService) }}</text></view>
-            <view class="availability" @tap.stop="bookEarliest"><text>◷　最早可约：<strong>{{ availabilityLoading?'查询中…':earliestSlot?`${earliestSlot.label} ${earliestSlot.time}`:'暂无档期' }}</strong></text><text>更换　›</text></view>
+            <view class="availability" @tap.stop="openServiceSheet"><text>◷　最早可约：<strong>{{ availabilityLoading?'查询中…':earliestSlot?`${earliestSlot.label} ${earliestSlot.time}`:'暂无档期' }}</strong></text><text>更换　›</text></view>
           </button>
         </section>
 
@@ -111,7 +111,6 @@ function goBack() { uni.navigateBack() }
 function showPending(feature: string) { uni.showToast({ title: `${feature}功能即将接入`, icon: 'none' }) }
 function openServiceSheet(){pendingServiceId.value=selectedService.value?.id||0;serviceSheetOpen.value=true}
 function confirmService(){selectedServiceId.value=pendingServiceId.value;serviceSheetOpen.value=false}
-function bookEarliest(){startBooking()}
 function startBooking() {
   if (!provider.value || !selectedService.value || !earliestSlot.value) { uni.showToast({title:'当前暂无可预约时间',icon:'none'});return }
   const today=new Date();const target=new Date(`${earliestSlot.value.date}T00:00:00`);const offset=Math.round((target.getTime()-new Date(today.getFullYear(),today.getMonth(),today.getDate()).getTime())/86400000)
