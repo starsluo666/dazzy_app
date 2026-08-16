@@ -32,6 +32,14 @@ export function getProviderOrder(orderNo: string) {
   return request<DataResponse<ProviderOrder>>(`/provider-orders/${orderNo}/`)
 }
 
+export function getProviderOrders() {
+  return request<{ data: { items: ProviderOrder[] } }>('/provider-orders/')
+}
+
+export function cancelProviderOrder(orderNo: string) {
+  return request<DataResponse<ProviderOrder>>(`/provider-orders/${orderNo}/cancel/`, { method: 'POST' })
+}
+
 export function simulateProviderOrderPayment(orderNo: string) {
   return request<DataResponse<ProviderOrder>>(`/provider-orders/${orderNo}/simulate-payment/`, { method: 'POST' })
 }

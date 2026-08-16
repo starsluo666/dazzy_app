@@ -37,6 +37,14 @@
       "style": { "navigationStyle": "custom" }
     },
     {
+      "path": "pages/orders/list",
+      "style": { "navigationStyle": "custom" }
+    },
+    {
+      "path": "pages/orders/detail",
+      "style": { "navigationStyle": "custom" }
+    },
+    {
       "path": "pages/activities/index",
       "style": { "navigationStyle": "custom" }
     },

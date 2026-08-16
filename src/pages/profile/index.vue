@@ -28,9 +28,9 @@
       </section>
 
       <section class="orders panel">
-        <view class="section-head"><text>我的订单</text><view role="button" @tap="showPending('全部订单')">全部订单　›</view></view>
+        <view class="section-head"><text>我的订单</text><view role="button" @tap="openOrders('all')">全部订单　›</view></view>
         <view class="order-grid">
-          <view v-for="item in orderEntries" :key="item.label" role="button" @tap="showPending(item.label)">
+          <view v-for="item in orderEntries" :key="item.label" role="button" @tap="openOrders(item.bucket)">
             <text class="feature-icon">{{ item.icon }}</text>
             <text>{{ item.label }}</text>
           </view>
@@ -79,10 +79,10 @@ const stats = computed(() => [
   { label: '粉丝', value: profile.value ? String(Math.max(136, profile.value.service_count * 4)) : '136' },
 ])
 const orderEntries = [
-  { label: '待付款', icon: '▱' },
-  { label: '待确认', icon: '▤' },
-  { label: '进行中', icon: '▣' },
-  { label: '退款/售后', icon: '¥' },
+  { label: '待付款', icon: '▱', bucket: 'pending_payment' },
+  { label: '待服务', icon: '▤', bucket: 'upcoming' },
+  { label: '进行中', icon: '▣', bucket: 'active' },
+  { label: '退款/售后', icon: '¥', bucket: 'finished' },
 ]
 const promotions = [
   { title: '申请达人', line1: '成为达人', line2: '享受更多权益', action: '去申请', art: '✦', className: 'provider' },
@@ -99,6 +99,7 @@ const functions = [
 function showPending(feature: string) {
   uni.showToast({ title: `${feature}功能即将接入`, icon: 'none' })
 }
+function openOrders(bucket: string) { uni.navigateTo({ url: `/pages/orders/list?status=${bucket}` }) }
 
 async function loadDemoProfile() {
   try {
