@@ -13,18 +13,6 @@
       "style": { "navigationStyle": "custom" }
     },
     {
-      "path": "pages/booking/service",
-      "style": { "navigationStyle": "custom" }
-    },
-    {
-      "path": "pages/booking/time",
-      "style": { "navigationStyle": "custom" }
-    },
-    {
-      "path": "pages/booking/location",
-      "style": { "navigationStyle": "custom" }
-    },
-    {
       "path": "pages/booking/confirm",
       "style": { "navigationStyle": "custom" }
     },

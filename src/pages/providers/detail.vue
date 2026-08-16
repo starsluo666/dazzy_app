@@ -31,23 +31,14 @@
           <view class="tags"><text v-for="tag in profileTags" :key="tag">{{ tag }}</text></view>
         </view>
 
-        <section class="service-card" v-if="primaryService">
-          <view class="service-icon">▣</view>
-          <view class="service-copy"><strong>{{ primaryService.category }}</strong><text>{{ billingLabel(primaryService.billing_type) }}</text></view>
-          <view class="service-cost"><strong>¥{{ money(primaryService.price_amount) }}<small>/小时</small></strong><text>最低预约2小时</text></view>
-        </section>
-
-        <section class="schedule">
-          <text class="section-title">可预约时间</text>
-          <scroll-view scroll-x class="date-rail" :show-scrollbar="false">
-            <view class="date-list">
-              <button v-for="(item,index) in dateOptions" :key="item.date" class="date-option" :class="{active:selectedDate===index}" @tap="selectedDate=index"><strong>{{ item.label }}</strong><text>{{ item.date }}</text></button>
-              <button class="date-option more-date" @tap="showPending('更多日期')"><strong>更多</strong><text>⌄</text></button>
-            </view>
-          </scroll-view>
-          <view class="time-list">
-            <button v-for="time in timeOptions" :key="time" class="time-option" :class="{active:selectedTime===time}" @tap="selectedTime=time">{{ time }}</button>
-          </view>
+        <section v-if="selectedService" class="current-service">
+          <text class="section-heading">当前服务</text>
+          <button class="service-summary" @tap="openServiceSheet">
+            <view class="service-icon">✈</view>
+            <view class="service-copy"><strong>{{ selectedService.category }}</strong><text>{{ serviceDescription(selectedService.category) }}</text></view>
+            <view class="service-cost"><strong>¥{{ money(selectedService.price_amount) }}<small>{{ selectedService.billing_type==='hourly'?'/小时':'/次' }}</small></strong><text>{{ durationHint(selectedService) }}</text></view>
+            <view class="availability" @tap.stop="bookEarliest"><text>◷　最早可约：<strong>{{ earliestSlot.label }} {{ earliestSlot.time }}</strong></text><text>更换　›</text></view>
+          </button>
         </section>
 
         <section class="introduction">
@@ -55,12 +46,22 @@
           <text>{{ provider.bio }}</text>
           <text>服务范围覆盖{{ provider.service_city_name }}，支持{{ provider.max_service_radius_km }}公里内预约。认真倾听你的需求，陪你轻松体验城市里的好时光。</text>
         </section>
+        <section class="reviews"><text class="section-title">用户评价</text><view class="review-preview"><view class="review-score"><strong>{{ provider.rating }}</strong><text>★★★★★</text><small>（128条评价）</small></view><view class="review-copy"><strong>小宇同学　<text>★★★★★</text></strong><text>晓晓非常热情，行程安排得很棒，拍照技术也超赞！</text><small>2周前</small></view></view></section>
       </main>
 
       <view class="action-bar dz-container">
         <button class="secondary" hover-class="button--pressed" @tap="showPending('收藏')"><text class="action-icon">☆</text><text>收藏</text></button>
         <button class="secondary" hover-class="button--pressed" @tap="showPending('私信')"><text class="action-icon">◌</text><text>私信</text></button>
         <button class="primary" hover-class="button--pressed" @tap="startBooking">立即预约</button>
+      </view>
+      <view v-if="serviceSheetOpen" class="sheet-layer" @tap="serviceSheetOpen=false">
+        <section class="service-sheet" @tap.stop>
+          <view class="sheet-handle"/><view class="sheet-title"><strong>选择服务</strong><button aria-label="关闭" @tap="serviceSheetOpen=false">×</button></view>
+          <scroll-view scroll-y class="sheet-services">
+            <button v-for="service in provider.services" :key="service.id" class="sheet-service" :class="{active:pendingServiceId===service.id}" @tap="pendingServiceId=service.id"><text class="radio">{{ pendingServiceId===service.id?'✓':'' }}</text><view class="sheet-icon">{{ service.category.includes('摄影')?'▣':'✈' }}</view><view class="sheet-copy"><strong>{{ service.category }}</strong><text>{{ serviceDescription(service.category) }}</text></view><view class="sheet-price"><strong>¥{{ money(service.price_amount) }}<small>{{ service.billing_type==='hourly'?'/小时':'/次' }}</small></strong><text>{{ durationHint(service) }}</text></view></button>
+          </scroll-view>
+          <button class="confirm-service" @tap="confirmService">确认服务</button>
+        </section>
       </view>
     </template>
   </view>
@@ -73,19 +74,19 @@ import { computed, ref } from 'vue'
 import NetworkState from '@/components/NetworkState.vue'
 import { createBookingDraft } from '@/services/bookingDraft'
 import { getProviderDetail } from '@/services/discovery'
-import type { ProviderDetail } from '@/types/api'
-import { formatAmount, formatMonthDay, getErrorMessage } from '@/utils/formatters'
+import type { ProviderDetail, ProviderServiceSummary } from '@/types/api'
+import { formatAmount, getErrorMessage } from '@/utils/formatters'
 
 const provider = ref<ProviderDetail | null>(null)
 const publicId = ref('')
 const loading = ref(true)
 const error = ref('')
 const heroImageFailed = ref(false)
-const selectedDate = ref(0)
-const selectedTime = ref('14:00')
-const timeOptions = ['09:00', '10:00', '14:00', '15:00', '16:00']
+const selectedServiceId = ref(0)
+const pendingServiceId = ref(0)
+const serviceSheetOpen = ref(false)
 
-const primaryService = computed(() => provider.value?.services[0] || null)
+const selectedService = computed(() => provider.value?.services.find(item=>item.id===selectedServiceId.value) || provider.value?.services[0] || null)
 const age = computed(() => {
   if (!provider.value?.birth_date) return null
   const birth = new Date(provider.value.birth_date)
@@ -95,32 +96,30 @@ const age = computed(() => {
   return value
 })
 const profileTags = computed(() => {
-  const category = primaryService.value?.category || '达人服务'
+  const category = selectedService.value?.category || '达人服务'
   const interest = category.replace('陪玩', '').replace('陪伴', '')
   return [category, '健谈开朗', `${interest}爱好者`, `${provider.value?.service_city_name || ''}达人`]
 })
-const dateOptions = computed(() => {
-  const labels = ['今天', '明天', '后天', '周末']
-  return labels.map((label, index) => {
-    const date = new Date(); date.setDate(date.getDate() + index)
-    return { label, date: formatMonthDay(date) }
-  })
-})
+const earliestSlot = computed(()=>{const now=new Date();const slot=new Date(now.getTime()+60*60*1000);slot.setSeconds(0,0);slot.setMinutes(Math.ceil(slot.getMinutes()/30)*30);let offset=0;if(slot.getHours()<9)slot.setHours(9,0,0,0);if(slot.getHours()>=18){slot.setDate(slot.getDate()+1);slot.setHours(9,0,0,0);offset=1}return{label:offset?'明天':'今天',time:`${String(slot.getHours()).padStart(2,'0')}:${String(slot.getMinutes()).padStart(2,'0')}`,offset}})
 
 const money = formatAmount
-function billingLabel(value: string) { return value === 'hourly' ? '按小时计费' : '按次计费' }
+function serviceDescription(name:string){return name.includes('摄影')?'拍照打卡，创意构图，记录美好时刻':'一起出行，陪伴游玩，景点打卡'}
+function durationHint(service:ProviderServiceSummary){return service.billing_type==='hourly'?'最低2小时':`预计${Math.max(1,Math.round((service.estimated_duration_minutes||180)/60))}小时`}
 function goBack() { uni.navigateBack() }
 function showPending(feature: string) { uni.showToast({ title: `${feature}功能即将接入`, icon: 'none' }) }
+function openServiceSheet(){pendingServiceId.value=selectedService.value?.id||0;serviceSheetOpen.value=true}
+function confirmService(){selectedServiceId.value=pendingServiceId.value;serviceSheetOpen.value=false}
+function bookEarliest(){startBooking()}
 function startBooking() {
-  if (!provider.value || !primaryService.value) return
-  createBookingDraft(provider.value, primaryService.value, selectedDate.value, selectedTime.value)
-  uni.navigateTo({ url: '/pages/booking/service' })
+  if (!provider.value || !selectedService.value) return
+  createBookingDraft(provider.value, selectedService.value, earliestSlot.value.offset, earliestSlot.value.time)
+  uni.navigateTo({ url: '/pages/booking/confirm' })
 }
 async function loadDetail() {
   if (!publicId.value) return
   loading.value = true; error.value = ''
   heroImageFailed.value = false
-  try { provider.value = (await getProviderDetail(publicId.value)).data }
+  try { provider.value = (await getProviderDetail(publicId.value)).data;selectedServiceId.value=provider.value.services[0]?.id||0 }
   catch (reason) { error.value = getErrorMessage(reason) }
   finally { loading.value = false }
 }
@@ -168,7 +167,6 @@ onLoad((query) => {
 .rating-row i{width:1rpx;height:24rpx;background:$dz-border-subtle}
 .tags{display:flex;flex-wrap:wrap;gap:10rpx;margin-left:-180rpx;margin-top:20rpx}
 .tags text{padding:8rpx 14rpx;border-radius:13rpx;color:$dz-brand-deep;background:$dz-brand-soft;font-size:20rpx}
-.service-card{display:flex;align-items:center;min-height:132rpx;padding:18rpx 20rpx;border:1rpx solid $dz-border-subtle;border-radius:22rpx;background:#fff;box-shadow:0 8rpx 24rpx rgba(23,33,38,.08);box-sizing:border-box}
 .service-icon{display:flex;align-items:center;justify-content:center;width:62rpx;height:62rpx;border-radius:50%;color:#fff;background:$dz-gradient-brand;font-size:29rpx}
 .service-copy{display:flex;flex-direction:column;gap:7rpx;margin-left:17rpx}
 .service-copy strong{font-size:29rpx}
@@ -177,20 +175,10 @@ onLoad((query) => {
 .service-cost strong{color:$dz-price-primary;font-size:39rpx}
 .service-cost small{font-size:20rpx;font-weight:500}
 .service-cost text{color:$dz-text-secondary;font-size:19rpx}
-.schedule{margin-top:42rpx}
 .section-title{display:block;font-size:30rpx;font-weight:700}
-.date-rail{width:100%;margin-top:24rpx;white-space:nowrap}
-.date-list{display:flex;gap:14rpx}
-.date-option{display:flex;flex:0 0 120rpx;flex-direction:column;align-items:center;justify-content:center;height:94rpx;margin:0;padding:0;border:1rpx solid $dz-border-subtle;border-radius:16rpx;color:$dz-text-primary;background:#fff;font-size:22rpx;line-height:30rpx}
-.date-option text{color:$dz-text-tertiary;font-size:18rpx}
-.date-option.active{border-color:$dz-brand-primary;color:$dz-brand-deep;background:$dz-brand-soft}
-.date-option.active text{color:$dz-text-secondary}
-.more-date{flex-basis:106rpx}
-.time-list{display:grid;grid-template-columns:repeat(5,1fr);gap:13rpx;margin-top:18rpx}
-.time-option{height:62rpx;margin:0;padding:0;border:1rpx solid $dz-border-subtle;border-radius:14rpx;color:$dz-text-primary;background:#fff;font-size:23rpx;line-height:62rpx}
-.time-option.active{border-color:$dz-brand-primary;color:#fff;background:$dz-gradient-brand}
 .introduction{margin-top:40rpx}
 .introduction>text:not(.section-title){display:block;margin-top:14rpx;color:$dz-text-secondary;font-size:22rpx;line-height:36rpx}
+.current-service{margin-top:8rpx}.section-heading{display:block;margin-bottom:18rpx;padding-left:14rpx;border-left:7rpx solid $dz-brand-primary;font-size:29rpx;font-weight:700}.service-summary{position:relative;display:grid;grid-template-columns:76rpx 1fr auto;grid-template-rows:96rpx 58rpx;align-items:center;width:100%;margin:0;padding:14rpx 18rpx 0;border:2rpx solid $dz-brand-primary;border-radius:20rpx;background:linear-gradient(135deg,#fff 35%,#e9fbfa);text-align:left;line-height:1.35;box-sizing:border-box}.service-summary::after,.sheet-title button::after,.sheet-service::after,.confirm-service::after{display:none}.service-summary .service-icon{width:64rpx;height:64rpx}.service-summary .service-copy{gap:6rpx;margin-left:10rpx}.service-summary .service-copy strong{font-size:27rpx}.service-summary .service-copy text{color:$dz-text-secondary;font-size:18rpx}.service-summary .service-cost strong{font-size:31rpx}.service-summary .service-cost text{padding:4rpx 8rpx;border:1rpx solid $dz-brand-primary;border-radius:8rpx;color:$dz-brand-deep;font-size:16rpx}.availability{grid-column:1/4;display:flex;align-items:center;justify-content:space-between;height:58rpx;border-top:1rpx solid rgba(24,199,198,.35);color:$dz-brand-deep;font-size:20rpx}.availability strong{font-size:21rpx}.reviews{margin-top:34rpx}.review-preview{display:grid;grid-template-columns:140rpx 1fr;gap:18rpx;margin-top:18rpx}.review-score{display:flex;flex-direction:column;align-items:center}.review-score strong{color:$dz-brand-deep;font-size:46rpx}.review-score text{color:#ffb623;font-size:19rpx;letter-spacing:1rpx}.review-score small{margin-top:5rpx;color:$dz-text-secondary;font-size:16rpx}.review-copy{position:relative;display:flex;flex-direction:column;gap:8rpx;padding:16rpx 18rpx;border-radius:16rpx;background:$dz-surface-page}.review-copy strong{font-size:19rpx}.review-copy strong text{color:$dz-brand-deep}.review-copy>text{font-size:18rpx;line-height:28rpx}.review-copy small{position:absolute;right:14rpx;top:14rpx;color:$dz-text-tertiary;font-size:15rpx}.sheet-layer{position:fixed;z-index:60;inset:0;background:rgba(15,28,32,.55)}.service-sheet{position:absolute;right:0;bottom:0;left:0;max-width:750px;margin:auto;padding:18rpx 24rpx calc(24rpx + env(safe-area-inset-bottom));border-radius:32rpx 32rpx 0 0;background:#fff;box-sizing:border-box}.sheet-handle{width:72rpx;height:7rpx;margin:0 auto 18rpx;border-radius:4rpx;background:#cbd1d3}.sheet-title{display:flex;align-items:center;justify-content:space-between}.sheet-title strong{font-size:30rpx}.sheet-title button{width:58rpx;height:58rpx;margin:0;padding:0;border:0;background:transparent;color:$dz-text-secondary;font-size:38rpx;line-height:58rpx}.sheet-services{max-height:660rpx;margin-top:15rpx}.sheet-service{display:grid;grid-template-columns:34rpx 76rpx 1fr auto;align-items:center;width:100%;min-height:126rpx;margin:0 0 14rpx;padding:14rpx;border:2rpx solid $dz-border-subtle;border-radius:18rpx;background:#fff;text-align:left;line-height:1.35;box-sizing:border-box}.sheet-service.active{border-color:$dz-brand-primary;background:linear-gradient(135deg,#fff,#e9fbfa)}.radio{display:flex;align-items:center;justify-content:center;width:28rpx;height:28rpx;border:2rpx solid #ccd4d7;border-radius:50%;color:#fff;font-size:17rpx}.active .radio{border-color:$dz-brand-primary;background:$dz-brand-primary}.sheet-icon{display:flex;align-items:center;justify-content:center;width:64rpx;height:64rpx;border-radius:50%;color:$dz-brand-deep;background:$dz-brand-soft;font-size:29rpx}.sheet-copy{display:flex;flex-direction:column;gap:8rpx;margin-left:12rpx}.sheet-copy strong{font-size:24rpx}.sheet-copy text{color:$dz-text-secondary;font-size:17rpx}.sheet-price{display:flex;flex-direction:column;align-items:flex-end;gap:10rpx}.sheet-price strong{color:$dz-price-primary;font-size:28rpx}.sheet-price small{font-size:17rpx}.sheet-price text{padding:4rpx 7rpx;border:1rpx solid $dz-brand-primary;border-radius:7rpx;color:$dz-brand-deep;font-size:15rpx}.confirm-service{height:78rpx;margin:4rpx 0 0;border:0;border-radius:39rpx;color:#fff;background:$dz-gradient-brand;font-size:28rpx;font-weight:700;line-height:78rpx}
 .action-bar{position:fixed;z-index:20;right:0;bottom:0;left:0;display:flex;align-items:center;gap:12rpx;height:calc(118rpx + env(safe-area-inset-bottom));padding:10rpx 24rpx env(safe-area-inset-bottom);border-radius:28rpx 28rpx 0 0;background:rgba(255,255,255,.98);box-shadow:0 -6rpx 24rpx rgba(23,33,38,.08);box-sizing:border-box}
 .action-bar button{margin:0;border:0}
 .secondary{display:flex;flex-direction:column;align-items:center;justify-content:center;width:104rpx;height:86rpx;padding:0;border:1rpx solid $dz-border-subtle!important;border-radius:18rpx;color:$dz-text-primary;background:#fff;font-size:18rpx;line-height:25rpx}

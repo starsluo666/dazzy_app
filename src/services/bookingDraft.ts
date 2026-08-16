@@ -16,6 +16,7 @@ export interface BookingDraft {
   durationMinutes: number
   date: string
   startTime: string
+  timeConfirmed: boolean
   address: string
   contactName: string
   contactPhone: string
@@ -47,6 +48,7 @@ export function createBookingDraft(provider: ProviderDetail, service: ProviderSe
     durationMinutes: service.billing_type === 'hourly' ? Math.max(120, service.estimated_duration_minutes || 120) : (service.estimated_duration_minutes || 180),
     date: dateKey(dateOffset),
     startTime,
+    timeConfirmed: false,
     address: '',
     contactName: '',
     contactPhone: '',
