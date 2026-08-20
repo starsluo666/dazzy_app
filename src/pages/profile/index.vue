@@ -49,7 +49,7 @@
       <section class="functions panel">
         <text class="section-title">我的功能</text>
         <view class="function-grid">
-          <view v-for="item in functions" :key="item.label" role="button" @tap="showPending(item.label)">
+          <view v-for="item in functions" :key="item.label" role="button" @tap="openFunction(item)">
             <text class="feature-icon">{{ item.icon }}</text>
             <text>{{ item.label }}</text>
           </view>
@@ -90,7 +90,7 @@ const promotions = [
   { title: '会员中心', line1: '专属特权', line2: '超值享受', action: '去查看', art: '♛', className: 'member' },
 ]
 const functions = [
-  { label: '我的收藏', icon: '☆' }, { label: '浏览记录', icon: '◷' },
+  { label: '我的收藏', icon: '☆' }, { label: '我的活动', icon: '♧', route: '/pages/activities/mine' },
   { label: '我的评价', icon: '◌' }, { label: '收货地址', icon: '⌖' },
   { label: '客服中心', icon: '♧' }, { label: '帮助中心', icon: '?' },
   { label: '安全中心', icon: '◇' }, { label: '设置', icon: '⚙' },
@@ -100,6 +100,10 @@ function showPending(feature: string) {
   uni.showToast({ title: `${feature}功能即将接入`, icon: 'none' })
 }
 function openOrders(bucket: string) { uni.navigateTo({ url: `/pages/orders/list?status=${bucket}` }) }
+function openFunction(item: { label: string; route?: string }) {
+  if (item.route) uni.navigateTo({ url: item.route })
+  else showPending(item.label)
+}
 
 async function loadDemoProfile() {
   try {

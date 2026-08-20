@@ -100,6 +100,11 @@ export interface ActivityParticipationResult {
   activity_status: string
 }
 
+export interface MyActivityListItem extends ActivityListItem {
+  participation_status: 'active' | 'cancelled' | null
+  joined_at: string | null
+}
+
 export interface LocationItem {
   id?: string | number
   name: string

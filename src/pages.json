@@ -45,6 +45,10 @@
       "style": { "navigationStyle": "custom" }
     },
     {
+      "path": "pages/activities/mine",
+      "style": { "navigationStyle": "custom" }
+    },
+    {
       "path": "pages/publish/index",
       "style": { "navigationStyle": "custom" }
     },
