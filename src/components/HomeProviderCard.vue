@@ -33,14 +33,14 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 
-import type { ProviderListItem } from '@/types/api'
+import type { HomeProviderListItem } from '@/types/api'
 import { formatAmount } from '@/utils/formatters'
 
-const props = defineProps<{ item: ProviderListItem }>()
+const props = defineProps<{ item: HomeProviderListItem }>()
 defineEmits<{ select: [id: string] }>()
 
-const favorite = ref(false)
-const availabilityLabel = computed(() => props.item.services.length ? '可预约' : '暂不可约')
+const favorite = ref(props.item.is_favorited)
+const availabilityLabel = computed(() => formatAvailability(props.item))
 const serviceName = computed(() => props.item.services[0]?.category || '达人服务')
 const price = computed(() => formatAmount(props.item.services[0]?.price_amount || 0))
 const billingUnit = computed(() => props.item.services[0]?.billing_type === 'per_session' ? '次' : '小时')
@@ -48,6 +48,18 @@ const distanceLabel = computed(() => props.item.distance_km === null ? props.ite
 
 function toggleFavorite() {
   favorite.value = !favorite.value
+}
+
+function formatAvailability(item: HomeProviderListItem) {
+  if (item.availability_status !== 'available' || !item.earliest_available_at) return '暂不可约'
+  const earliest = new Date(item.earliest_available_at)
+  const today = new Date()
+  const tomorrow = new Date(today)
+  tomorrow.setDate(today.getDate() + 1)
+  const time = `${String(earliest.getHours()).padStart(2, '0')}:${String(earliest.getMinutes()).padStart(2, '0')}`
+  if (earliest.toDateString() === today.toDateString()) return `最快${time}可约`
+  if (earliest.toDateString() === tomorrow.toDateString()) return `明天${time}可约`
+  return `${earliest.getMonth() + 1}月${earliest.getDate()}日可约`
 }
 </script>
 

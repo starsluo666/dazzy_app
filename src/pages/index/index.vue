@@ -55,9 +55,9 @@ import { ref } from 'vue'
 import DazzyTabBar from '@/components/DazzyTabBar.vue'
 import HomeActivityCarousel from '@/components/HomeActivityCarousel.vue'
 import HomeProviderCard from '@/components/HomeProviderCard.vue'
-import { getHomeCardAssets, getNearbyActivities, getRecommendedProviders } from '@/services/discovery'
+import { getHomeDiscovery } from '@/services/discovery'
 import { openPage } from '@/services/navigation'
-import type { ActivityListItem, HomeCardAssets, ProviderListItem } from '@/types/api'
+import type { HomeActivityListItem, HomeCardAssets, HomeProviderListItem } from '@/types/api'
 import { getErrorMessage } from '@/utils/formatters'
 
 const categories = [
@@ -66,8 +66,8 @@ const categories = [
   { label: '桌游', slug: 'board-games', icon: '⚄', color: 'linear-gradient(145deg,#b98bff,#7252e8)' },
   { label: '商务', slug: 'business', icon: '▰', color: 'linear-gradient(145deg,#48bcff,#1688ea)' },
 ]
-const providers = ref<ProviderListItem[]>([])
-const activities = ref<ActivityListItem[]>([])
+const providers = ref<HomeProviderListItem[]>([])
+const activities = ref<HomeActivityListItem[]>([])
 const loading = ref(true)
 const activityError = ref('')
 const providerError = ref('')
@@ -94,28 +94,21 @@ async function loadDiscovery() {
   activityError.value = ''
   providerError.value = ''
 
-  const [providerResult, activityResult] = await Promise.allSettled([
-    getRecommendedProviders(),
-    getNearbyActivities(),
-  ])
-  if (providerResult.status === 'fulfilled') {
-    providers.value = providerResult.value.data.items
-  } else {
-    providers.value = []
-    providerError.value = getErrorMessage(providerResult.reason)
-  }
-  if (activityResult.status === 'fulfilled') {
-    activities.value = activityResult.value.data.items
-  } else {
-    activities.value = []
-    activityError.value = getErrorMessage(activityResult.reason)
-  }
-  loading.value = false
-
   try {
-    homeCardAssets.value = (await getHomeCardAssets()).data
-  } catch {
+    const response = await getHomeDiscovery()
+    providers.value = response.data.recommended_providers
+    activities.value = response.data.recommended_activities
+    homeCardAssets.value = response.data.card_assets
+    providerError.value = response.data.errors.recommended_providers || ''
+    activityError.value = response.data.errors.recommended_activities || ''
+  } catch (error) {
+    providers.value = []
+    activities.value = []
     homeCardAssets.value = null
+    providerError.value = getErrorMessage(error)
+    activityError.value = getErrorMessage(error)
+  } finally {
+    loading.value = false
   }
 }
 

@@ -26,7 +26,7 @@
           <view class="activity-info">
             <text class="activity-title">{{ item.title }}</text>
             <view class="activity-bottomline">
-              <text class="activity-meta">{{ formatActivityTime(item.starts_at) }} · {{ item.min_participants }}/{{ item.capacity }}人</text>
+              <text class="activity-meta">{{ formatActivityTime(item.starts_at) }} · {{ item.participant_count }}/{{ item.capacity }}人</text>
               <text class="activity-price"><text class="activity-price-prefix">AA</text> ¥{{ formatAmount(item.aa_principal_amount) }}</text>
             </view>
           </view>
@@ -48,10 +48,10 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 
-import type { ActivityListItem } from '@/types/api'
+import type { HomeActivityListItem } from '@/types/api'
 import { formatActivityTime, formatAmount } from '@/utils/formatters'
 
-defineProps<{ items: ActivityListItem[] }>()
+defineProps<{ items: HomeActivityListItem[] }>()
 defineEmits<{ select: [id: number] }>()
 
 const activeIndex = ref(0)

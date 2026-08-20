@@ -3,6 +3,7 @@ import type {
   ActivityListItem,
   DataResponse,
   HomeCardAssets,
+  HomeDiscoveryData,
   ListResponse,
   ProviderDetail,
   ProviderAvailability,
@@ -42,6 +43,12 @@ export function getNearbyActivities(query: ActivityQuery = {}) {
 
 export function getHomeCardAssets() {
   return request<DataResponse<HomeCardAssets>>('/content/home-cards/')
+}
+
+export function getHomeDiscovery() {
+  return request<DataResponse<HomeDiscoveryData>>('/home/', {
+    query: { ...DEMO_LOCATION, city_code: '130400' },
+  })
 }
 
 export function getProviderDetail(publicId: string) {

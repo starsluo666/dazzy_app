@@ -73,6 +73,10 @@ export interface ActivityListItem {
   distance_km: number | null
 }
 
+export interface HomeActivityListItem extends ActivityListItem {
+  participant_count: number
+}
+
 export interface ActivityDetail extends ActivityListItem {
   meeting_address: string
   description: string
@@ -99,8 +103,21 @@ export interface LocationItem {
 }
 
 export interface HomeCardAssets {
-  provider_companion_url: string
-  group_activity_url: string
+  provider_companion_url?: string
+  group_activity_url?: string
+}
+
+export interface HomeProviderListItem extends ProviderListItem {
+  availability_status: 'available' | 'unavailable'
+  earliest_available_at: string | null
+  is_favorited: boolean
+}
+
+export interface HomeDiscoveryData {
+  card_assets: HomeCardAssets
+  recommended_activities: HomeActivityListItem[]
+  recommended_providers: HomeProviderListItem[]
+  errors: Partial<Record<'card_assets' | 'recommended_activities' | 'recommended_providers', string>>
 }
 
 export interface DataResponse<T> {
