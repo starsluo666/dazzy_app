@@ -100,6 +100,18 @@ export interface ActivityParticipationResult {
   activity_status: string
 }
 
+export interface ActivityCategoryItem {
+  name: string
+  slug: string
+}
+
+export interface ActivityDraftResult {
+  id: number
+  status: 'draft'
+  next_step: 'payment'
+  payment_required: true
+}
+
 export interface MyActivityListItem extends ActivityListItem {
   participation_status: 'active' | 'cancelled' | null
   joined_at: string | null
