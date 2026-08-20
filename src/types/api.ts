@@ -71,11 +71,10 @@ export interface ActivityListItem {
   aa_principal_amount: number
   status: string
   distance_km: number | null
-}
-
-export interface HomeActivityListItem extends ActivityListItem {
   participant_count: number
 }
+
+export type HomeActivityListItem = ActivityListItem
 
 export interface ActivityDetail extends ActivityListItem {
   meeting_address: string
@@ -89,6 +88,16 @@ export interface ActivityDetail extends ActivityListItem {
   payable_amount: number
   organizer_verified: boolean
   organizer_rating: string | null
+  is_joined: boolean
+  is_organizer: boolean
+  participation_status: 'active' | 'cancelled' | null
+}
+
+export interface ActivityParticipationResult {
+  status: 'active'
+  joined_at: string
+  participant_count: number
+  activity_status: string
 }
 
 export interface LocationItem {

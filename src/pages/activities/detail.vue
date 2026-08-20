@@ -58,7 +58,13 @@
 
       <view class="action-bar dz-container">
         <button class="secondary" hover-class="button--pressed" @tap="showPending('收藏')"><text class="action-icon">☆</text><text>收藏</text></button>
-        <button class="primary" :disabled="activity.status !== 'recruiting'" hover-class="button--pressed" @tap="joinActivity"><strong>加入活动</strong><text>还剩{{ remainingPlaces }}个名额</text></button>
+        <button
+          class="primary"
+          :class="{ 'primary--joined': activity.is_joined }"
+          :disabled="participationDisabled"
+          hover-class="button--pressed"
+          @tap="handleParticipation"
+        ><strong>{{ participationTitle }}</strong><text>{{ participationSubtitle }}</text></button>
       </view>
     </template>
   </view>
@@ -69,6 +75,7 @@ import { onLoad } from '@dcloudio/uni-app'
 import { computed, ref } from 'vue'
 
 import NetworkState from '@/components/NetworkState.vue'
+import { cancelActivityParticipation, joinActivity } from '@/services/activities'
 import { getActivityDetail } from '@/services/discovery'
 import type { ActivityDetail } from '@/types/api'
 import { formatActivityRange, formatAmount, getErrorMessage } from '@/utils/formatters'
@@ -77,9 +84,27 @@ const activity = ref<ActivityDetail | null>(null)
 const activityId = ref(0)
 const loading = ref(true)
 const error = ref('')
+const participationSubmitting = ref(false)
 const remainingPlaces = computed(() =>
   activity.value ? Math.max(0, activity.value.capacity - activity.value.participant_count) : 0,
 )
+const participationAllowed = computed(() =>
+  !!activity.value && ['recruiting', 'formed'].includes(activity.value.status) && remainingPlaces.value > 0,
+)
+const participationDisabled = computed(() =>
+  participationSubmitting.value || !!activity.value?.is_organizer || (!activity.value?.is_joined && !participationAllowed.value),
+)
+const participationTitle = computed(() => {
+  if (participationSubmitting.value) return '正在处理…'
+  if (activity.value?.is_organizer) return '我是组织者'
+  if (activity.value?.is_joined) return '已加入活动'
+  return participationAllowed.value ? '加入活动' : '暂不可报名'
+})
+const participationSubtitle = computed(() => {
+  if (activity.value?.is_organizer) return '无需重复报名'
+  if (activity.value?.is_joined) return '点击取消报名'
+  return remainingPlaces.value ? `还剩${remainingPlaces.value}个名额` : '名额已满'
+})
 
 function money(amount: number) {
   return formatAmount(amount, 2)
@@ -116,20 +141,48 @@ function showRefundRules() {
   })
 }
 
-function joinActivity() {
-  uni.showToast({ title: `应付 ¥${money(activity.value?.payable_amount || 0)}`, icon: 'none' })
+function handleParticipation() {
+  if (!activity.value || participationDisabled.value) return
+  const cancelling = activity.value.is_joined
+  uni.showModal({
+    title: cancelling ? '取消报名' : '确认加入活动',
+    content: cancelling
+      ? '确认取消本次活动报名吗？'
+      : `确认后将占用1个活动名额。活动费用为 ¥${money(activity.value.payable_amount)}/人，请按活动说明与组织者结算。`,
+    cancelText: '再想想',
+    confirmText: cancelling ? '确认取消' : '确认加入',
+    confirmColor: cancelling ? '#ff6433' : '#08aeb4',
+    success: async (result) => {
+      if (!result.confirm || !activity.value) return
+      participationSubmitting.value = true
+      try {
+        if (cancelling) {
+          await cancelActivityParticipation(activity.value.id)
+          uni.showToast({ title: '已取消报名', icon: 'success' })
+        } else {
+          await joinActivity(activity.value.id)
+          uni.showToast({ title: '报名成功', icon: 'success' })
+        }
+        await loadDetail(false)
+      } catch (reason) {
+        uni.showToast({ title: getErrorMessage(reason, '操作失败'), icon: 'none' })
+      } finally {
+        participationSubmitting.value = false
+      }
+    },
+  })
 }
 
-async function loadDetail() {
+async function loadDetail(showLoading = true) {
   if (!activityId.value) return
-  loading.value = true
+  if (showLoading) loading.value = true
   error.value = ''
   try {
     activity.value = (await getActivityDetail(activityId.value)).data
   } catch (reason) {
     error.value = getErrorMessage(reason)
   } finally {
-    loading.value = false
+    if (showLoading) loading.value = false
   }
 }
 
@@ -214,6 +267,7 @@ onLoad((query) => {
 .primary strong{font-size:28rpx;line-height:34rpx}
 .primary text{font-size:19rpx;line-height:24rpx}
 .primary[disabled]{opacity:.45}
+.primary--joined{background:linear-gradient(135deg,#5d6b70,#34454b)}
 .detail-state{min-height:500rpx}
 @media screen and (orientation:landscape) and (max-height:600px){.detail-page{padding-bottom:84px}
 .hero{height:220px}
