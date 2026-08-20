@@ -87,6 +87,17 @@ export interface ActivityDetail extends ActivityListItem {
   organizer_rating: string | null
 }
 
+export interface LocationItem {
+  id?: string | number
+  name: string
+  address: string
+  city_name: string
+  district_name?: string
+  longitude: number | string
+  latitude: number | string
+  is_default?: boolean
+}
+
 export interface HomeCardAssets {
   provider_companion_url: string
   group_activity_url: string
@@ -103,6 +114,8 @@ export interface ProviderOrderQuote {
   ends_at: string
   duration_minutes: number
   meeting_address: string
+  route_distance_km: string
+  route_duration_minutes: number
   service_fee_amount: number
   transport_fee_amount: number
   other_fee_amount: number

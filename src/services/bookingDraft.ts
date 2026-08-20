@@ -18,10 +18,12 @@ export interface BookingDraft {
   startTime: string
   timeConfirmed: boolean
   address: string
+  addressName: string
+  longitude: number | null
+  latitude: number | null
   contactName: string
   contactPhone: string
   note: string
-  routeDistanceKm: number | null
 }
 
 function dateKey(offset = 0) {
@@ -50,10 +52,12 @@ export function createBookingDraft(provider: ProviderDetail, service: ProviderSe
     startTime,
     timeConfirmed: false,
     address: '',
+    addressName: '',
+    longitude: null,
+    latitude: null,
     contactName: '',
     contactPhone: '',
     note: '',
-    routeDistanceKm: 6.8,
   }
   saveBookingDraft(draft)
   return draft

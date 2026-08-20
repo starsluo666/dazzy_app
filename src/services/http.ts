@@ -30,8 +30,12 @@ export function request<T>(path: string, options: RequestOptions = {}): Promise<
           resolve(response.data as T)
           return
         }
-        const body = response.data as { detail?: string; non_field_errors?: string[] } | undefined
-        reject(new Error(body?.detail || body?.non_field_errors?.[0] || `请求失败（${response.statusCode}）`))
+        const body = response.data as Record<string, unknown> | undefined
+        const firstError = body && Object.values(body).find((value) => typeof value === 'string' || Array.isArray(value))
+        const message = typeof firstError === 'string'
+          ? firstError
+          : Array.isArray(firstError) && typeof firstError[0] === 'string' ? firstError[0] : undefined
+        reject(new Error(message || `请求失败（${response.statusCode}）`))
       },
       fail: (error) => reject(new Error(error.errMsg || '网络连接失败')),
     })
