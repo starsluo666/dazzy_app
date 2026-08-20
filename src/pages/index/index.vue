@@ -25,41 +25,23 @@
         </view>
       </view>
 
-      <view class="section-head"><text>推荐达人</text><text class="more" @tap="openProviders()">更多 ›</text></view>
-      <view v-if="loading" class="loading-block">正在发现附近的搭子…</view>
-      <scroll-view v-else-if="providers.length" scroll-x class="rail" :show-scrollbar="false">
-        <view class="provider-row">
-          <view v-for="item in providers" :key="item.public_id" class="provider-card" hover-class="card--pressed" @tap="openProviderDetail(item.public_id)">
-            <view class="photo">
-              <image v-if="item.avatar_url" class="photo-image" :src="item.avatar_url" mode="aspectFill" />
-              <text v-else>{{ item.nickname.slice(0, 1) }}</text>
-              <text class="online">已认证</text>
-            </view>
-            <view class="provider-summary"><text class="provider-name">{{ item.nickname }}</text><text class="rating">★ {{ item.rating }}</text></view>
-            <view class="provider-tags"><text>{{ shortCategory(item) }}</text><text>{{ item.verified ? '健谈' : '活泼' }}</text></view>
-            <text class="provider-location">{{ shortCity(item.service_city_name) }} · {{ item.service_count }}次</text>
-          </view>
-        </view>
-      </scroll-view>
-      <view v-else class="empty-block">附近暂时没有可预约达人</view>
-
       <view class="section-head"><text>附近活动</text><text class="more" @tap="openActivities()">更多 ›</text></view>
-      <view v-if="loadError" class="error-block" @tap="loadDiscovery">{{ loadError }}，点击重试</view>
-      <view v-for="item in activities.slice(0, 1)" :key="item.id" class="activity-card" hover-class="card--pressed" @tap="openActivityDetail(item.id)">
-        <view class="activity-image">
-          <image v-if="item.cover_url" class="activity-cover" :src="item.cover_url" mode="aspectFill" />
-          <text v-else>{{ item.category }}</text>
-        </view>
-        <view class="activity-copy">
-          <text class="activity-title">{{ item.title }}</text>
-          <text class="activity-meta">⌖　{{ item.meeting_place_name }}</text>
-          <text class="activity-meta">◷　{{ formatActivityTime(item.starts_at) }}</text>
-          <text class="activity-meta">♧　{{ item.min_participants }}/{{ item.capacity }}人</text>
-          <view class="activity-tags"><text>{{ item.category }}</text><text>新手友好</text></view>
-        </view>
-        <text class="price"><small>AA</small> ¥{{ formatAmount(item.aa_principal_amount) }}</text>
+      <view v-if="loading" class="loading-block">正在发现附近的搭子…</view>
+      <view v-if="activityError" class="error-block" @tap="loadDiscovery">{{ activityError }}，点击重试</view>
+      <HomeActivityCarousel v-if="activities.length" :items="activities.slice(0, 3)" @select="openActivityDetail" />
+      <view v-if="!loading && !activityError && !activities.length" class="empty-block">附近暂时没有活动</view>
+
+      <view class="section-head provider-head"><text>推荐达人</text><text class="more" @tap="openProviders()">更多 ›</text></view>
+      <view v-if="providers.length" class="provider-grid">
+        <HomeProviderCard
+          v-for="item in providers.slice(0, 4)"
+          :key="item.public_id"
+          :item="item"
+          @select="openProviderDetail"
+        />
       </view>
-      <view v-if="!loading && !loadError && !activities.length" class="empty-block">附近暂时没有活动</view>
+      <view v-else-if="providerError" class="error-block" @tap="loadDiscovery">{{ providerError }}，点击重试</view>
+      <view v-else-if="!loading" class="empty-block">附近暂时没有可预约达人</view>
     </main>
 
     <DazzyTabBar active="home" />
@@ -71,10 +53,12 @@ import { onLoad } from '@dcloudio/uni-app'
 import { ref } from 'vue'
 
 import DazzyTabBar from '@/components/DazzyTabBar.vue'
+import HomeActivityCarousel from '@/components/HomeActivityCarousel.vue'
+import HomeProviderCard from '@/components/HomeProviderCard.vue'
 import { getHomeCardAssets, getNearbyActivities, getRecommendedProviders } from '@/services/discovery'
 import { openPage } from '@/services/navigation'
 import type { ActivityListItem, HomeCardAssets, ProviderListItem } from '@/types/api'
-import { formatActivityTime, formatAmount, getErrorMessage } from '@/utils/formatters'
+import { getErrorMessage } from '@/utils/formatters'
 
 const categories = [
   { label: '旅游', slug: 'travel', icon: '✈', color: 'linear-gradient(145deg,#52e0df,#16b9c9)' },
@@ -85,7 +69,8 @@ const categories = [
 const providers = ref<ProviderListItem[]>([])
 const activities = ref<ActivityListItem[]>([])
 const loading = ref(true)
-const loadError = ref('')
+const activityError = ref('')
+const providerError = ref('')
 const homeCardAssets = ref<HomeCardAssets | null>(null)
 
 function openProviders(category?: string) {
@@ -104,29 +89,28 @@ function openActivityDetail(id: number) {
   openPage(`/pages/activities/detail?id=${id}`)
 }
 
-function shortCategory(item: ProviderListItem) {
-  return (item.services[0]?.category || '达人服务').replace('陪玩', '达人').replace('陪伴', '达人')
-}
-
-function shortCity(value: string) {
-  return value.replace(/市$/, '')
-}
-
 async function loadDiscovery() {
   loading.value = true
-  loadError.value = ''
-  try {
-    const [providerResponse, activityResponse] = await Promise.all([
-      getRecommendedProviders(),
-      getNearbyActivities(),
-    ])
-    providers.value = providerResponse.data.items
-    activities.value = activityResponse.data.items
-  } catch (error) {
-    loadError.value = getErrorMessage(error)
-  } finally {
-    loading.value = false
+  activityError.value = ''
+  providerError.value = ''
+
+  const [providerResult, activityResult] = await Promise.allSettled([
+    getRecommendedProviders(),
+    getNearbyActivities(),
+  ])
+  if (providerResult.status === 'fulfilled') {
+    providers.value = providerResult.value.data.items
+  } else {
+    providers.value = []
+    providerError.value = getErrorMessage(providerResult.reason)
   }
+  if (activityResult.status === 'fulfilled') {
+    activities.value = activityResult.value.data.items
+  } else {
+    activities.value = []
+    activityError.value = getErrorMessage(activityResult.reason)
+  }
+  loading.value = false
 
   try {
     homeCardAssets.value = (await getHomeCardAssets()).data
@@ -177,31 +161,8 @@ button { margin:0; padding:0; line-height:1; background:transparent; }
 .category-icon { display:flex; align-items:center; justify-content:center; width:66rpx; height:66rpx; border-radius:22rpx; color:#fff; font-size:29rpx; font-weight:800; box-shadow:0 7rpx 14rpx rgba(31,65,72,.13); }
 .section-head { display:flex; justify-content:space-between; align-items:center; margin:30rpx 2rpx 18rpx; font-size:31rpx; font-weight:800; }
 .more { color:#7c878c; font-size:22rpx; font-weight:400; }
-.rail { width:100%; white-space:nowrap; }
-.provider-row { display:flex; gap:14rpx; }
-.provider-card { overflow:hidden; flex:0 0 176rpx; border:1rpx solid $dz-border-subtle; border-radius:18rpx; background:#fff; box-shadow:0 7rpx 22rpx rgba(31,65,72,.07); }
-.photo { position:relative; display:flex; align-items:flex-end; justify-content:center; height:206rpx; color:#fff; background:linear-gradient(145deg,#badfe4,#6db8be); font-size:50rpx; font-weight:700; }
-.activity-cover,.photo-image { position:absolute; width:100%; height:100%; inset:0; }
-.online { position:absolute; z-index:1; left:9rpx; top:9rpx; padding:3rpx 8rpx; border-radius:9rpx; color:#fff; background:rgba(25,182,110,.92); font-size:16rpx; font-weight:500; }
-.provider-summary { display:flex; align-items:center; justify-content:space-between; padding:12rpx 10rpx 0; }
-.provider-name { font-size:25rpx; font-weight:700; }
-.rating { color:#707a80; font-size:18rpx; }
-.rating::first-letter { color:#ffad1f; }
-.provider-tags { display:flex; gap:6rpx; padding:10rpx 9rpx 0; }
-.provider-tags text { overflow:hidden; max-width:86rpx; padding:3rpx 7rpx; border:1rpx solid #d9e0e2; border-radius:7rpx; color:#707a80; font-size:16rpx; text-overflow:ellipsis; white-space:nowrap; }
-.provider-tags text:first-child { border-color:#32d1cf; color:#08aeb4; }
-.provider-location { display:block; overflow:hidden; padding:11rpx 10rpx 14rpx; color:#858f94; font-size:18rpx; text-overflow:ellipsis; white-space:nowrap; }
-.activity-card { position:relative; display:flex; overflow:hidden; min-height:226rpx; margin-bottom:16rpx; border:1rpx solid $dz-border-subtle; border-radius:24rpx; background:#fff; box-shadow:0 8rpx 25rpx rgba(31,65,72,.07); }
-.activity-image { position:relative; overflow:hidden; display:flex; align-items:center; justify-content:center; flex:0 0 268rpx; min-height:226rpx; color:#fff; background:#12402e; }
-.activity-copy { min-width:0; flex:1; padding:20rpx 18rpx; color:#66737a; font-size:19rpx; box-sizing:border-box; }
-.activity-copy>text { display:block; overflow:hidden; margin-top:9rpx; text-overflow:ellipsis; white-space:nowrap; }
-.activity-title { margin-top:0!important; color:#172126; font-size:27rpx; font-weight:800; }
-.activity-meta { font-size:19rpx; }
-.activity-tags { display:flex; gap:8rpx; margin-top:10rpx; }
-.activity-tags text { padding:4rpx 9rpx; border:1rpx solid #dce2e4; border-radius:7rpx; color:#6c777c; font-size:17rpx; }
-.activity-tags text:first-child { border-color:#32d1cf; color:#08aeb4; }
-.price { position:absolute; right:20rpx; bottom:18rpx; color:$dz-price-primary; font-size:36rpx; font-weight:800; white-space:nowrap; }
-.price small { padding:3rpx 7rpx; border:1rpx solid #ffb699; border-radius:7rpx; font-size:18rpx; font-weight:500; }
+.provider-head { margin-top:22rpx; }
+.provider-grid { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:18rpx 16rpx; }
 .loading-block,.empty-block,.error-block { display:flex; align-items:center; justify-content:center; min-height:112rpx; border-radius:16rpx; color:$dz-text-secondary; background:$dz-surface-page; font-size:23rpx; }
 .error-block { min-height:72rpx; margin-bottom:14rpx; color:$dz-price-primary; }
 </style>
