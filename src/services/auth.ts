@@ -51,6 +51,8 @@ export async function logout() {
   const refresh = getRefreshToken()
   try {
     if (refresh) await request<void>('/auth/logout/', { method: 'POST', data: { refresh } })
+  } catch {
+    // Remote logout is best-effort; local credentials must always be removed.
   } finally {
     clearSession()
   }

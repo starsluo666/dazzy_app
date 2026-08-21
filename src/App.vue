@@ -1,7 +1,12 @@
 <script setup lang="ts">
-import { onLaunch } from '@dcloudio/uni-app'
+import { onLaunch, onShow } from '@dcloudio/uni-app'
+import { guardCurrentPage, installAuthenticationGuards } from '@/services/session'
 
-onLaunch(() => console.info('[DAZZY] app launched'))
+onLaunch(() => {
+  installAuthenticationGuards()
+  console.info('[DAZZY] app launched')
+})
+onShow(() => setTimeout(guardCurrentPage, 0))
 </script>
 
 <style lang="scss">

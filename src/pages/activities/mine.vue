@@ -57,6 +57,7 @@ import { ref } from 'vue'
 
 import NetworkState from '@/components/NetworkState.vue'
 import { getMyActivities } from '@/services/activities'
+import { isAuthenticated } from '@/services/session'
 import type { MyActivityListItem } from '@/types/api'
 import { formatAmount, getErrorMessage } from '@/utils/formatters'
 
@@ -85,7 +86,7 @@ function statusTone(item: MyActivityListItem) { return ['completed', 'cancelled'
 function organizerHint(item: MyActivityListItem) { return item.status === 'recruiting' ? `还需 ${Math.max(0, item.min_participants - item.participant_count)} 人成局` : statusCopy(item) }
 async function loadActivities() { loading.value = true; error.value = ''; try { activities.value = (await getMyActivities({ role: role.value, state: state.value })).data.items } catch (reason) { error.value = getErrorMessage(reason, '活动记录加载失败') } finally { loading.value = false } }
 
-onShow(loadActivities)
+onShow(() => { if (isAuthenticated()) loadActivities() })
 </script>
 
 <style lang="scss" scoped>

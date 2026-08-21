@@ -27,11 +27,15 @@ import { resetPassword } from '@/services/auth'
 
 const phone = ref(''), code = ref(''), password = ref(''), confirmation = ref('')
 const passwordVisible = ref(false), confirmationVisible = ref(false), submitting = ref(false)
+const redirect = ref('')
 const sms = useSmsCode('reset_password')
 const warn = (title: string) => uni.showToast({ title, icon: 'none' })
 const validPhone = () => /^1[3-9]\d{9}$/.test(phone.value)
 
-onLoad((query) => { if (typeof query?.phone === 'string') phone.value = query.phone })
+onLoad((query) => {
+  if (typeof query?.phone === 'string') phone.value = query.phone
+  if (typeof query?.redirect === 'string') redirect.value = decodeURIComponent(query.redirect)
+})
 async function requestCode() {
   if (!validPhone()) return warn('请输入正确的手机号')
   try { await sms.send(phone.value) } catch (error) { warn((error as Error).message) }
@@ -45,11 +49,12 @@ async function submit() {
   try {
     await resetPassword(phone.value, code.value, password.value)
     uni.showToast({ title: '密码重置成功', icon: 'success' })
-    setTimeout(() => uni.reLaunch({ url: '/pages/auth/login' }), 500)
+    setTimeout(() => uni.reLaunch({ url: loginUrl() }), 500)
   } catch (error) { warn((error as Error).message) }
   finally { submitting.value = false }
 }
-function back() { uni.navigateBack({ fail: () => uni.reLaunch({ url: '/pages/auth/login' }) }) }
+function loginUrl() { return `/pages/auth/login${redirect.value ? `?redirect=${encodeURIComponent(redirect.value)}` : ''}` }
+function back() { uni.navigateBack({ fail: () => uni.reLaunch({ url: loginUrl() }) }) }
 </script>
 
 <style lang="scss" scoped>

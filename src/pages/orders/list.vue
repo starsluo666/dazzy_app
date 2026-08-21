@@ -16,13 +16,13 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'; import { onLoad, onShow } from '@dcloudio/uni-app'; import { cancelProviderOrder, getProviderOrders } from '@/services/orders'; import { inOrderBucket, orderStatusCopy, orderTabs } from '@/services/orderPresentation'; import type { OrderBucket } from '@/services/orderPresentation'; import type { ProviderOrder } from '@/types/api'; import { formatAmount, getErrorMessage } from '@/utils/formatters'
+import { computed, ref } from 'vue'; import { onLoad, onShow } from '@dcloudio/uni-app'; import { cancelProviderOrder, getProviderOrders } from '@/services/orders'; import { inOrderBucket, orderStatusCopy, orderTabs } from '@/services/orderPresentation'; import type { OrderBucket } from '@/services/orderPresentation'; import { isAuthenticated } from '@/services/session'; import type { ProviderOrder } from '@/types/api'; import { formatAmount, getErrorMessage } from '@/utils/formatters'
 const orders=ref<ProviderOrder[]>([]),activeTab=ref<OrderBucket>('all'),loading=ref(true),error=ref(''),hasLoaded=ref(false);const visibleOrders=computed(()=>orders.value.filter(item=>inOrderBucket(item.status,activeTab.value)));const money=formatAmount
 function formatRange(start:string,end:string){const s=new Date(start),e=new Date(end);return `${String(s.getMonth()+1).padStart(2,'0')}月${String(s.getDate()).padStart(2,'0')}日 ${String(s.getHours()).padStart(2,'0')}:${String(s.getMinutes()).padStart(2,'0')}—${String(e.getHours()).padStart(2,'0')}:${String(e.getMinutes()).padStart(2,'0')}`}
 function goBack(){uni.navigateBack()}function browseProviders(){uni.reLaunch({url:'/pages/providers/list'})}function openOrder(orderNo:string){uni.navigateTo({url:`/pages/orders/detail?orderNo=${orderNo}`})}function continuePay(order:ProviderOrder){uni.navigateTo({url:`/pages/booking/payment?orderNo=${order.order_no}`})}
 function cancel(order:ProviderOrder){uni.showModal({title:'取消订单',content:'订单尚未支付，取消后将立即释放达人档期。',success:async result=>{if(!result.confirm)return;try{await cancelProviderOrder(order.order_no);await loadOrders()}catch(reason){uni.showToast({title:getErrorMessage(reason,'取消失败'),icon:'none'})}}})}
 async function loadOrders(){loading.value=true;error.value='';try{orders.value=(await getProviderOrders()).data.items;hasLoaded.value=true}catch(reason){error.value=getErrorMessage(reason)}finally{loading.value=false}}
-onLoad(query=>{const value=typeof query?.status==='string'?query.status:'all';if(orderTabs.some(item=>item.key===value))activeTab.value=value as OrderBucket});onShow(()=>{if(hasLoaded.value)loadOrders();else loadOrders()})
+onLoad(query=>{const value=typeof query?.status==='string'?query.status:'all';if(orderTabs.some(item=>item.key===value))activeTab.value=value as OrderBucket});onShow(()=>{if(isAuthenticated())loadOrders()})
 </script>
 
 <style lang="scss" scoped>

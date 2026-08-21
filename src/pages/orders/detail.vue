@@ -15,13 +15,13 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'; import { onLoad, onShow } from '@dcloudio/uni-app'; import { cancelProviderOrder, getProviderOrder } from '@/services/orders'; import { orderStatusCopy } from '@/services/orderPresentation'; import type { ProviderOrder } from '@/types/api'; import { formatAmount, getErrorMessage } from '@/utils/formatters'
+import { computed, ref } from 'vue'; import { onLoad, onShow } from '@dcloudio/uni-app'; import { cancelProviderOrder, getProviderOrder } from '@/services/orders'; import { orderStatusCopy } from '@/services/orderPresentation'; import { isAuthenticated } from '@/services/session'; import type { ProviderOrder } from '@/types/api'; import { formatAmount, getErrorMessage } from '@/utils/formatters'
 const orderNo=ref(''),order=ref<ProviderOrder|null>(null),loading=ref(true),error=ref('');const steps=['已支付','已接单','待出发','服务中','待确认'];const statusCopy=computed(()=>orderStatusCopy(order.value?.status||'')),showActions=computed(()=>order.value&&!['completed','cancelled','refunded'].includes(order.value.status)),money=formatAmount
 const timeLabel=computed(()=>{if(!order.value)return'';const s=new Date(order.value.starts_at),e=new Date(order.value.ends_at);return `${String(s.getMonth()+1).padStart(2,'0')}月${String(s.getDate()).padStart(2,'0')}日 ${String(s.getHours()).padStart(2,'0')}:${String(s.getMinutes()).padStart(2,'0')}—${String(e.getHours()).padStart(2,'0')}:${String(e.getMinutes()).padStart(2,'0')}`});const createdLabel=computed(()=>order.value?new Date(order.value.created_at).toLocaleString('zh-CN',{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false}):'')
 function goBack(){uni.navigateBack()}function showPending(name:string){uni.showToast({title:`${name}功能即将接入`,icon:'none'})}function copyOrderNo(){if(order.value)uni.setClipboardData({data:order.value.order_no})}function continuePay(){if(order.value)uni.navigateTo({url:`/pages/booking/payment?orderNo=${order.value.order_no}`})}
 function cancel(){if(!order.value)return;uni.showModal({title:'取消订单',content:'取消后将立即释放达人档期。',success:async result=>{if(!result.confirm)return;try{order.value=(await cancelProviderOrder(order.value!.order_no)).data}catch(reason){uni.showToast({title:getErrorMessage(reason,'取消失败'),icon:'none'})}}})}
 async function load(){if(!orderNo.value)return;loading.value=true;error.value='';try{order.value=(await getProviderOrder(orderNo.value)).data}catch(reason){error.value=getErrorMessage(reason)}finally{loading.value=false}}
-onLoad(query=>{orderNo.value=typeof query?.orderNo==='string'?query.orderNo:''});onShow(load)
+onLoad(query=>{orderNo.value=typeof query?.orderNo==='string'?query.orderNo:''});onShow(()=>{if(isAuthenticated())load()})
 </script>
 
 <style lang="scss" scoped>

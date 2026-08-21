@@ -40,11 +40,13 @@
 </template>
 
 <script setup lang="ts">
+import { onLoad } from '@dcloudio/uni-app'
 import { ref } from 'vue'
 
 import AuthBrand from '@/components/AuthBrand.vue'
 import { useSmsCode } from '@/composables/useSmsCode'
 import { loginWithPassword, loginWithSms } from '@/services/auth'
+import { returnAfterAuthentication } from '@/services/session'
 
 const mode = ref<'password' | 'sms'>('password')
 const phone = ref('')
@@ -53,7 +55,12 @@ const code = ref('')
 const passwordVisible = ref(false)
 const agreed = ref(false)
 const submitting = ref(false)
+const redirect = ref('')
 const sms = useSmsCode('login')
+
+onLoad((query) => {
+  redirect.value = typeof query?.redirect === 'string' ? decodeURIComponent(query.redirect) : ''
+})
 
 function validPhone() { return /^1[3-9]\d{9}$/.test(phone.value) }
 function warn(title: string) { uni.showToast({ title, icon: 'none' }) }
@@ -73,13 +80,14 @@ async function submit() {
     if (mode.value === 'password') await loginWithPassword(phone.value, password.value)
     else await loginWithSms(phone.value, code.value)
     uni.showToast({ title: '登录成功', icon: 'success' })
-    setTimeout(() => uni.reLaunch({ url: '/pages/profile/index' }), 350)
+    setTimeout(() => returnAfterAuthentication(redirect.value), 350)
   } catch (error) { warn((error as Error).message) }
   finally { submitting.value = false }
 }
 
-function openRegister() { uni.navigateTo({ url: '/pages/auth/register' }) }
-function openReset() { uni.navigateTo({ url: `/pages/auth/reset-password?phone=${phone.value}` }) }
+function redirectQuery() { return redirect.value ? `&redirect=${encodeURIComponent(redirect.value)}` : '' }
+function openRegister() { uni.navigateTo({ url: `/pages/auth/register?from=login${redirectQuery()}` }) }
+function openReset() { uni.navigateTo({ url: `/pages/auth/reset-password?phone=${phone.value}${redirectQuery()}` }) }
 </script>
 
 <style lang="scss" scoped>

@@ -23,7 +23,7 @@
           <view class="header-action service-icon" role="button" aria-label="客服中心" @tap.stop="showPending('客服中心')">
             <text>⌒</text><i />
           </view>
-          <view class="header-action settings-icon" role="button" aria-label="设置" @tap.stop="showPending('设置')">
+          <view class="header-action settings-icon" role="button" aria-label="设置" @tap.stop="openSettings">
             <text>⚙</text>
           </view>
         </view>
@@ -92,7 +92,7 @@ import { computed, ref } from 'vue'
 
 import DazzyTabBar from '@/components/DazzyTabBar.vue'
 import { getCurrentUser, getCurrentUserOverview } from '@/services/auth'
-import { isAuthenticated } from '@/services/session'
+import { isAuthenticated, requireAuthentication } from '@/services/session'
 import type { CurrentUser, CurrentUserOverview } from '@/types/api'
 
 type AccountEntry = { label: string; value: string; route?: string; bucket?: string }
@@ -135,6 +135,7 @@ function showPending(feature: string) {
 }
 
 function openOrders(bucket: string) {
+  if (!requireAuthentication(`/pages/orders/list?status=${bucket}`)) return
   uni.navigateTo({ url: `/pages/orders/list?status=${bucket}` })
 }
 
@@ -145,8 +146,12 @@ function openAccount(item: AccountEntry) {
 }
 
 function openFunction(item: FunctionEntry) {
-  if (item.route) uni.navigateTo({ url: item.route })
-  else showPending(item.label)
+  if (!item.route) return showPending(item.label)
+  if (requireAuthentication(item.route)) uni.navigateTo({ url: item.route })
+}
+
+function openSettings() {
+  if (requireAuthentication('/pages/settings/index')) uni.navigateTo({ url: '/pages/settings/index' })
 }
 
 function openLoginIfNeeded() {

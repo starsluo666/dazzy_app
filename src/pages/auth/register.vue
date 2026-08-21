@@ -22,16 +22,21 @@
 </template>
 
 <script setup lang="ts">
+import { onLoad } from '@dcloudio/uni-app'
 import { ref } from 'vue'
 import AuthBrand from '@/components/AuthBrand.vue'
 import { useSmsCode } from '@/composables/useSmsCode'
 import { register } from '@/services/auth'
+import { returnAfterAuthentication } from '@/services/session'
 
 const phone = ref(''), code = ref(''), password = ref(''), confirmation = ref('')
 const passwordVisible = ref(false), confirmationVisible = ref(false), agreed = ref(false), submitting = ref(false)
+const redirect = ref('')
 const sms = useSmsCode('register')
 const warn = (title: string) => uni.showToast({ title, icon: 'none' })
 const validPhone = () => /^1[3-9]\d{9}$/.test(phone.value)
+
+onLoad((query) => { redirect.value = typeof query?.redirect === 'string' ? decodeURIComponent(query.redirect) : '' })
 
 async function requestCode() {
   if (!validPhone()) return warn('请输入正确的手机号')
@@ -47,11 +52,15 @@ async function submit() {
   try {
     await register(phone.value, code.value, password.value)
     uni.showToast({ title: '注册成功', icon: 'success' })
-    setTimeout(() => uni.reLaunch({ url: '/pages/profile/index' }), 350)
+    setTimeout(() => returnAfterAuthentication(redirect.value), 350)
   } catch (error) { warn((error as Error).message) }
   finally { submitting.value = false }
 }
-function back() { uni.navigateBack({ fail: () => uni.reLaunch({ url: '/pages/auth/login' }) }) }
+function back() {
+  uni.navigateBack({
+    fail: () => uni.reLaunch({ url: `/pages/auth/login${redirect.value ? `?redirect=${encodeURIComponent(redirect.value)}` : ''}` }),
+  })
+}
 </script>
 
 <style lang="scss" scoped>
