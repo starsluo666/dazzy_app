@@ -5,6 +5,18 @@
       "style": { "navigationStyle": "custom" }
     },
     {
+      "path": "pages/auth/login",
+      "style": { "navigationStyle": "custom" }
+    },
+    {
+      "path": "pages/auth/register",
+      "style": { "navigationStyle": "custom" }
+    },
+    {
+      "path": "pages/auth/reset-password",
+      "style": { "navigationStyle": "custom" }
+    },
+    {
       "path": "pages/providers/list",
       "style": { "navigationStyle": "custom" }
     },
@@ -46,6 +58,10 @@
     },
     {
       "path": "pages/activities/mine",
+      "style": { "navigationStyle": "custom" }
+    },
+    {
+      "path": "pages/activities/publish-payment",
       "style": { "navigationStyle": "custom" }
     },
     {

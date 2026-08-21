@@ -1,6 +1,6 @@
-import type { ActivityCategoryItem, ActivityDraftResult, ActivityParticipationResult, DataResponse, ListResponse, MyActivityListItem } from '@/types/api'
+import type { ActivityCategoryItem, ActivityDraftResult, ActivityParticipationResult, ActivityPublishOrder, DataResponse, ListResponse, MyActivityListItem } from '@/types/api'
 
-import { request } from './http'
+import { request, uploadFile } from './http'
 
 export function joinActivity(activityId: number) {
   return request<DataResponse<ActivityParticipationResult>>(
@@ -25,6 +25,7 @@ export function getActivityCategories() {
 }
 
 export interface ActivityDraftPayload {
+  cover_id: string
   category_slug: string
   title: string
   starts_at: string
@@ -44,4 +45,16 @@ export interface ActivityDraftPayload {
 
 export function createActivityDraft(payload: ActivityDraftPayload) {
   return request<DataResponse<ActivityDraftResult>>('/activities/', { method: 'POST', data: payload as unknown as Record<string, unknown> })
+}
+
+export function uploadActivityCover(filePath: string) {
+  return uploadFile<DataResponse<{ id: string; url: string }>>('/media/activity-covers/', filePath)
+}
+
+export function createActivityPublishOrder(activityId: number) {
+  return request<DataResponse<ActivityPublishOrder>>(`/activities/${activityId}/publish-order/`, { method: 'POST' })
+}
+
+export function simulateActivityPublishPayment(activityId: number) {
+  return request<DataResponse<ActivityPublishOrder>>(`/activities/${activityId}/publish-order/simulate-payment/`, { method: 'POST' })
 }

@@ -112,6 +112,16 @@ export interface ActivityDraftResult {
   payment_required: true
 }
 
+export interface ActivityPublishOrder {
+  order_no: string
+  activity_id: number
+  aa_principal_amount: number
+  platform_service_fee_amount: number
+  payable_amount: number
+  status: 'pending_payment' | 'paid' | 'cancelled' | 'refunded'
+  paid_at: string | null
+}
+
 export interface MyActivityListItem extends ActivityListItem {
   participation_status: 'active' | 'cancelled' | null
   joined_at: string | null
@@ -148,6 +158,36 @@ export interface HomeDiscoveryData {
 
 export interface DataResponse<T> {
   data: T
+}
+
+export type SmsPurpose = 'register' | 'login' | 'reset_password'
+
+export interface CurrentUser {
+  public_id: string
+  phone: string
+  nickname: string
+  gender: 'unspecified' | 'male' | 'female'
+  birth_date: string | null
+  avatar_url: string | null
+  verification_status: 'unverified' | 'pending' | 'verified' | 'rejected'
+  account_status: 'active' | 'restricted' | 'suspended' | 'closed'
+}
+
+export interface AuthSession {
+  access: string
+  refresh: string
+  user: CurrentUser
+}
+
+export interface CurrentUserOverview {
+  balance_amount: number | null
+  coupon_count: number | null
+  favorite_count: number | null
+  order_count: number
+  pending_payment_count: number
+  pending_service_count: number
+  in_service_count: number
+  after_sales_count: number
 }
 
 export interface ProviderOrderQuote {

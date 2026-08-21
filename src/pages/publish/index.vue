@@ -7,7 +7,7 @@
         <view v-else><text>＋</text><strong>添加活动封面</strong><small>建议上传 4:3 横图</small></view>
         <text v-if="coverPath" class="replace">更换封面</text>
       </section>
-      <text class="cover-tip">封面会在正式提交审核前上传，本阶段先保存本地预览。</text>
+      <text class="cover-tip">{{ coverUploading ? '正在安全上传封面…' : coverAssetId ? '封面已上传至腾讯 COS' : '封面仅支持 JPG、PNG 或 WebP，最大10MB。' }}</text>
 
       <section class="panel">
         <text class="section-title">基本信息</text>
@@ -50,7 +50,7 @@
 <script setup lang="ts">
 import { computed, reactive, ref } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
-import { createActivityDraft, getActivityCategories } from '@/services/activities'
+import { createActivityDraft, getActivityCategories, uploadActivityCover } from '@/services/activities'
 import { searchLocations } from '@/services/locations'
 import type { ActivityCategoryItem, LocationItem } from '@/types/api'
 import { getErrorMessage } from '@/utils/formatters'
@@ -60,16 +60,16 @@ const now=new Date(),start=new Date(now);start.setDate(start.getDate()+3);const 
 const min=new Date(now);min.setDate(min.getDate()+2);const max=new Date(now);max.setDate(max.getDate()+30)
 const minDate=dateValue(min),maxDate=dateValue(max)
 const form=reactive({categorySlug:'',title:'',description:'',rules:'',date:dateValue(start),startTime:'14:00',endTime:'17:00',deadlineDate:dateValue(deadline),deadlineTime:'20:00',capacity:8,minimum:4,price:'68'})
-const categories=ref<ActivityCategoryItem[]>([]),location=ref<LocationItem|null>(null),coverPath=ref(''),agreed=ref(false),submitting=ref(false),addressSheet=ref(false),keyword=ref(''),locations=ref<LocationItem[]>([]),searching=ref(false)
-const principalCents=computed(()=>Math.round((Number(form.price)||0)*100)),serviceFeeCents=computed(()=>Math.round(principalCents.value*.1)),serviceFee=computed(()=>(serviceFeeCents.value/100).toFixed(2)),totalFee=computed(()=>((principalCents.value+serviceFeeCents.value)/100).toFixed(2))
-const canSubmit=computed(()=>!!form.categorySlug&&form.title.trim().length>=4&&!!form.description.trim()&&!!form.rules.trim()&&!!location.value&&principalCents.value>0&&agreed.value)
+const categories=ref<ActivityCategoryItem[]>([]),location=ref<LocationItem|null>(null),coverPath=ref(''),coverAssetId=ref(''),coverUploading=ref(false),agreed=ref(false),submitting=ref(false),addressSheet=ref(false),keyword=ref(''),locations=ref<LocationItem[]>([]),searching=ref(false)
+const principalCents=computed(()=>Math.round((Number(form.price)||0)*100)),serviceFeeCents=computed(()=>Math.floor((principalCents.value+5)/10)),serviceFee=computed(()=>(serviceFeeCents.value/100).toFixed(2)),totalFee=computed(()=>((principalCents.value+serviceFeeCents.value)/100).toFixed(2))
+const canSubmit=computed(()=>!!coverAssetId.value&&!coverUploading.value&&!!form.categorySlug&&form.title.trim().length>=4&&!!form.description.trim()&&!!form.rules.trim()&&!!location.value&&principalCents.value>0&&agreed.value)
 function goBack(){uni.navigateBack()}function setDate(event:any){form.date=event.detail.value;if(form.deadlineDate>=form.date){const value=new Date(`${form.date}T00:00:00`);value.setDate(value.getDate()-1);form.deadlineDate=dateValue(value)}}function setStartTime(event:any){form.startTime=event.detail.value}function setEndTime(event:any){form.endTime=event.detail.value}function setDeadlineDate(event:any){form.deadlineDate=event.detail.value}
 function changeCapacity(step:number){form.capacity=Math.max(2,Math.min(100,form.capacity+step));form.minimum=Math.min(form.minimum,form.capacity)}function changeMinimum(step:number){form.minimum=Math.max(2,Math.min(form.capacity,form.minimum+step))}
-function chooseCover(){uni.chooseImage({count:1,sizeType:['compressed'],success:result=>{coverPath.value=result.tempFilePaths[0]||''}})}function openAddressSheet(){addressSheet.value=true}
+function chooseCover(){if(coverUploading.value)return;uni.chooseImage({count:1,sizeType:['compressed'],success:async result=>{const path=result.tempFilePaths[0]||'';if(!path)return;coverPath.value=path;coverAssetId.value='';coverUploading.value=true;try{const uploaded=(await uploadActivityCover(path)).data;coverAssetId.value=uploaded.id;coverPath.value=uploaded.url||path}catch(reason){coverPath.value='';uni.showToast({title:getErrorMessage(reason,'封面上传失败'),icon:'none'})}finally{coverUploading.value=false}}})}function openAddressSheet(){addressSheet.value=true}
 async function searchAddress(){if(keyword.value.trim().length<2)return;searching.value=true;try{locations.value=(await searchLocations(keyword.value.trim())).data.items}catch(reason){uni.showToast({title:getErrorMessage(reason,'地点搜索失败'),icon:'none'})}finally{searching.value=false}}
 function selectLocation(item:LocationItem){location.value=item;addressSheet.value=false}
 function localIso(date:string,time:string){return new Date(`${date}T${time}:00`).toISOString()}
-async function submit(){if(!canSubmit.value||!location.value||submitting.value)return;submitting.value=true;try{await createActivityDraft({category_slug:form.categorySlug,title:form.title.trim(),starts_at:localIso(form.date,form.startTime),ends_at:localIso(form.date,form.endTime),formation_deadline:localIso(form.deadlineDate,form.deadlineTime),meeting_place_name:location.value.name,meeting_address:location.value.address||location.value.name,longitude:Number(location.value.longitude),latitude:Number(location.value.latitude),capacity:form.capacity,min_participants:form.minimum,description:form.description.trim(),participation_rules:form.rules.trim(),aa_principal_amount:principalCents.value,refund_template_version:'standard-v1'});uni.showModal({title:'活动草稿已保存',content:'活动支付功能接入后，可支付本人AA费用并提交平台审核。',showCancel:false,success:()=>uni.redirectTo({url:'/pages/activities/mine'})})}catch(reason){uni.showToast({title:getErrorMessage(reason,'保存活动失败'),icon:'none'})}finally{submitting.value=false}}
+async function submit(){if(!canSubmit.value||!location.value||submitting.value)return;submitting.value=true;try{const draft=(await createActivityDraft({cover_id:coverAssetId.value,category_slug:form.categorySlug,title:form.title.trim(),starts_at:localIso(form.date,form.startTime),ends_at:localIso(form.date,form.endTime),formation_deadline:localIso(form.deadlineDate,form.deadlineTime),meeting_place_name:location.value.name,meeting_address:location.value.address||location.value.name,longitude:Number(location.value.longitude),latitude:Number(location.value.latitude),capacity:form.capacity,min_participants:form.minimum,description:form.description.trim(),participation_rules:form.rules.trim(),aa_principal_amount:principalCents.value,refund_template_version:'standard-v1'})).data;uni.navigateTo({url:`/pages/activities/publish-payment?id=${draft.id}`})}catch(reason){uni.showToast({title:getErrorMessage(reason,'保存活动失败'),icon:'none'})}finally{submitting.value=false}}
 onLoad(async()=>{try{categories.value=(await getActivityCategories()).data.items;form.categorySlug=categories.value[0]?.slug||''}catch(reason){uni.showToast({title:getErrorMessage(reason,'分类加载失败'),icon:'none'})}})
 </script>
 
