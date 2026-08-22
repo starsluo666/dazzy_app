@@ -88,12 +88,13 @@ export function request<T>(path: string, options: RequestOptions = {}, retried =
   })
 }
 
-export function uploadFile<T>(path: string, filePath: string, name = 'file'): Promise<T> {
+export function uploadFile<T>(path: string, filePath: string, name = 'file', file?: unknown): Promise<T> {
   function performUpload(retried = false): Promise<T> {
     return new Promise((resolve, reject) => {
       uni.uploadFile({
         url: `${API_BASE_URL}${path}`,
         filePath,
+        file,
         name,
         header: getAccessToken()
           ? { Authorization: `Bearer ${getAccessToken()}` }
@@ -115,7 +116,7 @@ export function uploadFile<T>(path: string, filePath: string, name = 'file'): Pr
           reject(new Error(errorMessage(body, `上传失败（${response.statusCode}）`)))
         },
         fail: (error) => reject(new Error(error.errMsg || '文件上传失败')),
-      })
+      } as UniApp.UploadFileOption)
     })
   }
   return performUpload()

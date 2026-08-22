@@ -87,7 +87,7 @@
 </template>
 
 <script setup lang="ts">
-import { onLoad } from '@dcloudio/uni-app'
+import { onShow } from '@dcloudio/uni-app'
 import { computed, ref } from 'vue'
 
 import DazzyTabBar from '@/components/DazzyTabBar.vue'
@@ -123,7 +123,7 @@ const functionEntries: FunctionEntry[] = [
   { label: '我的活动', icon: '⚑', route: '/pages/activities/mine' },
   { label: '浏览记录', icon: '◷' },
   { label: '我的评价', icon: '✦' },
-  { label: '常用地址', icon: '⌖' },
+  { label: '常用地址', icon: '⌖', route: '/pages/addresses/index' },
   { label: '客服中心', icon: '◡' },
   { label: '帮助中心', icon: '?' },
   { label: '问题反馈', icon: '•••' },
@@ -177,7 +177,7 @@ async function loadProfile() {
   }
 }
 
-onLoad(loadProfile)
+onShow(loadProfile)
 </script>
 
 <style lang="scss" scoped>

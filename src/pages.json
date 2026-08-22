@@ -79,6 +79,22 @@
     {
       "path": "pages/settings/index",
       "style": { "navigationStyle": "custom" }
+    },
+    {
+      "path": "pages/profile/edit",
+      "style": { "navigationStyle": "custom" }
+    },
+    {
+      "path": "pages/addresses/index",
+      "style": { "navigationStyle": "custom" }
+    },
+    {
+      "path": "pages/addresses/edit",
+      "style": { "navigationStyle": "custom" }
+    },
+    {
+      "path": "pages/addresses/search",
+      "style": { "navigationStyle": "custom" }
     }
   ],
   "globalStyle": {

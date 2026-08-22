@@ -10,7 +10,7 @@
     </view>
 
     <main class="settings-content dz-container">
-      <section class="account-card">
+      <section class="account-card" role="button" @tap="openProfileEditor">
         <view class="avatar">
           <image v-if="user?.avatar_url && !avatarFailed" :src="user.avatar_url" mode="aspectFill" @error="avatarFailed = true" />
           <text v-else>{{ (user?.nickname || '乐').slice(0, 1) }}</text>
@@ -38,14 +38,14 @@
 </template>
 
 <script setup lang="ts">
-import { onLoad } from '@dcloudio/uni-app'
+import { onLoad, onShow } from '@dcloudio/uni-app'
 import { computed, ref } from 'vue'
 
 import { getCurrentUser, logout } from '@/services/auth'
-import { guardCurrentPage } from '@/services/session'
+import { guardCurrentPage, isAuthenticated } from '@/services/session'
 import type { CurrentUser } from '@/types/api'
 
-type SettingItem = { label: string; icon: string; value?: string; action?: 'cache' }
+type SettingItem = { label: string; icon: string; value?: string; action?: 'cache' | 'profile' }
 
 const user = ref<CurrentUser | null>(null)
 const avatarFailed = ref(false)
@@ -53,7 +53,7 @@ const loggingOut = ref(false)
 const maskedPhone = computed(() => user.value?.phone.replace(/(\d{3})\d{4}(\d{4})/, '$1****$2') || '')
 const settingGroups: SettingItem[][] = [
   [
-    { label: '编辑个人资料', icon: '人' },
+    { label: '编辑个人资料', icon: '人', action: 'profile' },
     { label: '账号与安全', icon: '盾' },
     { label: '隐私设置', icon: '锁' },
   ],
@@ -69,7 +69,9 @@ const settingGroups: SettingItem[][] = [
 ]
 
 function goBack() { uni.navigateBack({ fail: () => uni.reLaunch({ url: '/pages/profile/index' }) }) }
+function openProfileEditor() { uni.navigateTo({ url: '/pages/profile/edit' }) }
 function openSetting(item: SettingItem) {
+  if (item.action === 'profile') return openProfileEditor()
   if (item.action === 'cache') {
     uni.showToast({ title: '缓存已清理', icon: 'success' })
     return
@@ -95,11 +97,14 @@ function confirmLogout() {
   })
 }
 
-onLoad(async () => {
-  if (!guardCurrentPage()) return
+async function loadUser() {
+  if (!isAuthenticated()) return
   try { user.value = (await getCurrentUser()).data }
   catch { uni.showToast({ title: '账号信息加载失败', icon: 'none' }) }
-})
+}
+
+onLoad(() => { guardCurrentPage() })
+onShow(loadUser)
 </script>
 
 <style lang="scss" scoped>

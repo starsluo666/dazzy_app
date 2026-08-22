@@ -1,6 +1,6 @@
 import type { AuthSession, CurrentUser, CurrentUserOverview, DataResponse, SmsPurpose } from '@/types/api'
 
-import { request } from './http'
+import { request, uploadFile } from './http'
 import { clearSession, getRefreshToken, saveSession } from './session'
 
 export function sendSmsCode(phone: string, purpose: SmsPurpose) {
@@ -41,6 +41,16 @@ export function resetPassword(phone: string, code: string, newPassword: string) 
 
 export function getCurrentUser() {
   return request<DataResponse<CurrentUser>>('/users/me/')
+}
+
+export function updateCurrentUser(payload: Pick<CurrentUser, 'nickname' | 'gender' | 'birth_date'>) {
+  return request<DataResponse<CurrentUser>>('/users/me/', {
+    method: 'PATCH', data: payload as unknown as Record<string, unknown>,
+  })
+}
+
+export function uploadAvatar(filePath: string, file?: unknown) {
+  return uploadFile<DataResponse<{ id: string; url: string }>>('/media/avatars/', filePath, 'file', file)
 }
 
 export function getCurrentUserOverview() {

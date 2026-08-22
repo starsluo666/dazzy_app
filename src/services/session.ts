@@ -44,6 +44,10 @@ const protectedRoutes = [
   '/pages/publish/index',
   '/pages/messages/index',
   '/pages/settings/index',
+  '/pages/profile/edit',
+  '/pages/addresses/index',
+  '/pages/addresses/edit',
+  '/pages/addresses/search',
 ]
 
 let redirectingToLogin = false
