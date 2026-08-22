@@ -57,7 +57,7 @@
       </main>
 
       <view class="action-bar dz-container">
-        <button class="secondary" hover-class="button--pressed" @tap="showPending('收藏')"><text class="action-icon">☆</text><text>收藏</text></button>
+        <button class="secondary" hover-class="button--pressed" @tap="showPending('分享')"><text class="action-icon">↗</text><text>分享</text></button>
         <button
           class="primary"
           :class="{ 'primary--joined': activity.is_joined }"
@@ -77,6 +77,8 @@ import { computed, ref } from 'vue'
 import NetworkState from '@/components/NetworkState.vue'
 import { cancelActivityParticipation, joinActivity } from '@/services/activities'
 import { getActivityDetail } from '@/services/discovery'
+import { recordActivityView } from '@/services/engagements'
+import { isAuthenticated } from '@/services/session'
 import type { ActivityDetail } from '@/types/api'
 import { formatActivityRange, formatAmount, getErrorMessage } from '@/utils/formatters'
 
@@ -179,6 +181,7 @@ async function loadDetail(showLoading = true) {
   error.value = ''
   try {
     activity.value = (await getActivityDetail(activityId.value)).data
+    if (isAuthenticated()) recordActivityView(activityId.value).catch(() => {})
   } catch (reason) {
     error.value = getErrorMessage(reason)
   } finally {

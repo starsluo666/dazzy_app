@@ -109,7 +109,7 @@ const accountEntries = computed<AccountEntry[]>(() => [
   { label: '账户余额', value: overview.value?.balance_amount == null ? '--' : `¥${(overview.value.balance_amount / 100).toFixed(2)}` },
   { label: '优惠券', value: overview.value?.coupon_count == null ? '--' : `${overview.value.coupon_count}张` },
   { label: '我的订单', value: String(overview.value?.order_count ?? 0), bucket: 'all' },
-  { label: '我的收藏', value: overview.value?.favorite_count == null ? '--' : String(overview.value.favorite_count) },
+  { label: '我的收藏', value: overview.value?.favorite_count == null ? '--' : String(overview.value.favorite_count), route: '/pages/favorites/index' },
 ])
 
 const orderEntries = computed(() => [
@@ -121,7 +121,7 @@ const orderEntries = computed(() => [
 
 const functionEntries: FunctionEntry[] = [
   { label: '我的活动', icon: '⚑', route: '/pages/activities/mine' },
-  { label: '浏览记录', icon: '◷' },
+  { label: '浏览记录', icon: '◷', route: '/pages/history/index' },
   { label: '我的评价', icon: '✦' },
   { label: '常用地址', icon: '⌖', route: '/pages/addresses/index' },
   { label: '客服中心', icon: '◡' },

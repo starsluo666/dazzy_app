@@ -48,6 +48,8 @@ const protectedRoutes = [
   '/pages/addresses/index',
   '/pages/addresses/edit',
   '/pages/addresses/search',
+  '/pages/favorites/index',
+  '/pages/history/index',
 ]
 
 let redirectingToLogin = false

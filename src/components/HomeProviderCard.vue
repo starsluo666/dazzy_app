@@ -33,21 +33,36 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 
+import { favoriteProvider, unfavoriteProvider } from '@/services/engagements'
+import { requireAuthentication } from '@/services/session'
 import type { HomeProviderListItem } from '@/types/api'
+import { getErrorMessage } from '@/utils/formatters'
 import { formatAmount } from '@/utils/formatters'
 
 const props = defineProps<{ item: HomeProviderListItem }>()
 defineEmits<{ select: [id: string] }>()
 
 const favorite = ref(props.item.is_favorited)
+const favoriteSubmitting = ref(false)
 const availabilityLabel = computed(() => formatAvailability(props.item))
 const serviceName = computed(() => props.item.services[0]?.category || '达人服务')
 const price = computed(() => formatAmount(props.item.services[0]?.price_amount || 0))
 const billingUnit = computed(() => props.item.services[0]?.billing_type === 'per_session' ? '次' : '小时')
 const distanceLabel = computed(() => props.item.distance_km === null ? props.item.service_city_name : `${props.item.distance_km.toFixed(1)}km`)
 
-function toggleFavorite() {
-  favorite.value = !favorite.value
+async function toggleFavorite() {
+  if (favoriteSubmitting.value || !requireAuthentication('/pages/index/index')) return
+  favoriteSubmitting.value = true
+  try {
+    if (favorite.value) await unfavoriteProvider(props.item.public_id)
+    else await favoriteProvider(props.item.public_id)
+    favorite.value = !favorite.value
+    uni.showToast({ title: favorite.value ? '收藏成功' : '已取消收藏', icon: 'success' })
+  } catch (reason) {
+    uni.showToast({ title: getErrorMessage(reason, '操作失败'), icon: 'none' })
+  } finally {
+    favoriteSubmitting.value = false
+  }
 }
 
 function formatAvailability(item: HomeProviderListItem) {

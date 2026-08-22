@@ -39,6 +39,7 @@ export interface ProviderDetail extends ProviderListItem {
   gender: 'unspecified' | 'male' | 'female'
   credit_score: number
   max_service_radius_km: number
+  is_favorited: boolean
 }
 
 export interface ProviderAvailabilitySlot {
@@ -91,6 +92,14 @@ export interface ActivityDetail extends ActivityListItem {
   is_joined: boolean
   is_organizer: boolean
   participation_status: 'active' | 'cancelled' | null
+}
+
+export interface BrowsingHistoryItem {
+  id: number
+  target_type: 'provider' | 'activity'
+  viewed_at: string
+  view_count: number
+  target: ProviderListItem | ActivityListItem
 }
 
 export interface ActivityParticipationResult {

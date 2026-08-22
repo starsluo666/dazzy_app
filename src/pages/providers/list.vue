@@ -50,7 +50,6 @@
           <image v-if="item.avatar_url" :src="item.avatar_url" mode="aspectFill" />
           <text v-else class="photo-fallback">{{ item.nickname.slice(0, 1) }}</text>
           <text class="online"><i />在线</text>
-          <view class="favorite" role="button" aria-label="收藏" @tap.stop="showPending('收藏')">♡</view>
         </view>
 
         <view class="body">

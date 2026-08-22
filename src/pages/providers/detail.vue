@@ -50,7 +50,7 @@
       </main>
 
       <view class="action-bar dz-container">
-        <button class="secondary" hover-class="button--pressed" @tap="showPending('收藏')"><text class="action-icon">☆</text><text>收藏</text></button>
+        <button class="secondary" :disabled="favoriteSubmitting" hover-class="button--pressed" @tap="toggleFavorite"><text class="action-icon">{{ provider.is_favorited?'★':'☆' }}</text><text>{{ provider.is_favorited?'已收藏':'收藏' }}</text></button>
         <button class="secondary" hover-class="button--pressed" @tap="showPending('私信')"><text class="action-icon">◌</text><text>私信</text></button>
         <button class="primary" hover-class="button--pressed" @tap="startBooking">立即预约</button>
       </view>
@@ -74,6 +74,8 @@ import { computed, ref, watch } from 'vue'
 import NetworkState from '@/components/NetworkState.vue'
 import { createBookingDraft } from '@/services/bookingDraft'
 import { getProviderAvailability, getProviderDetail } from '@/services/discovery'
+import { favoriteProvider, recordProviderView, unfavoriteProvider } from '@/services/engagements'
+import { isAuthenticated, requireAuthentication } from '@/services/session'
 import type { ProviderAvailabilitySlot, ProviderDetail, ProviderServiceSummary } from '@/types/api'
 import { formatAmount, getErrorMessage } from '@/utils/formatters'
 
@@ -87,6 +89,7 @@ const pendingServiceId = ref(0)
 const serviceSheetOpen = ref(false)
 const earliest = ref<ProviderAvailabilitySlot | null>(null)
 const availabilityLoading = ref(false)
+const favoriteSubmitting = ref(false)
 
 const selectedService = computed(() => provider.value?.services.find(item=>item.id===selectedServiceId.value) || provider.value?.services[0] || null)
 const age = computed(() => {
@@ -109,6 +112,7 @@ function serviceDescription(name:string){return name.includes('摄影')?'拍照�
 function durationHint(service:ProviderServiceSummary){return service.billing_type==='hourly'?'最低2小时':`预计${Math.max(1,Math.round((service.estimated_duration_minutes||180)/60))}小时`}
 function goBack() { uni.navigateBack() }
 function showPending(feature: string) { uni.showToast({ title: `${feature}功能即将接入`, icon: 'none' }) }
+async function toggleFavorite(){if(!provider.value||favoriteSubmitting.value)return;if(!requireAuthentication(`/pages/providers/detail?id=${publicId.value}`))return;favoriteSubmitting.value=true;try{if(provider.value.is_favorited)await unfavoriteProvider(publicId.value);else await favoriteProvider(publicId.value);provider.value.is_favorited=!provider.value.is_favorited;uni.showToast({title:provider.value.is_favorited?'收藏成功':'已取消收藏',icon:'success'})}catch(reason){uni.showToast({title:getErrorMessage(reason,'操作失败'),icon:'none'})}finally{favoriteSubmitting.value=false}}
 function openServiceSheet(){pendingServiceId.value=selectedService.value?.id||0;serviceSheetOpen.value=true}
 function confirmService(){selectedServiceId.value=pendingServiceId.value;serviceSheetOpen.value=false}
 function startBooking() {
@@ -123,7 +127,7 @@ async function loadDetail() {
   if (!publicId.value) return
   loading.value = true; error.value = ''
   heroImageFailed.value = false
-  try { provider.value = (await getProviderDetail(publicId.value)).data;selectedServiceId.value=provider.value.services[0]?.id||0 }
+  try { provider.value = (await getProviderDetail(publicId.value)).data;selectedServiceId.value=provider.value.services[0]?.id||0;if(isAuthenticated())recordProviderView(publicId.value).catch(()=>{}) }
   catch (reason) { error.value = getErrorMessage(reason) }
   finally { loading.value = false }
 }
