@@ -4,7 +4,7 @@
     <NetworkState v-else-if="error" class="dz-container detail-state" :message="error" error @retry="loadDetail" />
     <template v-else-if="provider">
       <view class="hero dz-container">
-        <image v-if="provider.avatar_url && !heroImageFailed" :src="provider.avatar_url" mode="aspectFill" @error="heroImageFailed = true" />
+        <image v-if="heroPhotoUrl" :src="heroPhotoUrl" mode="aspectFill" @error="handleHeroPhotoError" />
         <view v-else class="hero-fallback">{{ provider.nickname.slice(0, 1) }}</view>
         <view class="hero-shade" />
         <button class="round back" aria-label="返回" hover-class="round--pressed" @tap="goBack"><text>‹</text></button>
@@ -17,14 +17,14 @@
 
       <main class="profile-sheet dz-container">
         <view class="portrait-ring">
-          <image v-if="provider.avatar_url && !heroImageFailed" :src="provider.avatar_url" mode="aspectFill" @error="heroImageFailed = true" />
+          <image v-if="provider.avatar_url && !avatarFailed" :src="provider.avatar_url" mode="aspectFill" @error="avatarFailed = true" />
           <view v-else>{{ provider.nickname.slice(0, 1) }}</view>
         </view>
 
         <view class="identity">
           <view class="name-row">
             <text class="name">{{ provider.nickname }}</text>
-            <text v-if="age" class="gender">♀</text><text v-if="age" class="age">{{ age }}岁</text>
+            <text v-if="genderSymbol" class="gender">{{ genderSymbol }}</text><text v-if="age" class="age">{{ age }}岁</text>
           </view>
           <view class="certifications"><text v-if="provider.verified">♙ 实名认证</text></view>
           <view class="rating-row"><text class="stars">★★★★★</text><strong>{{ provider.rating }}分</strong><i /><text>服务{{ provider.service_count }}次</text></view>
@@ -83,13 +83,24 @@ const provider = ref<ProviderDetail | null>(null)
 const publicId = ref('')
 const loading = ref(true)
 const error = ref('')
-const heroImageFailed = ref(false)
+const lifestylePhotoFailed = ref(false)
+const avatarFailed = ref(false)
 const selectedServiceId = ref(0)
 const pendingServiceId = ref(0)
 const serviceSheetOpen = ref(false)
 const earliest = ref<ProviderAvailabilitySlot | null>(null)
 const availabilityLoading = ref(false)
 const favoriteSubmitting = ref(false)
+
+const heroPhotoUrl = computed(() => {
+  if (provider.value?.lifestyle_photo_url && !lifestylePhotoFailed.value) {
+    return provider.value.lifestyle_photo_url
+  }
+  return provider.value?.avatar_url && !avatarFailed.value ? provider.value.avatar_url : ''
+})
+const genderSymbol = computed(() =>
+  provider.value?.gender === 'male' ? '♂' : provider.value?.gender === 'female' ? '♀' : '',
+)
 
 const selectedService = computed(() => provider.value?.services.find(item=>item.id===selectedServiceId.value) || provider.value?.services[0] || null)
 const age = computed(() => {
@@ -108,6 +119,13 @@ const profileTags = computed(() => {
 const earliestSlot = computed(()=>{if(!earliest.value)return null;const slot=new Date(earliest.value.starts_at);const today=new Date();const tomorrow=new Date();tomorrow.setDate(today.getDate()+1);const date=localDateKey(slot);const label=date===localDateKey(today)?'今天':date===localDateKey(tomorrow)?'明天':`${slot.getMonth()+1}月${slot.getDate()}日`;return{label,time:`${String(slot.getHours()).padStart(2,'0')}:${String(slot.getMinutes()).padStart(2,'0')}`,date}})
 
 const money = formatAmount
+function handleHeroPhotoError() {
+  if (provider.value?.lifestyle_photo_url && !lifestylePhotoFailed.value) {
+    lifestylePhotoFailed.value = true
+    return
+  }
+  avatarFailed.value = true
+}
 function serviceDescription(name:string){return name.includes('摄影')?'拍照打卡，创意构图，记录美好时刻':'一起出行，陪伴游玩，景点打卡'}
 function durationHint(service:ProviderServiceSummary){return service.billing_type==='hourly'?'最低2小时':`预计${Math.max(1,Math.round((service.estimated_duration_minutes||180)/60))}小时`}
 function goBack() { uni.navigateBack() }
@@ -126,7 +144,8 @@ async function loadAvailability(){if(!provider.value||!selectedService.value)ret
 async function loadDetail() {
   if (!publicId.value) return
   loading.value = true; error.value = ''
-  heroImageFailed.value = false
+  lifestylePhotoFailed.value = false
+  avatarFailed.value = false
   try { provider.value = (await getProviderDetail(publicId.value)).data;selectedServiceId.value=provider.value.services[0]?.id||0;if(isAuthenticated())recordProviderView(publicId.value).catch(()=>{}) }
   catch (reason) { error.value = getErrorMessage(reason) }
   finally { loading.value = false }

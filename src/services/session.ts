@@ -50,6 +50,11 @@ const protectedRoutes = [
   '/pages/addresses/search',
   '/pages/favorites/index',
   '/pages/history/index',
+  '/pages/providers/apply',
+  '/pages/providers/services',
+  '/pages/providers/workbench',
+  '/pages/providers/schedule',
+  '/pages/providers/orders',
 ]
 
 let redirectingToLogin = false

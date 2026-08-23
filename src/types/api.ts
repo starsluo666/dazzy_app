@@ -37,9 +37,71 @@ export interface ProviderListItem {
 
 export interface ProviderDetail extends ProviderListItem {
   gender: 'unspecified' | 'male' | 'female'
+  lifestyle_photo_url: string | null
   credit_score: number
   max_service_radius_km: number
   is_favorited: boolean
+}
+
+export interface ProviderApplication {
+  status: 'draft' | 'pending' | 'approved' | 'rejected' | 'suspended'
+  verification_status: CurrentUser['verification_status']
+  gender: CurrentUser['gender']
+  bio: string
+  lifestyle_photo_id: string | null
+  lifestyle_photo_url: string | null
+  service_city_code: string
+  service_city_name: string
+  max_service_radius_km: number
+  invitation_code: string
+  agreement_accepted_at: string | null
+  submitted_at: string | null
+  reviewed_at: string | null
+  rejection_reason: string
+  updated_at: string
+}
+
+export interface ServiceCategory {
+  id: number
+  name: string
+  slug: string
+}
+
+export interface ProviderManagedService extends ProviderServiceSummary {
+  category_id: number
+  description: string
+  is_active: boolean
+  created_at: string
+  updated_at: string
+}
+
+export interface ProviderWorkbench {
+  nickname: string
+  avatar_url: string | null
+  is_accepting_orders: boolean
+  today_order_count: number
+  month_income_amount: number
+  service_count: number
+  upcoming_order: null | {
+    order_no: string
+    starts_at: string
+    ends_at: string
+    service_name: string
+  }
+}
+
+export interface ProviderSchedulePeriod {
+  id: string | null
+  source: 'weekly' | 'date' | 'order'
+  starts_at: string
+  ends_at: string
+  status: 'available' | 'booked'
+}
+
+export interface ProviderScheduleDay {
+  date: string
+  is_closed: boolean
+  periods: ProviderSchedulePeriod[]
 }
 
 export interface ProviderAvailabilitySlot {
@@ -196,6 +258,7 @@ export interface CurrentUserOverview {
   pending_payment_count: number
   pending_service_count: number
   in_service_count: number
+  pending_review_count: number
   after_sales_count: number
 }
 
@@ -242,5 +305,17 @@ export interface ProviderOrder {
   pricing_snapshot: Record<string, unknown>
   payment_expires_at: string
   paid_at: string | null
+  accepted_at: string | null
+  departed_at: string | null
+  arrival_photo_url: string | null
+  arrival_photo_uploaded_at: string | null
+  service_started_at: string | null
+  completion_submitted_at: string | null
+  customer_confirmed_at: string | null
   created_at: string
+}
+
+export interface ProviderManagedOrder extends ProviderOrder {
+  customer_name: string
+  acceptance_expires_at: string | null
 }

@@ -32,12 +32,12 @@
 
     <main class="profile-content dz-container">
       <section class="account-card panel">
-        <view class="provider-strip" role="button" aria-label="申请成为达人" @tap="showPending('申请达人')">
+        <view class="provider-strip" role="button" aria-label="申请成为达人" @tap="openProviderCenter">
           <view class="provider-copy">
-            <strong>成为达人</strong>
-            <text>开启陪玩服务，获得更多收入</text>
+            <strong>{{ providerEntry.title }}</strong>
+            <text>{{ providerEntry.description }}</text>
           </view>
-          <view class="provider-apply">申请达人 <text>›</text></view>
+          <view class="provider-apply">{{ providerEntry.action }} <text>›</text></view>
           <view class="provider-star">☆</view>
         </view>
 
@@ -55,9 +55,16 @@
           <view role="button" aria-label="查看全部订单" @tap="openOrders('all')">全部订单 <text>›</text></view>
         </view>
         <view class="order-grid">
-          <view v-for="item in orderEntries" :key="item.label" role="button" @tap="openOrders(item.bucket)">
-            <view class="order-icon" :class="`order-icon--${item.kind}`">
-              <text>{{ item.icon }}</text>
+          <view
+            v-for="item in orderEntries"
+            :key="item.label"
+            role="button"
+            :aria-label="item.count ? `${item.label}，${item.count}笔` : item.label"
+            hover-class="order-entry--pressed"
+            @tap="openOrders(item.bucket)"
+          >
+            <view class="order-icon">
+              <image :src="item.icon" mode="aspectFit" aria-hidden="true" />
               <i v-if="item.count">{{ item.count }}</i>
             </view>
             <text>{{ item.label }}</text>
@@ -74,8 +81,15 @@
       <section class="functions panel">
         <text class="section-title">常用功能</text>
         <view class="function-grid">
-          <view v-for="item in functionEntries" :key="item.label" role="button" @tap="openFunction(item)">
-            <view class="function-icon" :class="{ 'function-icon--reward': item.label === '举报有奖' }">{{ item.icon }}</view>
+          <view
+            v-for="item in functionEntries"
+            :key="item.label"
+            role="button"
+            :aria-label="item.label"
+            hover-class="function-entry--pressed"
+            @tap="openFunction(item)"
+          >
+            <view class="function-icon"><image :src="item.icon" mode="aspectFit" aria-hidden="true" /></view>
             <text>{{ item.label }}</text>
           </view>
         </view>
@@ -92,18 +106,34 @@ import { computed, ref } from 'vue'
 
 import DazzyTabBar from '@/components/DazzyTabBar.vue'
 import { getCurrentUser, getCurrentUserOverview } from '@/services/auth'
+import { getProviderApplication } from '@/services/providers'
 import { isAuthenticated, requireAuthentication } from '@/services/session'
-import type { CurrentUser, CurrentUserOverview } from '@/types/api'
+import type { CurrentUser, CurrentUserOverview, ProviderApplication } from '@/types/api'
 
 type AccountEntry = { label: string; value: string; route?: string; bucket?: string }
 type FunctionEntry = { label: string; icon: string; route?: string }
 
 const profile = ref<CurrentUser | null>(null)
 const overview = ref<CurrentUserOverview | null>(null)
+const providerApplication = ref<ProviderApplication | null>(null)
 const avatarFailed = ref(false)
 const displayName = computed(() => profile.value?.nickname || '登录 / 注册')
 const maskedPhone = computed(() => profile.value?.phone.replace(/(\d{3})\d{4}(\d{4})/, '$1****$2') || '')
 const verificationLabel = computed(() => profile.value?.verification_status === 'verified' ? '实名认证' : '未实名认证')
+const providerEntry = computed(() => {
+  switch (providerApplication.value?.status) {
+    case 'approved':
+      return { title: '达人工作台', description: '管理服务、接单状态和可预约档期', action: '进入工作台' }
+    case 'pending':
+      return { title: '达人申请审核中', description: '审核结果会在这里同步更新', action: '查看进度' }
+    case 'rejected':
+      return { title: '完善达人申请', description: '根据驳回原因修改资料后可重新提交', action: '修改资料' }
+    case 'suspended':
+      return { title: '达人资格已暂停', description: '请联系客服了解暂停原因', action: '查看详情' }
+    default:
+      return { title: '成为达人', description: '开启陪玩服务，获得更多收入', action: '申请达人' }
+  }
+})
 
 const accountEntries = computed<AccountEntry[]>(() => [
   { label: '账户余额', value: overview.value?.balance_amount == null ? '--' : `¥${(overview.value.balance_amount / 100).toFixed(2)}` },
@@ -113,21 +143,22 @@ const accountEntries = computed<AccountEntry[]>(() => [
 ])
 
 const orderEntries = computed(() => [
-  { label: '待付款', icon: '▱', kind: 'wallet', count: overview.value?.pending_payment_count ?? 0, bucket: 'pending_payment' },
-  { label: '待服务', icon: '▤', kind: 'service', count: overview.value?.pending_service_count ?? 0, bucket: 'upcoming' },
-  { label: '进行中', icon: 'Ⅱ', kind: 'active', count: overview.value?.in_service_count ?? 0, bucket: 'active' },
-  { label: '退款/售后', icon: '¥', kind: 'refund', count: overview.value?.after_sales_count ?? 0, bucket: 'finished' },
+  { label: '待付款', icon: '/static/orders/pending-payment.svg', count: overview.value?.pending_payment_count ?? 0, bucket: 'pending_payment' },
+  { label: '待服务', icon: '/static/orders/pending-service.svg', count: overview.value?.pending_service_count ?? 0, bucket: 'upcoming' },
+  { label: '进行中', icon: '/static/orders/in-progress.svg', count: overview.value?.in_service_count ?? 0, bucket: 'active' },
+  { label: '待评价', icon: '/static/orders/pending-review.svg', count: overview.value?.pending_review_count ?? 0, bucket: 'pending_review' },
+  { label: '退款/售后', icon: '/static/orders/after-sales.svg', count: overview.value?.after_sales_count ?? 0, bucket: 'after_sales' },
 ])
 
 const functionEntries: FunctionEntry[] = [
-  { label: '我的活动', icon: '⚑', route: '/pages/activities/mine' },
-  { label: '浏览记录', icon: '◷', route: '/pages/history/index' },
-  { label: '我的评价', icon: '✦' },
-  { label: '常用地址', icon: '⌖', route: '/pages/addresses/index' },
-  { label: '客服中心', icon: '◡' },
-  { label: '帮助中心', icon: '?' },
-  { label: '问题反馈', icon: '•••' },
-  { label: '举报有奖', icon: '¥' },
+  { label: '我的活动', icon: '/static/functions/my-activities.svg', route: '/pages/activities/mine' },
+  { label: '浏览记录', icon: '/static/functions/browsing-history.svg', route: '/pages/history/index' },
+  { label: '我的评价', icon: '/static/functions/my-reviews.svg' },
+  { label: '常用地址', icon: '/static/functions/addresses.svg', route: '/pages/addresses/index' },
+  { label: '客服中心', icon: '/static/functions/customer-service.svg' },
+  { label: '帮助中心', icon: '/static/functions/help-center.svg' },
+  { label: '问题反馈', icon: '/static/functions/feedback.svg' },
+  { label: '举报有奖', icon: '/static/functions/report-reward.svg' },
 ]
 
 function showPending(feature: string) {
@@ -154,6 +185,13 @@ function openSettings() {
   if (requireAuthentication('/pages/settings/index')) uni.navigateTo({ url: '/pages/settings/index' })
 }
 
+function openProviderCenter() {
+  const route = providerApplication.value?.status === 'approved'
+    ? '/pages/providers/workbench'
+    : '/pages/providers/apply'
+  if (requireAuthentication(route)) uni.navigateTo({ url: route })
+}
+
 function openLoginIfNeeded() {
   if (!profile.value) uni.navigateTo({ url: '/pages/auth/login' })
 }
@@ -162,6 +200,7 @@ async function loadProfile() {
   if (!isAuthenticated()) {
     profile.value = null
     overview.value = null
+    providerApplication.value = null
     return
   }
   try {
@@ -171,9 +210,15 @@ async function loadProfile() {
     ])
     profile.value = profileResponse.data
     overview.value = overviewResponse.data
+    try {
+      providerApplication.value = (await getProviderApplication()).data
+    } catch {
+      providerApplication.value = null
+    }
   } catch {
     profile.value = null
     overview.value = null
+    providerApplication.value = null
   }
 }
 
@@ -404,12 +449,14 @@ onShow(loadProfile)
 
 .order-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   margin-top: 34rpx;
 }
 
 .order-grid > view {
   display: flex;
+  min-width: 0;
+  min-height: 96rpx;
   flex-direction: column;
   align-items: center;
   justify-content: center;
@@ -419,35 +466,19 @@ onShow(loadProfile)
 }
 
 .order-grid > view:last-child { border-right: 0; }
-.order-grid > view > text { margin-top: 16rpx; }
+.order-grid > view > text { margin-top: 14rpx; white-space: nowrap; }
+.order-entry--pressed { opacity: .64; }
 
 .order-icon {
   position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 66rpx;
-  height: 66rpx;
-  color: #111b20;
-  font-size: 41rpx;
-  line-height: 1;
+  width: 60rpx;
+  height: 60rpx;
 }
 
-.order-icon::after {
-  position: absolute;
-  right: 5rpx;
-  bottom: 6rpx;
-  width: 15rpx;
-  height: 5rpx;
-  border-radius: 3rpx;
-  background: $dz-brand-primary;
-  content: '';
-}
-
-.order-icon--service::after { width: 16rpx; height: 16rpx; border: 2rpx solid $dz-brand-primary; border-radius: 50%; background: #fff; }
-.order-icon--active::after { display: none; }
-.order-icon--refund { border: 3rpx solid #111b20; border-radius: 50%; color: $dz-brand-deep; font-size: 27rpx; box-sizing: border-box; }
-.order-icon--refund::after { right: -5rpx; bottom: -2rpx; width: 17rpx; height: 5rpx; background: #111b20; transform: rotate(-37deg); }
+.order-icon image { display: block; width: 56rpx; height: 56rpx; }
 
 .order-icon i {
   position: absolute;
@@ -527,6 +558,7 @@ onShow(loadProfile)
 
 .function-grid > view:nth-child(4n) { border-right: 0; }
 .function-grid > view:nth-last-child(-n + 4) { border-bottom: 0; }
+.function-entry--pressed { opacity: .64; }
 
 .function-icon {
   display: flex;
@@ -534,13 +566,10 @@ onShow(loadProfile)
   justify-content: center;
   width: 52rpx;
   height: 52rpx;
-  color: #111b20;
-  font-size: 38rpx;
-  line-height: 1;
 }
 
+.function-icon image { display: block; width: 50rpx; height: 50rpx; }
 .function-grid > view > text { margin-top: 8rpx; white-space: nowrap; }
-.function-icon--reward { width: 43rpx; height: 47rpx; border: 3rpx solid #ff5b20; border-radius: 12rpx 12rpx 18rpx 18rpx; color: #ff5b20; font-size: 23rpx; box-sizing: border-box; }
 
 @media screen and (max-width: 360px) {
   .provider-copy text { max-width: 220rpx; }

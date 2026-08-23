@@ -43,7 +43,7 @@ export function getCurrentUser() {
   return request<DataResponse<CurrentUser>>('/users/me/')
 }
 
-export function updateCurrentUser(payload: Pick<CurrentUser, 'nickname' | 'gender' | 'birth_date'>) {
+export function updateCurrentUser(payload: Partial<Pick<CurrentUser, 'nickname' | 'gender' | 'birth_date'>>) {
   return request<DataResponse<CurrentUser>>('/users/me/', {
     method: 'PATCH', data: payload as unknown as Record<string, unknown>,
   })

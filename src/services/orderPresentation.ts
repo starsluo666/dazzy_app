@@ -1,15 +1,16 @@
-export type OrderBucket = 'all' | 'pending_payment' | 'upcoming' | 'active' | 'finished'
+export type OrderBucket = 'all' | 'pending_payment' | 'upcoming' | 'active' | 'pending_review' | 'after_sales'
 
 const upcoming = ['pending_acceptance', 'pending_support', 'pending_service']
 const active = ['departed', 'in_service', 'pending_confirmation']
-const finished = ['pending_review', 'completed', 'cancelled', 'after_sales', 'refunded']
+const afterSales = ['after_sales', 'refunded']
 
 export const orderTabs: { key: OrderBucket; label: string }[] = [
   { key: 'all', label: '全部' },
   { key: 'pending_payment', label: '待付款' },
   { key: 'upcoming', label: '待服务' },
   { key: 'active', label: '进行中' },
-  { key: 'finished', label: '已完成' },
+  { key: 'pending_review', label: '待评价' },
+  { key: 'after_sales', label: '退款/售后' },
 ]
 
 export function inOrderBucket(status: string, bucket: OrderBucket) {
@@ -17,7 +18,8 @@ export function inOrderBucket(status: string, bucket: OrderBucket) {
   if (bucket === 'pending_payment') return status === bucket
   if (bucket === 'upcoming') return upcoming.includes(status)
   if (bucket === 'active') return active.includes(status)
-  return finished.includes(status)
+  if (bucket === 'pending_review') return status === bucket
+  return afterSales.includes(status)
 }
 
 export function orderStatusCopy(status: string) {

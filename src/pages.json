@@ -25,6 +25,26 @@
       "style": { "navigationStyle": "custom" }
     },
     {
+      "path": "pages/providers/apply",
+      "style": { "navigationStyle": "custom" }
+    },
+    {
+      "path": "pages/providers/services",
+      "style": { "navigationStyle": "custom" }
+    },
+    {
+      "path": "pages/providers/workbench",
+      "style": { "navigationStyle": "custom" }
+    },
+    {
+      "path": "pages/providers/schedule",
+      "style": { "navigationStyle": "custom" }
+    },
+    {
+      "path": "pages/providers/orders",
+      "style": { "navigationStyle": "custom" }
+    },
+    {
       "path": "pages/booking/confirm",
       "style": { "navigationStyle": "custom" }
     },
