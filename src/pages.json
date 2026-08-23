@@ -37,6 +37,10 @@
       "style": { "navigationStyle": "custom" }
     },
     {
+      "path": "pages/providers/location",
+      "style": { "navigationStyle": "custom" }
+    },
+    {
       "path": "pages/providers/schedule",
       "style": { "navigationStyle": "custom" }
     },

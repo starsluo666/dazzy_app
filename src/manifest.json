@@ -43,7 +43,22 @@
             /* ios打包配置 */
             "ios" : {},
             /* SDK配置 */
-            "sdkConfigs" : {}
+            "sdkConfigs" : {
+                "maps": {
+                    "tencent": {
+                        "key": "EJZBZ-TNEC3-TD237-RFIBL-XB4B3-Y5FID"
+                    }
+                }
+            }
+        }
+    },
+    "h5" : {
+        "sdkConfigs" : {
+            "maps" : {
+                "tencent" : {
+                "key": "FWQBZ-LWSCJ-PNHFB-DE5DO-P6GAS-3PFFS"
+                }
+            }
         }
     },
     /* 快应用特有相关 */

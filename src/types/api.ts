@@ -79,6 +79,14 @@ export interface ProviderWorkbench {
   nickname: string
   avatar_url: string | null
   is_accepting_orders: boolean
+  admin_order_restricted: boolean
+  admin_restriction_reason: string
+  has_service_location: boolean
+  service_city_code: string
+  service_city_name: string
+  service_location_name: string
+  service_address: string
+  max_service_radius_km: number
   today_order_count: number
   month_income_amount: number
   service_count: number
@@ -88,6 +96,17 @@ export interface ProviderWorkbench {
     ends_at: string
     service_name: string
   }
+}
+
+export interface ProviderServiceLocation {
+  has_service_location: boolean
+  service_city_code: string
+  service_city_name: string
+  service_location_name: string
+  service_address: string
+  longitude: string | null
+  latitude: string | null
+  max_service_radius_km: number
 }
 
 export interface ProviderSchedulePeriod {
