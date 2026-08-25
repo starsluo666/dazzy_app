@@ -1,10 +1,9 @@
-export type TabKey = 'home' | 'provider' | 'activity' | 'message' | 'profile'
+export type TabKey = 'home' | 'provider' | 'activity' | 'profile'
 
 const tabRoutes: Record<TabKey, string> = {
   home: '/pages/index/index',
   provider: '/pages/providers/list',
   activity: '/pages/activities/index',
-  message: '/pages/messages/index',
   profile: '/pages/profile/index',
 }
 

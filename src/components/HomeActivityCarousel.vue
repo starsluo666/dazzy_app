@@ -1,129 +1,75 @@
 <template>
-  <view class="activity-carousel">
-    <swiper
-      class="activity-swiper"
-      :current="activeIndex"
-      :previous-margin="sideMargin"
-      :next-margin="sideMargin"
-      :circular="items.length > 1"
-      :duration="280"
-      @change="handleChange"
-    >
-      <swiper-item v-for="(item, index) in items" :key="item.id" class="activity-slide">
-        <view
-          class="activity-banner"
-          :class="{ 'activity-banner--active': index === activeIndex }"
-          hover-class="activity-banner--pressed"
-          @tap="$emit('select', item.id)"
-        >
-          <image v-if="item.cover_url" class="activity-cover" :src="item.cover_url" mode="aspectFill" />
-          <view class="activity-placeholder" v-else>{{ item.category }}</view>
-          <view class="activity-shade" />
-          <view class="activity-topline">
-            <text class="recruiting">{{ statusLabel(item.status) }}</text>
-            <text class="distance">{{ distanceLabel(item.distance_km) }}</text>
-          </view>
-          <view class="activity-info">
-            <text class="activity-title">{{ item.title }}</text>
-            <view class="activity-bottomline">
-              <text class="activity-meta">{{ formatActivityTime(item.starts_at) }} · {{ item.participant_count }}/{{ item.capacity }}人</text>
-              <text class="activity-price"><text class="activity-price-prefix">AA</text> ¥{{ formatAmount(item.aa_principal_amount) }}</text>
-            </view>
-          </view>
-        </view>
-      </swiper-item>
-    </swiper>
-
-    <view v-if="items.length > 1" class="activity-dots" aria-label="活动轮播位置">
-      <view
-        v-for="(_, index) in items"
-        :key="index"
-        class="activity-dot"
-        :class="{ active: index === activeIndex }"
-      />
+  <view v-if="item" class="activity-card" hover-class="activity-card--pressed" @tap="$emit('select', item.id)">
+    <view class="activity-media">
+      <image v-if="item.cover_url" class="activity-cover" :src="item.cover_url" mode="aspectFill" />
+      <view class="activity-placeholder" v-else>{{ item.category }}</view>
+    </view>
+    <view class="activity-info">
+      <text class="activity-title">{{ item.title }}</text>
+      <view class="meta-row"><i class="meta-icon pin" /><text>{{ item.meeting_place_name || '邯郸市' }}</text></view>
+      <view class="meta-row"><i class="meta-icon clock" /><text>{{ homeActivityTime(item.starts_at) }}</text></view>
+      <view class="meta-row"><i class="meta-icon people" /><text>{{ item.participant_count }}/{{ item.capacity }}人</text></view>
+      <view class="activity-footer">
+        <view class="activity-tags"><text class="category-tag">{{ item.category }}</text><text class="friendly-tag">新手友好</text></view>
+        <view class="activity-price"><text class="aa-tag">AA</text><text class="price-symbol">¥</text><text>{{ formatAmount(item.aa_principal_amount) }}</text></view>
+      </view>
     </view>
   </view>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed } from 'vue'
 
 import type { HomeActivityListItem } from '@/types/api'
-import { formatActivityTime, formatAmount } from '@/utils/formatters'
+import { formatAmount } from '@/utils/formatters'
 
-defineProps<{ items: HomeActivityListItem[] }>()
+const props = defineProps<{ items: HomeActivityListItem[] }>()
 defineEmits<{ select: [id: number] }>()
 
-const activeIndex = ref(0)
-const sideMargin = '52rpx'
+const item = computed(() => props.items[0])
 
-function handleChange(event: { detail: { current: number } }) {
-  activeIndex.value = event.detail.current
-}
-
-function distanceLabel(distance: number | null) {
-  return distance === null ? '同城' : `${distance.toFixed(1)}km`
-}
-
-function statusLabel(status: string) {
-  const labels: Record<string, string> = {
-    draft: '草稿',
-    pending_review: '待审核',
-    recruiting: '招募中',
-    formed: '已成局',
-    in_progress: '进行中',
-    completed: '已结束',
-    cancelled: '已取消',
-    failed_to_form: '未成局',
-  }
-  return labels[status] || '活动中'
+function homeActivityTime(value: string) {
+  const date = new Date(value)
+  const today = new Date()
+  const tomorrow = new Date(today)
+  tomorrow.setDate(today.getDate() + 1)
+  const time = `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`
+  if (date.toDateString() === today.toDateString()) return `今天 ${time}`
+  if (date.toDateString() === tomorrow.toDateString()) return `明天 ${time}`
+  return `${date.getMonth() + 1}月${date.getDate()}日 ${time}`
 }
 </script>
 
 <style lang="scss" scoped>
 @use '../styles/tokens.scss' as *;
 
-.activity-carousel { margin:0 -24rpx; }
-.activity-swiper { height:254rpx; overflow:visible; }
-.activity-slide { display:flex; align-items:center; justify-content:center; box-sizing:border-box; }
-.activity-banner {
-  position:relative;
-  overflow:hidden;
-  width:100%;
-  height:202rpx;
-  border:1rpx solid rgba(19,37,42,.08);
-  border-radius:22rpx;
-  background:#17383b;
-  box-shadow:0 7rpx 13rpx rgba(19,37,42,.16);
-  opacity:.62;
-  transform:scale(.9) perspective(900rpx) rotateY(2deg);
-  transition:transform .28s ease,opacity .28s ease,box-shadow .28s ease;
-  box-sizing:border-box;
-}
-.activity-banner--active {
-  z-index:2;
-  opacity:1;
-  transform:scale(1) perspective(900rpx) rotateY(0);
-  box-shadow:0 6rpx 10rpx rgba(16,48,51,.18),0 22rpx 38rpx rgba(16,48,51,.18),0 2rpx 0 rgba(24,199,198,.35);
-}
-.activity-banner--pressed { transform:scale(.98); }
-.activity-cover,.activity-shade,.activity-placeholder { position:absolute; width:100%; height:100%; inset:0; }
-.activity-placeholder { display:flex; align-items:center; justify-content:center; color:#fff; background:linear-gradient(135deg,#237c7e,#122f32); font-size:30rpx; font-weight:700; }
-.activity-shade { background:linear-gradient(180deg,rgba(3,11,13,.08) 20%,rgba(3,11,13,.78) 100%); }
-.activity-topline { position:absolute; z-index:1; top:14rpx; left:16rpx; right:16rpx; display:flex; align-items:center; justify-content:space-between; }
-.recruiting { padding:5rpx 14rpx; border-radius:18rpx; color:#fff; background:rgba(22,182,109,.94); font-size:19rpx; font-weight:700; }
-.distance { color:#fff; font-size:20rpx; text-shadow:0 1rpx 4rpx rgba(0,0,0,.5); }
-.activity-info { position:absolute; z-index:1; right:18rpx; bottom:14rpx; left:18rpx; color:#fff; }
-.activity-title { display:block; overflow:hidden; font-size:28rpx; font-weight:800; line-height:38rpx; text-overflow:ellipsis; white-space:nowrap; }
-.activity-bottomline { display:flex; align-items:flex-end; justify-content:space-between; gap:12rpx; margin-top:4rpx; }
-.activity-meta { overflow:hidden; min-width:0; color:rgba(255,255,255,.94); font-size:20rpx; text-overflow:ellipsis; white-space:nowrap; }
-.activity-price { flex:0 0 auto; color:$dz-price-primary; font-size:30rpx; font-weight:800; white-space:nowrap; }
-.activity-price-prefix { font-size:17rpx; font-weight:600; }
-.activity-dots { display:flex; align-items:center; justify-content:center; gap:12rpx; height:22rpx; }
-.activity-dot { width:12rpx; height:12rpx; border-radius:8rpx; background:#dce1e3; transition:width .2s ease,background .2s ease; }
-.activity-dot.active { width:34rpx; background:$dz-brand-primary; }
+.activity-card { display:grid; grid-template-columns:238rpx minmax(0,1fr); overflow:hidden; height:210rpx; border:1rpx solid rgba(23,33,38,.055); border-radius:23rpx; background:#fff; box-shadow:0 8rpx 26rpx rgba(31,65,72,.075); transition:transform .18s ease,box-shadow .18s ease; }
+.activity-card--pressed { transform:scale(.99); box-shadow:0 4rpx 14rpx rgba(31,65,72,.06); }
+.activity-media { position:relative; overflow:hidden; min-width:0; background:linear-gradient(145deg,#badfe4,#397f83); }
+.activity-cover,.activity-placeholder { position:absolute; width:100%; height:100%; inset:0; }
+.activity-placeholder { display:flex; align-items:center; justify-content:center; color:#fff; font-size:27rpx; font-weight:700; }
+.activity-info { position:relative; min-width:0; padding:16rpx 18rpx 13rpx; box-sizing:border-box; }
+.activity-title { display:block; overflow:hidden; color:$dz-text-primary; font-size:27rpx; line-height:35rpx; font-weight:800; text-overflow:ellipsis; white-space:nowrap; }
+.meta-row { display:flex; align-items:center; min-width:0; gap:10rpx; margin-top:8rpx; color:#6d767c; font-size:20rpx; line-height:24rpx; }
+.meta-row text { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.meta-icon { position:relative; display:block; flex:0 0 19rpx; width:19rpx; height:19rpx; color:#7b848a; box-sizing:border-box; font-style:normal; }
+.meta-icon.pin { width:16rpx; height:16rpx; margin:0 1rpx 4rpx 2rpx; border:3rpx solid currentColor; border-radius:50% 50% 50% 0; transform:rotate(-45deg); }
+.meta-icon.pin::after { position:absolute; width:4rpx; height:4rpx; top:3rpx; left:3rpx; border-radius:50%; background:currentColor; content:''; }
+.meta-icon.clock { border:3rpx solid currentColor; border-radius:50%; }
+.meta-icon.clock::before { position:absolute; width:2rpx; height:5rpx; top:3rpx; left:6rpx; background:currentColor; content:''; }
+.meta-icon.clock::after { position:absolute; width:5rpx; height:2rpx; top:8rpx; left:7rpx; background:currentColor; transform:rotate(26deg); transform-origin:left center; content:''; }
+.meta-icon.people::before,.meta-icon.people::after { position:absolute; border:2rpx solid currentColor; content:''; box-sizing:border-box; }
+.meta-icon.people::before { width:8rpx; height:8rpx; top:0; left:5rpx; border-radius:50%; }
+.meta-icon.people::after { width:18rpx; height:10rpx; bottom:0; left:0; border-bottom:0; border-radius:12rpx 12rpx 0 0; }
+.activity-footer { position:absolute; right:17rpx; bottom:13rpx; left:17rpx; display:flex; align-items:flex-end; justify-content:space-between; gap:8rpx; }
+.activity-tags { display:flex; min-width:0; gap:7rpx; }
+.category-tag,.friendly-tag,.aa-tag { height:27rpx; padding:0 8rpx; border:1rpx solid #42d8d5; border-radius:5rpx; color:#08aeb4; background:#f8ffff; font-size:17rpx; line-height:26rpx; box-sizing:border-box; white-space:nowrap; }
+.friendly-tag { border-color:#dfe4e6; color:#707980; background:#fafafa; }
+.activity-price { display:flex; flex:0 0 auto; align-items:flex-end; gap:4rpx; color:$dz-price-primary; font-size:38rpx; line-height:38rpx; font-weight:800; white-space:nowrap; }
+.activity-price .aa-tag { margin-right:3rpx; border-color:#ffccb9; color:$dz-price-primary; background:#fff; font-size:16rpx; line-height:25rpx; font-weight:500; }
+.price-symbol { font-size:23rpx; line-height:32rpx; }
 
 @media (prefers-reduced-motion: reduce) {
-  .activity-banner,.activity-dot { transition:none; }
+  .activity-card { transition:none; }
 }
 </style>

@@ -17,11 +17,11 @@ export interface BookingDraft {
   date: string
   startTime: string
   timeConfirmed: boolean
+  addressId: number | null
   address: string
   addressName: string
-  longitude: number | null
-  latitude: number | null
   contactName: string
+  contactGender: 'mr' | 'ms' | ''
   contactPhone: string
   note: string
 }
@@ -51,11 +51,11 @@ export function createBookingDraft(provider: ProviderDetail, service: ProviderSe
     date: dateKey(dateOffset),
     startTime,
     timeConfirmed: false,
+    addressId: null,
     address: '',
     addressName: '',
-    longitude: null,
-    latitude: null,
     contactName: '',
+    contactGender: '',
     contactPhone: '',
     note: '',
   }
@@ -65,7 +65,15 @@ export function createBookingDraft(provider: ProviderDetail, service: ProviderSe
 
 export function getBookingDraft(): BookingDraft | null {
   try {
-    return uni.getStorageSync(STORAGE_KEY) || null
+    const stored = uni.getStorageSync(STORAGE_KEY) as Partial<BookingDraft> | null
+    if (!stored?.providerPublicId) return null
+    return {
+      ...stored,
+      addressId: Number(stored.addressId) || null,
+      contactGender: stored.contactGender === 'mr' || stored.contactGender === 'ms'
+        ? stored.contactGender
+        : '',
+    } as BookingDraft
   } catch {
     return null
   }

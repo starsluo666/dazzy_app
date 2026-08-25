@@ -223,6 +223,10 @@ export interface LocationItem {
   address: string
   city_name: string
   district_name?: string
+  contact_name?: string
+  contact_gender?: 'mr' | 'ms' | ''
+  contact_gender_label?: string
+  contact_phone?: string
   longitude: number | string
   latitude: number | string
   is_default?: boolean
@@ -287,6 +291,7 @@ export interface ProviderOrderQuote {
   starts_at: string
   ends_at: string
   duration_minutes: number
+  meeting_location_name: string
   meeting_address: string
   route_distance_km: string
   route_duration_minutes: number
@@ -312,8 +317,11 @@ export interface ProviderOrder {
   starts_at: string
   ends_at: string
   duration_minutes: number
+  meeting_location_name: string
   meeting_address: string
   contact_name: string
+  contact_gender: 'mr' | 'ms' | ''
+  contact_gender_label: string
   contact_phone_masked: string
   note: string
   service_fee_amount: number

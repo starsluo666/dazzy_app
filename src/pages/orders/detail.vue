@@ -43,7 +43,7 @@
 
       <section class="info-card panel">
         <view><i>◷</i><text>服务时间</text><strong>{{ timeLabel }}</strong></view>
-        <view><i>●</i><text>集合地点</text><strong>{{ order.meeting_address }}</strong><button @tap="showPending('导航')">导航</button></view>
+        <view><i>●</i><text>集合地点</text><strong>{{ addressLabel }}</strong><button @tap="showPending('导航')">导航</button></view>
         <view class="map"><view class="roads" /><i>●</i></view>
         <view><i>▤</i><text>订单编号</text><strong class="muted">{{ order.order_no }}</strong><button aria-label="复制订单编号" @tap="copyOrderNo">▣</button></view>
         <view><i>▦</i><text>创建时间</text><strong class="muted">{{ createdLabel }}</strong></view>
@@ -134,6 +134,11 @@ const contactableStatuses = ['pending_acceptance', 'pending_service', 'departed'
 const statusCopy = computed(() => orderStatusCopy(order.value?.status || ''))
 const showActions = computed(() => order.value && !['completed', 'cancelled', 'refunded'].includes(order.value.status))
 const money = formatAmount
+const addressLabel = computed(() => order.value
+  ? [order.value.meeting_location_name, order.value.meeting_address]
+    .filter((value, index, values) => value && values.indexOf(value) === index)
+    .join('，')
+  : '')
 
 const timeLabel = computed(() => {
   if (!order.value) return ''

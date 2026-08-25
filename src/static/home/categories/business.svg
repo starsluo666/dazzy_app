@@ -1,0 +1,4 @@
+<svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs><linearGradient id="case" x1="17" y1="16" x2="63" y2="67" gradientUnits="userSpaceOnUse"><stop stop-color="#53C9FF"/><stop offset="1" stop-color="#0784EA"/></linearGradient><filter id="shadow" x="7" y="9" width="66" height="66" filterUnits="userSpaceOnUse"><feDropShadow dx="0" dy="5" stdDeviation="4" flood-color="#1473AD" flood-opacity=".24"/></filter></defs>
+  <g filter="url(#shadow)"><path d="M29 23V18C29 14.686 31.686 12 35 12H45C48.314 12 51 14.686 51 18V23" stroke="#168BD2" stroke-width="5"/><rect x="15" y="22" width="50" height="42" rx="9" fill="url(#case)"/><path d="M15 36H65V43C65 47.418 61.418 51 57 51H23C18.582 51 15 47.418 15 43V36Z" fill="#199CE9"/><rect x="36" y="37" width="8" height="10" rx="2" fill="white"/><path d="M22 28H58" stroke="white" stroke-opacity=".34" stroke-width="3" stroke-linecap="round"/></g>
+</svg>

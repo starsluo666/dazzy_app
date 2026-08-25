@@ -8,13 +8,7 @@ function orderPayload(draft: BookingDraft) {
     service_id: draft.serviceId,
     starts_at: localStart.toISOString(),
     duration_minutes: draft.durationMinutes,
-    meeting_address: [draft.addressName, draft.address]
-      .filter((value, index, values) => value && values.indexOf(value) === index)
-      .join('，'),
-    longitude: draft.longitude ?? undefined,
-    latitude: draft.latitude ?? undefined,
-    contact_name: draft.contactName,
-    contact_phone: draft.contactPhone,
+    address_id: draft.addressId,
     note: draft.note,
   }
 }

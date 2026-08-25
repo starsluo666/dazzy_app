@@ -33,14 +33,13 @@ const tabs: Array<{ key: TabKey; label: string; icon: string; activeIcon: string
   { key: 'home', label: '首页', icon: '/static/tabbar/home.svg', activeIcon: '/static/tabbar/home-active.svg' },
   { key: 'provider', label: '达人', icon: '/static/tabbar/provider.svg', activeIcon: '/static/tabbar/provider-active.svg' },
   { key: 'activity', label: '活动', icon: '/static/tabbar/activity.svg', activeIcon: '/static/tabbar/activity-active.svg' },
-  { key: 'message', label: '消息', icon: '/static/tabbar/message.svg', activeIcon: '/static/tabbar/message-active.svg' },
   { key: 'profile', label: '我的', icon: '/static/tabbar/profile.svg', activeIcon: '/static/tabbar/profile-active.svg' },
 ]
 </script>
 
 <style lang="scss" scoped>
 @use '../styles/tokens.scss' as *;
-.tabbar { position: fixed; z-index: 10; right: 0; bottom: 0; left: 0; display: grid; grid-template-columns: repeat(5,1fr); height: calc(112rpx + env(safe-area-inset-bottom)); padding-bottom: env(safe-area-inset-bottom); border-top: 1rpx solid $dz-border-subtle; background: rgba(255,255,255,.97); box-sizing: border-box; }
+.tabbar { position: fixed; z-index: 10; right: 0; bottom: 0; left: 0; display: grid; grid-template-columns: repeat(4,1fr); height: calc(112rpx + env(safe-area-inset-bottom)); padding-bottom: env(safe-area-inset-bottom); border-top: 1rpx solid $dz-border-subtle; background: rgba(255,255,255,.97); box-sizing: border-box; }
 .tab { display: flex; min-height: 88rpx; align-items: center; justify-content: center; color: $dz-text-secondary; font-size: 19rpx; touch-action: manipulation; flex-direction: column; }
 .tab-icon-shell { display: flex; width: 92rpx; height: 48rpx; align-items: center; justify-content: center; margin-bottom: 4rpx; border-radius: 24rpx; transition: background-color .18s ease-out, opacity .18s ease-out; }
 .tab-icon { display: block; width: 44rpx; height: 44rpx; }

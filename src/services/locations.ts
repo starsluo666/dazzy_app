@@ -11,20 +11,6 @@ export function getSavedAddresses() {
   return request<{ data: { items: LocationItem[] } }>('/addresses/')
 }
 
-export function saveAddress(location: LocationItem) {
-  return request<DataResponse<LocationItem>>('/addresses/', {
-    method: 'POST',
-    data: {
-      name: location.name,
-      address: location.address,
-      city_name: location.city_name,
-      longitude: location.longitude,
-      latitude: location.latitude,
-      is_default: false,
-    },
-  })
-}
-
 export function getAddress(addressId: number) {
   return request<DataResponse<LocationItem>>(`/addresses/${addressId}/`)
 }
@@ -56,6 +42,9 @@ function addressPayload(location: LocationItem): Record<string, unknown> {
     name: location.name,
     address: location.address,
     city_name: location.city_name,
+    contact_name: location.contact_name,
+    contact_gender: location.contact_gender,
+    contact_phone: location.contact_phone,
     longitude: location.longitude,
     latitude: location.latitude,
     is_default: Boolean(location.is_default),

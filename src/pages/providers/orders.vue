@@ -46,8 +46,8 @@
             <view class="order-copy">
               <strong>{{ order.customer_name || '预约用户' }} · {{ order.service_name }}</strong>
               <text>◷ {{ timeRange(order.starts_at, order.ends_at) }}</text>
-              <text>● {{ order.meeting_address }}</text>
-              <text>☎ {{ order.contact_name }} {{ order.contact_phone_masked }}</text>
+              <text>● {{ addressLabel(order) }}</text>
+              <text>☎ {{ order.contact_name }}{{ order.contact_gender_label }} {{ order.contact_phone_masked }}</text>
             </view>
             <view class="amount">
               <small>订单金额</small>
@@ -119,6 +119,11 @@ const error = ref('')
 const busyOrderNo = ref('')
 const busyLabel = ref('处理中…')
 const money = formatAmount
+function addressLabel(order: ProviderManagedOrder) {
+  return [order.meeting_location_name, order.meeting_address]
+    .filter((value, index, values) => value && values.indexOf(value) === index)
+    .join('，')
+}
 
 function inTab(status: string, tab: OrderTab) {
   if (tab === 'all') return true
