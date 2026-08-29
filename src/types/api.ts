@@ -127,6 +127,22 @@ export interface ActivityListItem {
 
 export type HomeActivityListItem = ActivityListItem
 
+export interface ActivitySettlement {
+  settlement_no: string
+  status: 'confirming' | 'risk_frozen' | 'dispute_frozen' | 'settled'
+  status_label: string
+  confirmation_started_at: string
+  confirmation_deadline: string
+  risk_frozen_at: string | null
+  freeze_until: string
+  settled_at: string | null
+  dispute_reason: string
+  settlement_amount: number | null
+  organizer_principal_amount: number | null
+  participant_principal_amount: number | null
+  retained_participant_principal_amount: number | null
+}
+
 export interface ActivityDetail extends ActivityListItem {
   meeting_address: string
   description: string
@@ -145,6 +161,7 @@ export interface ActivityDetail extends ActivityListItem {
   participation_payment_expires_at: string | null
   participation_refund: ActivityParticipationRefundOrder | null
   participation_after_sales: ActivityAfterSalesCase | null
+  settlement: ActivitySettlement | null
   locked_seat_count: number
   remaining_capacity: number
   reviewed_at: string | null
@@ -309,6 +326,7 @@ export interface MyActivityListItem extends ActivityListItem {
   participation_payment_expires_at: string | null
   participation_refund_status: 'pending' | 'processing' | 'succeeded' | 'failed' | null
   participation_after_sales_status: 'pending' | 'processing' | 'approved' | 'rejected' | null
+  settlement: ActivitySettlement | null
   reviewed_at: string | null
   rejection_reason: string
   cancelled_at: string | null

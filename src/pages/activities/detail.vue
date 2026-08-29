@@ -50,6 +50,23 @@
           <text class="refund-link">查看详情 ›</text>
         </section>
 
+        <section v-if="activity.settlement" class="panel settlement-panel">
+          <view class="settlement-head">
+            <view><text class="section-title">履约与结算</text><text>资金按平台规则流转，全程可追溯</text></view>
+            <text class="settlement-status" :class="activity.settlement.status">{{ activity.settlement.status_label }}</text>
+          </view>
+          <view class="settlement-progress">
+            <i :class="{ active: true }" />
+            <span :class="{ active: activity.settlement.status !== 'confirming' }" />
+            <i :class="{ active: activity.settlement.status !== 'confirming' }" />
+            <span :class="{ active: activity.settlement.status === 'settled' }" />
+            <i :class="{ active: activity.settlement.status === 'settled' }" />
+          </view>
+          <view class="settlement-steps"><text>履约确认</text><text>风险冻结</text><text>结算入账</text></view>
+          <text class="settlement-hint">{{ settlementHint }}</text>
+          <view v-if="activity.settlement.settlement_amount !== null" class="settlement-amount"><text>预计入账</text><strong>¥{{ money(activity.settlement.settlement_amount) }}</strong></view>
+        </section>
+
         <section class="panel description">
           <text class="section-title">活动说明</text><text>{{ activity.description }}</text>
           <text class="section-title rules-title">参与规则</text><text>{{ activity.participation_rules }}</text>
@@ -113,6 +130,14 @@ const participationSubtitle = computed(() => {
   if (activity.value?.participation_status === 'pending_payment') return '名额锁定中，完成支付后正式报名'
   return remainingPlaces.value ? `还剩${remainingPlaces.value}个名额` : '名额已满'
 })
+const settlementHint = computed(() => {
+  const settlement = activity.value?.settlement
+  if (!settlement) return ''
+  if (settlement.status === 'confirming') return `履约确认期至 ${formatDeadline(settlement.confirmation_deadline)}，有异常请及时申请售后。`
+  if (settlement.status === 'risk_frozen') return `确认期已结束，资金预计于 ${formatDeadline(settlement.freeze_until)} 入账。`
+  if (settlement.status === 'dispute_frozen') return settlement.dispute_reason || '存在待处理争议，结算已暂停。'
+  return `已于 ${formatDeadline(settlement.settled_at || settlement.freeze_until)} 完成入账。`
+})
 
 function money(amount: number) {
   return formatAmount(amount, 2)
@@ -128,6 +153,11 @@ function statusLabel(status: string) {
 }
 
 const formatRange = formatActivityRange
+function formatDeadline(value: string) {
+  const date = new Date(value)
+  const pad = (part: number) => String(part).padStart(2, '0')
+  return `${pad(date.getMonth() + 1)}月${pad(date.getDate())}日 ${pad(date.getHours())}:${pad(date.getMinutes())}`
+}
 
 function goBack() {
   uni.navigateBack()
@@ -308,6 +338,7 @@ onLoad((query) => {
 .refund>view{display:flex;flex-direction:column;gap:10rpx}
 .refund view>text:last-child,.description>text:not(.section-title){color:$dz-text-secondary;font-size:21rpx;line-height:32rpx}
 .refund-link{color:$dz-brand-deep;font-size:22rpx}
+.settlement-panel{padding:26rpx 28rpx}.settlement-head{display:flex;align-items:flex-start;justify-content:space-between}.settlement-head>view{display:flex;flex-direction:column;gap:8rpx}.settlement-head>view>text:last-child{color:$dz-text-tertiary;font-size:18rpx}.settlement-status{padding:7rpx 13rpx;border-radius:10rpx;color:$dz-brand-deep;background:$dz-brand-soft;font-size:18rpx}.settlement-status.dispute_frozen{color:#a45625;background:#fff0e3}.settlement-status.settled{color:#13875a;background:#e7f8ef}.settlement-progress{display:grid;grid-template-columns:20rpx 1fr 20rpx 1fr 20rpx;align-items:center;margin:27rpx 12rpx 10rpx}.settlement-progress i{width:18rpx;height:18rpx;border:4rpx solid #dfe7e8;border-radius:50%;background:#fff;box-sizing:border-box}.settlement-progress span{height:4rpx;background:#dfe7e8}.settlement-progress .active{border-color:$dz-brand-primary;background:$dz-brand-primary}.settlement-steps{display:flex;justify-content:space-between;color:$dz-text-secondary;font-size:18rpx}.settlement-hint{display:block;margin-top:20rpx;padding:15rpx 17rpx;border-radius:14rpx;color:$dz-text-secondary;background:$dz-surface-page;font-size:19rpx;line-height:1.55}.settlement-amount{display:flex;align-items:center;justify-content:space-between;margin-top:18rpx;padding-top:17rpx;border-top:1rpx dashed $dz-border-subtle;font-size:21rpx}.settlement-amount strong{color:$dz-price-primary;font-size:30rpx}
 .description .section-title{display:block}
 .description>text:not(.section-title){display:block;margin-top:10rpx}
 .rules-title{margin-top:22rpx}
