@@ -33,6 +33,8 @@ export interface ActivityDraftPayload {
   formation_deadline: string
   meeting_place_name: string
   meeting_address: string
+  city_code: string
+  city_name: string
   longitude: number
   latitude: number
   capacity: number
