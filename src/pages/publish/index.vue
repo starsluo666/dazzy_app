@@ -1,6 +1,6 @@
 <template>
   <view class="dz-page publish-page">
-    <header class="page-head"><button aria-label="返回" @tap="goBack">‹</button><text>发布活动</text><text class="draft-mark">草稿</text></header>
+    <header class="page-head"><button aria-label="返回" @tap="goBack">‹</button><text>发布活动</text><text class="draft-mark">{{ copyFrom ? '修改副本' : '草稿' }}</text></header>
     <main class="form-content dz-container">
       <section class="cover-card" @tap="chooseCover">
         <image v-if="coverPath" :src="coverPath" mode="aspectFill" />
@@ -50,7 +50,7 @@
 <script setup lang="ts">
 import { computed, reactive, ref } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
-import { createActivityDraft, getActivityCategories, uploadActivityCover } from '@/services/activities'
+import { createActivityDraft, getActivityCategories, getActivityCopySource, uploadActivityCover } from '@/services/activities'
 import { searchLocations } from '@/services/locations'
 import type { ActivityCategoryItem, LocationItem } from '@/types/api'
 import { getErrorMessage } from '@/utils/formatters'
@@ -61,6 +61,7 @@ const min=new Date(now);min.setDate(min.getDate()+2);const max=new Date(now);max
 const minDate=dateValue(min),maxDate=dateValue(max)
 const form=reactive({categorySlug:'',title:'',description:'',rules:'',date:dateValue(start),startTime:'14:00',endTime:'17:00',deadlineDate:dateValue(deadline),deadlineTime:'20:00',capacity:8,minimum:4,price:'68'})
 const categories=ref<ActivityCategoryItem[]>([]),location=ref<LocationItem|null>(null),coverPath=ref(''),coverAssetId=ref(''),coverUploading=ref(false),agreed=ref(false),submitting=ref(false),addressSheet=ref(false),keyword=ref(''),locations=ref<LocationItem[]>([]),searching=ref(false)
+const copyFrom=ref(0)
 const principalCents=computed(()=>Math.round((Number(form.price)||0)*100)),serviceFeeCents=computed(()=>Math.floor((principalCents.value+5)/10)),serviceFee=computed(()=>(serviceFeeCents.value/100).toFixed(2)),totalFee=computed(()=>((principalCents.value+serviceFeeCents.value)/100).toFixed(2))
 const canSubmit=computed(()=>!!coverAssetId.value&&!coverUploading.value&&!!form.categorySlug&&form.title.trim().length>=4&&!!form.description.trim()&&!!form.rules.trim()&&!!location.value&&principalCents.value>0&&agreed.value)
 function goBack(){uni.navigateBack()}function setDate(event:any){form.date=event.detail.value;if(form.deadlineDate>=form.date){const value=new Date(`${form.date}T00:00:00`);value.setDate(value.getDate()-1);form.deadlineDate=dateValue(value)}}function setStartTime(event:any){form.startTime=event.detail.value}function setEndTime(event:any){form.endTime=event.detail.value}function setDeadlineDate(event:any){form.deadlineDate=event.detail.value}
@@ -70,7 +71,9 @@ async function searchAddress(){if(keyword.value.trim().length<2)return;searching
 function selectLocation(item:LocationItem){location.value=item;addressSheet.value=false}
 function localIso(date:string,time:string){return new Date(`${date}T${time}:00`).toISOString()}
 async function submit(){if(!canSubmit.value||!location.value||submitting.value)return;submitting.value=true;try{const draft=(await createActivityDraft({cover_id:coverAssetId.value,category_slug:form.categorySlug,title:form.title.trim(),starts_at:localIso(form.date,form.startTime),ends_at:localIso(form.date,form.endTime),formation_deadline:localIso(form.deadlineDate,form.deadlineTime),meeting_place_name:location.value.name,meeting_address:location.value.address||location.value.name,city_code:'130400',city_name:location.value.city_name||'邯郸市',longitude:Number(location.value.longitude),latitude:Number(location.value.latitude),capacity:form.capacity,min_participants:form.minimum,description:form.description.trim(),participation_rules:form.rules.trim(),aa_principal_amount:principalCents.value,refund_template_version:'standard-v1'})).data;uni.navigateTo({url:`/pages/activities/publish-payment?id=${draft.id}`})}catch(reason){uni.showToast({title:getErrorMessage(reason,'保存活动失败'),icon:'none'})}finally{submitting.value=false}}
-onLoad(async()=>{try{categories.value=(await getActivityCategories()).data.items;form.categorySlug=categories.value[0]?.slug||''}catch(reason){uni.showToast({title:getErrorMessage(reason,'分类加载失败'),icon:'none'})}})
+function dateParts(value:string){const date=new Date(value);return{date:dateValue(date),time:`${pad(date.getHours())}:${pad(date.getMinutes())}`}}
+async function applyCopySource(id:number){const source=(await getActivityCopySource(id)).data;form.categorySlug=source.category_slug;form.title=source.title;form.description=source.description;form.rules=source.participation_rules;form.capacity=source.capacity;form.minimum=source.min_participants;form.price=(source.aa_principal_amount/100).toFixed(2);const starts=dateParts(source.starts_at),ends=dateParts(source.ends_at),deadlineValue=dateParts(source.formation_deadline);const earliest=new Date(Date.now()+48*3600000);if(new Date(source.starts_at)>earliest){form.date=starts.date;form.startTime=starts.time;form.endTime=ends.time;form.deadlineDate=deadlineValue.date;form.deadlineTime=deadlineValue.time}coverAssetId.value=source.cover_id;coverPath.value=source.cover_url||'';location.value={name:source.meeting_place_name,address:source.meeting_address,city_name:source.city_name,longitude:source.longitude,latitude:source.latitude};uni.showToast({title:'已复制活动资料',icon:'success'})}
+onLoad(async(query)=>{copyFrom.value=Number(query?.copyFrom)||0;try{categories.value=(await getActivityCategories()).data.items;form.categorySlug=categories.value[0]?.slug||'';if(copyFrom.value)await applyCopySource(copyFrom.value)}catch(reason){uni.showToast({title:getErrorMessage(reason,copyFrom.value?'复制活动失败':'分类加载失败'),icon:'none'})}})
 </script>
 
 <style lang="scss" scoped>

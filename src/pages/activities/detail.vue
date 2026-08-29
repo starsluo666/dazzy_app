@@ -10,7 +10,7 @@
         <button class="round back" aria-label="返回" hover-class="round--pressed" @tap="goBack"><text>‹</text></button>
         <view class="hero-actions">
           <button class="round" aria-label="分享" hover-class="round--pressed" @tap="showPending('分享')"><text>↥</text></button>
-          <button class="round" aria-label="更多操作" hover-class="round--pressed" @tap="showPending('更多')"><text class="dots">•••</text></button>
+          <button class="round" aria-label="更多操作" hover-class="round--pressed" @tap="showMoreActions"><text class="dots">•••</text></button>
         </view>
         <text class="status">{{ statusLabel(activity.status) }}</text>
         <text class="photo-count">1/1</text>
@@ -75,7 +75,7 @@ import { onLoad } from '@dcloudio/uni-app'
 import { computed, ref } from 'vue'
 
 import NetworkState from '@/components/NetworkState.vue'
-import { cancelActivityParticipation, joinActivity } from '@/services/activities'
+import { cancelActivityParticipation, reportActivity } from '@/services/activities'
 import { getActivityDetail } from '@/services/discovery'
 import { recordActivityView } from '@/services/engagements'
 import { isAuthenticated } from '@/services/session'
@@ -88,23 +88,29 @@ const loading = ref(true)
 const error = ref('')
 const participationSubmitting = ref(false)
 const remainingPlaces = computed(() =>
-  activity.value ? Math.max(0, activity.value.capacity - activity.value.participant_count) : 0,
+  activity.value ? activity.value.remaining_capacity : 0,
 )
 const participationAllowed = computed(() =>
   !!activity.value && ['recruiting', 'formed'].includes(activity.value.status) && remainingPlaces.value > 0,
 )
 const participationDisabled = computed(() =>
-  participationSubmitting.value || !!activity.value?.is_organizer || (!activity.value?.is_joined && !participationAllowed.value),
+  participationSubmitting.value || !!activity.value?.is_organizer || (
+    !activity.value?.is_joined
+    && activity.value?.participation_status !== 'pending_payment'
+    && !participationAllowed.value
+  ),
 )
 const participationTitle = computed(() => {
   if (participationSubmitting.value) return '正在处理…'
   if (activity.value?.is_organizer) return '我是组织者'
   if (activity.value?.is_joined) return '已加入活动'
+  if (activity.value?.participation_status === 'pending_payment') return '继续支付'
   return participationAllowed.value ? '加入活动' : '暂不可报名'
 })
 const participationSubtitle = computed(() => {
   if (activity.value?.is_organizer) return '无需重复报名'
-  if (activity.value?.is_joined) return '点击取消报名'
+  if (activity.value?.is_joined) return activity.value.participation_after_sales ? activity.value.participation_after_sales.status_label : '取消报名或申请售后'
+  if (activity.value?.participation_status === 'pending_payment') return '名额锁定中，完成支付后正式报名'
   return remainingPlaces.value ? `还剩${remainingPlaces.value}个名额` : '名额已满'
 })
 
@@ -131,6 +137,38 @@ function showPending(feature: string) {
   uni.showToast({ title: `${feature}功能即将接入`, icon: 'none' })
 }
 
+function showMoreActions() {
+  if (!activity.value || activity.value.is_organizer) {
+    uni.showToast({ title: '这是你发起的活动', icon: 'none' })
+    return
+  }
+  const reasons = [
+    { label: '信息不实', value: 'false_information' },
+    { label: '内容不当', value: 'inappropriate_content' },
+    { label: '诱导私下交易', value: 'private_transaction' },
+    { label: '存在安全风险', value: 'safety_risk' },
+    { label: '其他问题', value: 'other' },
+  ]
+  uni.showActionSheet({
+    itemList: reasons.map((item) => item.label),
+    success: ({ tapIndex }) => {
+      const selected = reasons[tapIndex]
+      if (!selected || !activity.value) return
+      uni.showModal({
+        title: '举报活动', content: `确认以“${selected.label}”举报该活动？平台将在后台受理并记录处理结果。`,
+        confirmText: '提交举报', confirmColor: '#ef6d2e',
+        success: async (result) => {
+          if (!result.confirm || !activity.value) return
+          try {
+            const receipt = (await reportActivity(activity.value.id, selected.value)).data
+            uni.showModal({ title: '举报已提交', content: `举报单号：${receipt.case_no}`, showCancel: false })
+          } catch (reason) { uni.showToast({ title: getErrorMessage(reason, '举报提交失败'), icon: 'none' }) }
+        },
+      })
+    },
+  })
+}
+
 function showMapPending() {
   uni.showToast({ title: '地图服务接入后开放导航', icon: 'none' })
 }
@@ -143,34 +181,45 @@ function showRefundRules() {
   })
 }
 
+async function cancelParticipation() {
+  if (!activity.value) return
+  participationSubmitting.value = true
+  try {
+    const result = (await cancelActivityParticipation(activity.value.id)).data
+    const refund = result.refund
+    await loadDetail(false)
+    uni.showModal({
+      title: refund ? '取消与退款已完成' : '报名已取消',
+      content: refund
+        ? `退款 ¥${money(refund.refund_amount)}（AA本金 ¥${money(refund.principal_refund_amount)}，服务费 ¥${money(refund.service_fee_refund_amount)}）。${refund.retained_principal_amount ? `按规则扣除AA本金 ¥${money(refund.retained_principal_amount)}。` : ''}`
+        : '待支付报名单已关闭，名额已经释放。',
+      showCancel: false,
+    })
+  } catch (reason) { uni.showToast({ title: getErrorMessage(reason, '取消报名失败'), icon: 'none' }) } finally { participationSubmitting.value = false }
+}
+
 function handleParticipation() {
   if (!activity.value || participationDisabled.value) return
-  const cancelling = activity.value.is_joined
-  uni.showModal({
-    title: cancelling ? '取消报名' : '确认加入活动',
-    content: cancelling
-      ? '确认取消本次活动报名吗？'
-      : `确认后将占用1个活动名额。活动费用为 ¥${money(activity.value.payable_amount)}/人，请按活动说明与组织者结算。`,
-    cancelText: '再想想',
-    confirmText: cancelling ? '确认取消' : '确认加入',
-    confirmColor: cancelling ? '#ff6433' : '#08aeb4',
-    success: async (result) => {
-      if (!result.confirm || !activity.value) return
-      participationSubmitting.value = true
-      try {
-        if (cancelling) {
-          await cancelActivityParticipation(activity.value.id)
-          uni.showToast({ title: '已取消报名', icon: 'success' })
-        } else {
-          await joinActivity(activity.value.id)
-          uni.showToast({ title: '报名成功', icon: 'success' })
-        }
-        await loadDetail(false)
-      } catch (reason) {
-        uni.showToast({ title: getErrorMessage(reason, '操作失败'), icon: 'none' })
-      } finally {
-        participationSubmitting.value = false
-      }
+  if (!isAuthenticated()) { uni.navigateTo({ url: '/pages/auth/login' }); return }
+  if (!activity.value.is_joined) {
+    uni.navigateTo({ url: `/pages/activities/participation-payment?id=${activity.value.id}` })
+    return
+  }
+  if (activity.value.participation_after_sales && ['pending', 'processing'].includes(activity.value.participation_after_sales.status)) {
+    uni.navigateTo({ url: `/pages/activities/after-sales?id=${activity.value.id}` })
+    return
+  }
+  uni.showActionSheet({
+    itemList: ['按活动规则取消并退款', '申请特殊情况售后'],
+    success: ({ tapIndex }) => {
+      if (!activity.value) return
+      if (tapIndex === 1) { uni.navigateTo({ url: `/pages/activities/after-sales?id=${activity.value.id}` }); return }
+      uni.showModal({
+        title: '按规则取消报名',
+        content: '系统将按报名时确认的退款规则和当前服务器时间计算退款，扣除金额提交后不可撤销。',
+        cancelText: '再想想', confirmText: '确认取消', confirmColor: '#ff6433',
+        success: (result) => { if (result.confirm) cancelParticipation() },
+      })
     },
   })
 }

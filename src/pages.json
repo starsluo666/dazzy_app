@@ -81,6 +81,14 @@
       "style": { "navigationStyle": "custom" }
     },
     {
+      "path": "pages/activities/participation-payment",
+      "style": { "navigationStyle": "custom" }
+    },
+    {
+      "path": "pages/activities/after-sales",
+      "style": { "navigationStyle": "custom" }
+    },
+    {
       "path": "pages/publish/index",
       "style": { "navigationStyle": "custom" }
     },

@@ -115,6 +115,8 @@ export interface ActivityListItem {
   starts_at: string
   ends_at: string
   meeting_place_name: string
+  city_code: string
+  city_name: string
   capacity: number
   min_participants: number
   aa_principal_amount: number
@@ -139,7 +141,14 @@ export interface ActivityDetail extends ActivityListItem {
   organizer_rating: string | null
   is_joined: boolean
   is_organizer: boolean
-  participation_status: 'active' | 'cancelled' | null
+  participation_status: 'pending_payment' | 'active' | 'cancelled' | 'expired' | null
+  participation_payment_expires_at: string | null
+  participation_refund: ActivityParticipationRefundOrder | null
+  participation_after_sales: ActivityAfterSalesCase | null
+  locked_seat_count: number
+  remaining_capacity: number
+  reviewed_at: string | null
+  rejection_reason: string
 }
 
 export interface BrowsingHistoryItem {
@@ -150,16 +159,131 @@ export interface BrowsingHistoryItem {
   target: ProviderListItem | ActivityListItem
 }
 
-export interface ActivityParticipationResult {
-  status: 'active'
-  joined_at: string
+export interface ActivityParticipationPaymentOrder {
+  order_no: string
+  aa_principal_amount: number
+  platform_service_fee_amount: number
+  payable_amount: number
+  channel: 'mock_wechat' | 'mock_alipay' | 'wechat' | 'alipay'
+  channel_label: string
+  status: 'pending_payment' | 'paid' | 'closed' | 'partially_refunded' | 'refunded'
+  status_label: string
+  expires_at: string
+  paid_at: string | null
+  closed_at: string | null
+}
+
+export interface ActivityParticipationRefundOrder {
+  refund_no: string
+  refund_type: string
+  refund_type_label: string
+  status: 'pending' | 'processing' | 'succeeded' | 'failed'
+  status_label: string
+  principal_refund_amount: number
+  service_fee_refund_amount: number
+  refund_amount: number
+  retained_principal_amount: number
+  retained_service_fee_amount: number
+  retained_principal_destination: 'none' | 'organizer' | 'platform'
+  retained_principal_destination_label: string
+  reason: string
+  requested_at: string
+  refunded_at: string | null
+}
+
+export interface ActivityAfterSalesCase {
+  case_no: string
+  reason: string
+  reason_label: string
+  description: string
+  status: 'pending' | 'processing' | 'approved' | 'rejected'
+  status_label: string
+  requested_principal_amount: number
+  requested_service_fee_amount: number
+  requested_amount: number
+  approved_principal_amount: number | null
+  approved_service_fee_amount: number | null
+  approved_amount: number | null
+  result_note: string
+  reviewed_at: string | null
+  refund_order: ActivityParticipationRefundOrder | null
+  created_at: string
+  updated_at: string
+}
+
+export interface ActivityParticipationCheckout {
+  participation_status: 'pending_payment' | 'active'
+  rule_confirmed_at: string
+  payment_order: ActivityParticipationPaymentOrder
+  participant_count: number
+  remaining_capacity: number
+}
+
+export interface ActivityParticipationPaymentResult {
+  participation: {
+    status: 'active'
+    joined_at: string
+  }
+  payment_order: ActivityParticipationPaymentOrder
   participant_count: number
   activity_status: string
+  changed: boolean
+}
+
+export interface ActivityParticipationCancellationResult {
+  participation: {
+    status: 'cancelled'
+    cancelled_at: string
+    cancellation_reason: string
+  }
+  refund: ActivityParticipationRefundOrder | null
+  changed: boolean
 }
 
 export interface ActivityCategoryItem {
   name: string
   slug: string
+  icon_url: string | null
+  min_capacity: number
+  max_capacity: number
+  min_aa_principal_amount: number
+  max_aa_principal_amount: number
+  content_guidance: string
+}
+
+export interface ActivityCopySource {
+  id: number
+  category_slug: string
+  cover_id: string
+  cover_url: string | null
+  title: string
+  starts_at: string
+  ends_at: string
+  formation_deadline: string
+  meeting_place_name: string
+  meeting_address: string
+  city_code: string
+  city_name: string
+  longitude: string
+  latitude: string
+  capacity: number
+  min_participants: number
+  description: string
+  participation_rules: string
+  aa_principal_amount: number
+  refund_template_version: 'standard-v1'
+  rejection_reason: string
+}
+
+export interface ActivityReportReceipt {
+  case_no: string
+  activity_id: number
+  reason: string
+  reason_label: string
+  description: string
+  status: 'pending' | 'processing' | 'resolved' | 'rejected'
+  status_label: string
+  created_at: string
 }
 
 export interface ActivityDraftResult {
@@ -180,8 +304,15 @@ export interface ActivityPublishOrder {
 }
 
 export interface MyActivityListItem extends ActivityListItem {
-  participation_status: 'active' | 'cancelled' | null
+  participation_status: 'pending_payment' | 'active' | 'cancelled' | 'expired' | null
   joined_at: string | null
+  participation_payment_expires_at: string | null
+  participation_refund_status: 'pending' | 'processing' | 'succeeded' | 'failed' | null
+  participation_after_sales_status: 'pending' | 'processing' | 'approved' | 'rejected' | null
+  reviewed_at: string | null
+  rejection_reason: string
+  cancelled_at: string | null
+  cancellation_reason: string
 }
 
 export interface LocationItem {

@@ -1,16 +1,42 @@
-import type { ActivityCategoryItem, ActivityDraftResult, ActivityParticipationResult, ActivityPublishOrder, DataResponse, ListResponse, MyActivityListItem } from '@/types/api'
+import type { ActivityAfterSalesCase, ActivityCategoryItem, ActivityCopySource, ActivityDraftResult, ActivityParticipationCancellationResult, ActivityParticipationCheckout, ActivityParticipationPaymentResult, ActivityPublishOrder, ActivityReportReceipt, DataResponse, ListResponse, MyActivityListItem } from '@/types/api'
 
 import { request, uploadFile } from './http'
 
-export function joinActivity(activityId: number) {
-  return request<DataResponse<ActivityParticipationResult>>(
+export function createActivityParticipationOrder(activityId: number, channel: 'mock_wechat' | 'mock_alipay') {
+  return request<DataResponse<ActivityParticipationCheckout>>(
     `/activities/${activityId}/participation/`,
+    { method: 'POST', data: { channel } },
+  )
+}
+
+export function simulateActivityParticipationPayment(activityId: number) {
+  return request<DataResponse<ActivityParticipationPaymentResult>>(
+    `/activities/${activityId}/participation/simulate-payment/`,
     { method: 'POST' },
   )
 }
 
-export function cancelActivityParticipation(activityId: number) {
-  return request<void>(`/activities/${activityId}/participation/`, { method: 'DELETE' })
+export function cancelActivityParticipation(activityId: number, reason = '用户主动取消报名') {
+  return request<DataResponse<ActivityParticipationCancellationResult>>(
+    `/activities/${activityId}/participation/`,
+    { method: 'DELETE', data: { reason } },
+  )
+}
+
+export function createActivityAfterSales(activityId: number, reason: string, description: string) {
+  return request<DataResponse<ActivityAfterSalesCase>>(`/activities/${activityId}/after-sales/`, {
+    method: 'POST', data: { reason, description },
+  })
+}
+
+export function getActivityAfterSales(activityId: number) {
+  return request<{ data: { items: ActivityAfterSalesCase[] } }>(`/activities/${activityId}/after-sales/`)
+}
+
+export function cancelOrganizedActivity(activityId: number, reason: string) {
+  return request<DataResponse<{ activity_id: number; status: 'cancelled'; refund_no: string; refund_amount: number }>>(
+    `/activities/${activityId}/cancel/`, { method: 'POST', data: { reason } },
+  )
 }
 
 export function getMyActivities(options: {
@@ -21,7 +47,17 @@ export function getMyActivities(options: {
 }
 
 export function getActivityCategories() {
-  return request<{ data: { items: ActivityCategoryItem[] } }>('/activity-categories/')
+  return request<{ data: { items: ActivityCategoryItem[] } }>('/activity-categories/', { query: { city_code: '130400' } })
+}
+
+export function getActivityCopySource(activityId: number) {
+  return request<DataResponse<ActivityCopySource>>(`/activities/${activityId}/copy-source/`)
+}
+
+export function reportActivity(activityId: number, reason: string, description = '') {
+  return request<DataResponse<ActivityReportReceipt>>(`/activities/${activityId}/reports/`, {
+    method: 'POST', data: { reason, description },
+  })
 }
 
 export interface ActivityDraftPayload {
