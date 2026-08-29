@@ -1,5 +1,5 @@
 import { request, uploadFile } from './http'
-import type { DataResponse, ProviderApplication, ProviderManagedService, ProviderScheduleDay, ProviderServiceLocation, ProviderWorkbench, ServiceCategory } from '@/types/api'
+import type { DataResponse, ProviderApplication, ProviderManagedService, ProviderScheduleDay, ServiceCategory } from '@/types/api'
 
 export type ProviderApplicationDraft = Pick<
   ProviderApplication,
@@ -41,26 +41,6 @@ export const updateMyProviderService = (id: number, data: Record<string, unknown
 
 export const disableMyProviderService = (id: number) =>
   request<void>(`/providers/me/services/${id}/`, { method: 'DELETE' })
-
-export const getProviderWorkbench = () =>
-  request<DataResponse<ProviderWorkbench>>('/providers/me/workbench/')
-
-export const updateAcceptingOrders = (is_accepting_orders: boolean) =>
-  request<DataResponse<{ is_accepting_orders: boolean }>>('/providers/me/workbench/', {
-    method: 'PATCH', data: { is_accepting_orders },
-  })
-
-export const getProviderServiceLocation = () =>
-  request<DataResponse<ProviderServiceLocation>>('/providers/me/service-location/')
-
-export const updateProviderServiceLocation = (
-  data: Omit<ProviderServiceLocation, 'has_service_location' | 'longitude' | 'latitude'> & {
-    longitude: string | number
-    latitude: string | number
-  },
-) => request<DataResponse<ProviderServiceLocation>>('/providers/me/service-location/', {
-  method: 'PUT', data,
-})
 
 export const getProviderSchedule = (startDate: string, days = 7) =>
   request<DataResponse<{ start_date: string; days: ProviderScheduleDay[] }>>('/providers/me/schedule/', {

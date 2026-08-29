@@ -26,6 +26,7 @@ export interface ProviderListItem {
   birth_date: string | null
   avatar_url: string | null
   verified: boolean
+  is_online: boolean
   service_city_name: string
   bio: string
   rating: string
@@ -73,40 +74,6 @@ export interface ProviderManagedService extends ProviderServiceSummary {
   is_active: boolean
   created_at: string
   updated_at: string
-}
-
-export interface ProviderWorkbench {
-  nickname: string
-  avatar_url: string | null
-  is_accepting_orders: boolean
-  admin_order_restricted: boolean
-  admin_restriction_reason: string
-  has_service_location: boolean
-  service_city_code: string
-  service_city_name: string
-  service_location_name: string
-  service_address: string
-  max_service_radius_km: number
-  today_order_count: number
-  month_income_amount: number
-  service_count: number
-  upcoming_order: null | {
-    order_no: string
-    starts_at: string
-    ends_at: string
-    service_name: string
-  }
-}
-
-export interface ProviderServiceLocation {
-  has_service_location: boolean
-  service_city_code: string
-  service_city_name: string
-  service_location_name: string
-  service_address: string
-  longitude: string | null
-  latitude: string | null
-  max_service_radius_km: number
 }
 
 export interface ProviderSchedulePeriod {

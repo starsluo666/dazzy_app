@@ -33,7 +33,6 @@
           </view>
           <strong>{{ statusTitle }}</strong>
           <text>{{ statusText }}</text>
-          <button v-if="application?.status === 'approved'" @tap="openWorkbench">进入达人工作台</button>
         </section>
       </template>
 
@@ -128,7 +127,7 @@
           <strong>提交前请确认</strong>
           <text>• 生活照和个人资料真实完整</text>
           <text>• 未完成实名认证时可提交申请，但平台不能审核通过</text>
-          <text>• 审核通过后需配置服务、档期并主动开启接单</text>
+          <text>• 审核通过后，服务配置与接单将在达人端小程序完成</text>
         </section>
 
         <view class="agreement" role="checkbox" :aria-checked="agreed" @tap="agreed = !agreed">
@@ -213,7 +212,7 @@ const heroTitle = computed(() =>
 )
 const heroText = computed(() =>
   application.value?.status === 'approved'
-    ? '设置服务项目和价格，开始接受预约'
+    ? '达人端小程序正在准备中'
     : '完善资料并提交审核，审核通过后即可发布服务',
 )
 const statusTitle = computed(() =>
@@ -223,7 +222,7 @@ const statusTitle = computed(() =>
 )
 const statusText = computed(() =>
   application.value?.status === 'approved'
-    ? '你的达人主页已经可以对外展示。'
+    ? '达人端小程序将在后续开放，请耐心等待。'
     : application.value?.status === 'suspended'
       ? '请联系客服了解详情。'
       : '我们会尽快完成审核，结果将通过消息通知你。',
@@ -231,7 +230,6 @@ const statusText = computed(() =>
 
 function warn(title: string) { uni.showToast({ title, icon: 'none' }) }
 function goBack() { uni.navigateBack({ fail: () => uni.switchTab({ url: '/pages/profile/index' }) }) }
-function openWorkbench() { uni.redirectTo({ url: '/pages/providers/workbench' }) }
 function chooseCity(event: { detail: { value: string } }) {
   const city = cities[Number(event.detail.value)]
   if (city) {

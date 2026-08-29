@@ -123,7 +123,7 @@ const verificationLabel = computed(() => profile.value?.verification_status === 
 const providerEntry = computed(() => {
   switch (providerApplication.value?.status) {
     case 'approved':
-      return { title: '达人工作台', description: '管理服务、接单状态和可预约档期', action: '进入工作台' }
+      return { title: '达人认证已通过', description: '达人端小程序正在准备中', action: '敬请期待' }
     case 'pending':
       return { title: '达人申请审核中', description: '审核结果会在这里同步更新', action: '查看进度' }
     case 'rejected':
@@ -186,9 +186,11 @@ function openSettings() {
 }
 
 function openProviderCenter() {
-  const route = providerApplication.value?.status === 'approved'
-    ? '/pages/providers/workbench'
-    : '/pages/providers/apply'
+  if (providerApplication.value?.status === 'approved') {
+    uni.showToast({ title: '达人端小程序即将上线', icon: 'none' })
+    return
+  }
+  const route = '/pages/providers/apply'
   if (requireAuthentication(route)) uni.navigateTo({ url: route })
 }
 

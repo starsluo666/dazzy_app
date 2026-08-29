@@ -52,8 +52,6 @@ const protectedRoutes = [
   '/pages/history/index',
   '/pages/providers/apply',
   '/pages/providers/services',
-  '/pages/providers/workbench',
-  '/pages/providers/location',
   '/pages/providers/schedule',
   '/pages/providers/orders',
 ]
