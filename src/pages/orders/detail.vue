@@ -47,6 +47,9 @@
         <view class="map"><view class="roads" /><i>●</i></view>
         <view><i>▤</i><text>订单编号</text><strong class="muted">{{ order.order_no }}</strong><button aria-label="复制订单编号" @tap="copyOrderNo">▣</button></view>
         <view><i>▦</i><text>创建时间</text><strong class="muted">{{ createdLabel }}</strong></view>
+        <view v-if="order.status === 'pending_confirmation' && order.confirmation_expires_at">
+          <i>⌛</i><text>确认截止</text><strong class="muted">{{ formatDateTime(order.confirmation_expires_at) }}</strong>
+        </view>
       </section>
 
       <section class="fees panel">

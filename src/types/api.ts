@@ -454,7 +454,9 @@ export interface ProviderOrder {
   arrival_photo_uploaded_at: string | null
   service_started_at: string | null
   completion_submitted_at: string | null
+  confirmation_expires_at: string | null
   customer_confirmed_at: string | null
+  auto_confirmed_at: string | null
   created_at: string
 }
 
