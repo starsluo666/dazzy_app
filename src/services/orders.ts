@@ -91,3 +91,9 @@ export function confirmProviderOrderCompletion(orderNo: string) {
     method: 'POST',
   })
 }
+
+export function reviewProviderOrder(orderNo: string, data: { rating: number; content: string }) {
+  return request<DataResponse<ProviderOrder>>(`/provider-orders/${orderNo}/review/`, {
+    method: 'POST', data,
+  })
+}
