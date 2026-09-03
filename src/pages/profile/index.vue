@@ -20,7 +20,7 @@
         </view>
 
         <view class="header-actions">
-          <view class="header-action service-icon" role="button" aria-label="客服中心" @tap.stop="showPending('客服中心')">
+          <view class="header-action service-icon" role="button" aria-label="客服中心" @tap.stop="openSupportCenter">
             <text>⌒</text><i />
           </view>
           <view class="header-action settings-icon" role="button" aria-label="设置" @tap.stop="openSettings">
@@ -155,10 +155,10 @@ const functionEntries: FunctionEntry[] = [
   { label: '浏览记录', icon: '/static/functions/browsing-history.svg', route: '/pages/history/index' },
   { label: '我的评价', icon: '/static/functions/my-reviews.svg', route: '/pages/reviews/index' },
   { label: '常用地址', icon: '/static/functions/addresses.svg', route: '/pages/addresses/index' },
-  { label: '客服中心', icon: '/static/functions/customer-service.svg' },
+  { label: '客服中心', icon: '/static/functions/customer-service.svg', route: '/pages/support/index' },
   { label: '帮助中心', icon: '/static/functions/help-center.svg' },
-  { label: '问题反馈', icon: '/static/functions/feedback.svg' },
-  { label: '举报有奖', icon: '/static/functions/report-reward.svg' },
+  { label: '问题反馈', icon: '/static/functions/feedback.svg', route: '/pages/support/index?mode=new&caseType=consultation' },
+  { label: '举报有奖', icon: '/static/functions/report-reward.svg', route: '/pages/support/index?mode=new&caseType=report' },
 ]
 
 function showPending(feature: string) {
@@ -183,6 +183,11 @@ function openFunction(item: FunctionEntry) {
 
 function openSettings() {
   if (requireAuthentication('/pages/settings/index')) uni.navigateTo({ url: '/pages/settings/index' })
+}
+
+function openSupportCenter() {
+  const route = '/pages/support/index'
+  if (requireAuthentication(route)) uni.navigateTo({ url: route })
 }
 
 function openProviderCenter() {

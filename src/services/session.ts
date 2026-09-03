@@ -51,6 +51,7 @@ const protectedRoutes = [
   '/pages/favorites/index',
   '/pages/history/index',
   '/pages/reviews/index',
+  '/pages/support/index',
   '/pages/providers/apply',
   '/pages/providers/services',
   '/pages/providers/schedule',

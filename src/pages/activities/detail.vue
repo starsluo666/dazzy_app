@@ -92,10 +92,10 @@ import { onLoad } from '@dcloudio/uni-app'
 import { computed, ref } from 'vue'
 
 import NetworkState from '@/components/NetworkState.vue'
-import { cancelActivityParticipation, reportActivity } from '@/services/activities'
+import { cancelActivityParticipation } from '@/services/activities'
 import { getActivityDetail } from '@/services/discovery'
 import { recordActivityView } from '@/services/engagements'
-import { isAuthenticated } from '@/services/session'
+import { isAuthenticated, requireAuthentication } from '@/services/session'
 import type { ActivityDetail } from '@/types/api'
 import { formatActivityRange, formatAmount, getErrorMessage } from '@/utils/formatters'
 
@@ -184,17 +184,8 @@ function showMoreActions() {
     success: ({ tapIndex }) => {
       const selected = reasons[tapIndex]
       if (!selected || !activity.value) return
-      uni.showModal({
-        title: '举报活动', content: `确认以“${selected.label}”举报该活动？平台将在后台受理并记录处理结果。`,
-        confirmText: '提交举报', confirmColor: '#ef6d2e',
-        success: async (result) => {
-          if (!result.confirm || !activity.value) return
-          try {
-            const receipt = (await reportActivity(activity.value.id, selected.value)).data
-            uni.showModal({ title: '举报已提交', content: `举报单号：${receipt.case_no}`, showCancel: false })
-          } catch (reason) { uni.showToast({ title: getErrorMessage(reason, '举报提交失败'), icon: 'none' }) }
-        },
-      })
+      const route = `/pages/support/index?mode=new&caseType=report&targetType=activity&targetId=${activity.value.id}&targetTitle=${encodeURIComponent(activity.value.title)}&reason=${selected.value}`
+      if (requireAuthentication(route)) uni.navigateTo({ url: route })
     },
   })
 }

@@ -3,7 +3,7 @@
     <header class="page-head">
       <button aria-label="返回" @tap="goBack">‹</button>
       <text>订单详情</text>
-      <view role="button" aria-label="联系平台客服" @tap="showPending('客服')">♧ 客服</view>
+      <view role="button" aria-label="联系平台客服" @tap="openSupport()">♧ 客服</view>
     </header>
 
     <view v-if="loading" class="booking-empty">正在加载订单…</view>
@@ -83,7 +83,7 @@
           <view><strong>关键节点位置留存</strong><text>集合照会同时留存上传位置，持续定位后续接入</text></view>
           <b>›</b>
         </button>
-        <button aria-label="紧急联系客服" @tap="showPending('紧急客服')">
+        <button aria-label="紧急联系客服" @tap="openSupport('safety_risk')">
           <i>☎</i>
           <view><strong>紧急联系客服</strong><text>如遇紧急情况，请及时联系平台客服</text></view>
           <b>›</b>
@@ -119,7 +119,7 @@
     <footer v-if="order && showActions" class="detail-footer">
       <button v-if="order.status === 'pending_payment'" class="outline" @tap="cancel">取消订单</button>
       <button v-if="order.status === 'pending_payment'" class="primary" @tap="continuePay">继续支付</button>
-      <button v-else class="outline" @tap="showPending('联系客服')">联系客服</button>
+      <button v-else class="outline" @tap="openSupport()">联系客服</button>
       <button
         v-if="contactableStatuses.includes(order.status)"
         class="primary"
@@ -202,6 +202,13 @@ function formatDateTime(value: string) {
 }
 function goBack() { uni.navigateBack() }
 function showPending(name: string) { uni.showToast({ title: `${name}功能即将接入`, icon: 'none' }) }
+function openSupport(reason = 'service_quality') {
+  if (!order.value) return
+  const title = encodeURIComponent(`${order.value.service_name} · ${order.value.order_no}`)
+  uni.navigateTo({
+    url: `/pages/support/index?mode=new&caseType=complaint&targetType=provider_order&targetId=${encodeURIComponent(order.value.order_no)}&targetTitle=${title}&reason=${reason}`,
+  })
+}
 function showEvidencePending() { uni.showToast({ title: '达人上传后可在这里查看', icon: 'none' }) }
 function showLocationNotice() {
   uni.showModal({

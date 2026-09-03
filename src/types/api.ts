@@ -64,6 +64,58 @@ export interface ProviderReviewListResponse extends ListResponse<ProviderReview>
   data: ListResponse<ProviderReview>['data'] & { summary: ProviderReviewSummary }
 }
 
+export type SupportCaseType = 'consultation' | 'complaint' | 'report'
+export type SupportTargetType = 'general' | 'provider' | 'provider_order' | 'activity' | 'review'
+export type SupportCaseReason =
+  | 'service_quality'
+  | 'false_information'
+  | 'inappropriate_content'
+  | 'private_transaction'
+  | 'safety_risk'
+  | 'payment_refund'
+  | 'account_issue'
+  | 'other'
+export type SupportCaseStatus = 'pending' | 'processing' | 'reviewing' | 'resolved' | 'rejected' | 'closed'
+
+export interface SupportCaseRecord {
+  id: number
+  record_type: 'created' | 'user_reply' | 'operator_reply' | 'status_changed' | 'review_requested'
+  record_type_label: string
+  actor_name: string
+  content: string
+  from_status: string
+  to_status: string
+  created_at: string
+}
+
+export interface SupportCase {
+  public_id: string
+  case_no: string
+  case_type: SupportCaseType
+  case_type_label: string
+  target_type: SupportTargetType
+  target_type_label: string
+  target_id: string
+  target_title: string
+  target_subtitle: string
+  reason: SupportCaseReason
+  reason_label: string
+  description: string
+  attachment_urls: string[]
+  city_code: string
+  city_name: string
+  status: SupportCaseStatus
+  status_label: string
+  assignee_name: string | null
+  result_note: string
+  resolved_at: string | null
+  review_requested_at: string | null
+  review_reason: string
+  records: SupportCaseRecord[]
+  created_at: string
+  updated_at: string
+}
+
 export interface ProviderApplication {
   status: 'draft' | 'pending' | 'approved' | 'rejected' | 'suspended'
   verification_status: CurrentUser['verification_status']
