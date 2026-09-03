@@ -46,7 +46,30 @@
           <text>{{ provider.bio }}</text>
           <text>服务范围覆盖{{ provider.service_city_name }}，支持{{ provider.max_service_radius_km }}公里内预约。认真倾听你的需求，陪你轻松体验城市里的好时光。</text>
         </section>
-        <section class="reviews"><text class="section-title">用户评价</text><view class="review-preview"><view class="review-score"><strong>{{ provider.rating }}</strong><text>★★★★★</text><small>（128条评价）</small></view><view class="review-copy"><strong>小宇同学　<text>★★★★★</text></strong><text>晓晓非常热情，行程安排得很棒，拍照技术也超赞！</text><small>2周前</small></view></view></section>
+        <section class="reviews">
+          <view class="review-title-row"><text class="section-title">用户评价</text><text v-if="reviewSummary">共 {{ reviewSummary.total }} 条</text></view>
+          <view v-if="reviewsLoading" class="review-state">正在加载评价…</view>
+          <view v-else-if="reviewError" class="review-state review-state--error" role="button" @tap="loadReviews">{{ reviewError }}，点击重试</view>
+          <view v-else-if="reviewSummary && reviewSummary.total === 0" class="review-empty"><strong>还没有评价</strong><text>完成服务后，第一条真实感受会显示在这里</text></view>
+          <view v-else class="review-layout">
+            <view class="review-score">
+              <strong>{{ reviewSummary?.rating || provider.rating }}</strong><text>★★★★★</text><small>综合评分</small>
+              <view class="review-breakdown">
+                <view v-for="star in [5,4,3,2,1]" :key="star"><text>{{ star }}</text><i><b :style="{ width: `${reviewRatio(star)}%` }" /></i></view>
+              </view>
+            </view>
+            <view class="review-list">
+              <article v-for="review in reviews" :key="review.id" class="review-copy">
+                <view class="review-meta"><strong>{{ review.customer_name }}</strong><text>{{ '★'.repeat(review.rating) }}</text><small>{{ reviewDate(review.created_at) }}</small></view>
+                <text v-if="review.service_name" class="review-service">{{ review.service_name }}</text>
+                <text class="review-content">{{ review.content || '用户未填写文字评价' }}</text>
+                <view v-if="review.image_urls.length" class="review-images">
+                  <image v-for="(url, index) in review.image_urls" :key="url" :src="url" mode="aspectFill" @tap="previewReviewImages(review.image_urls, index)" />
+                </view>
+              </article>
+            </view>
+          </view>
+        </section>
       </main>
 
       <view class="action-bar dz-container">
@@ -73,10 +96,10 @@ import { computed, ref, watch } from 'vue'
 
 import NetworkState from '@/components/NetworkState.vue'
 import { createBookingDraft } from '@/services/bookingDraft'
-import { getProviderAvailability, getProviderDetail } from '@/services/discovery'
+import { getProviderAvailability, getProviderDetail, getProviderReviews } from '@/services/discovery'
 import { favoriteProvider, recordProviderView, unfavoriteProvider } from '@/services/engagements'
 import { isAuthenticated, requireAuthentication } from '@/services/session'
-import type { ProviderAvailabilitySlot, ProviderDetail, ProviderServiceSummary } from '@/types/api'
+import type { ProviderAvailabilitySlot, ProviderDetail, ProviderReview, ProviderReviewSummary, ProviderServiceSummary } from '@/types/api'
 import { formatAmount, getErrorMessage } from '@/utils/formatters'
 
 const provider = ref<ProviderDetail | null>(null)
@@ -91,6 +114,10 @@ const serviceSheetOpen = ref(false)
 const earliest = ref<ProviderAvailabilitySlot | null>(null)
 const availabilityLoading = ref(false)
 const favoriteSubmitting = ref(false)
+const reviews = ref<ProviderReview[]>([])
+const reviewSummary = ref<ProviderReviewSummary | null>(null)
+const reviewsLoading = ref(false)
+const reviewError = ref('')
 
 const heroPhotoUrl = computed(() => {
   if (provider.value?.lifestyle_photo_url && !lifestylePhotoFailed.value) {
@@ -129,6 +156,15 @@ function handleHeroPhotoError() {
 function serviceDescription(name:string){return name.includes('摄影')?'拍照打卡，创意构图，记录美好时刻':'一起出行，陪伴游玩，景点打卡'}
 function durationHint(service:ProviderServiceSummary){return service.billing_type==='hourly'?'最低2小时':`预计${Math.max(1,Math.round((service.estimated_duration_minutes||180)/60))}小时`}
 function goBack() { uni.navigateBack() }
+function reviewDate(value: string) {
+  const date = new Date(value)
+  return `${date.getFullYear()}.${String(date.getMonth() + 1).padStart(2, '0')}.${String(date.getDate()).padStart(2, '0')}`
+}
+function previewReviewImages(urls: string[], index: number) { uni.previewImage({ current: urls[index], urls }) }
+function reviewRatio(star: number) {
+  if (!reviewSummary.value?.total) return 0
+  return Math.round(((reviewSummary.value.distribution[String(star)] || 0) / reviewSummary.value.total) * 100)
+}
 function showPending(feature: string) { uni.showToast({ title: `${feature}功能即将接入`, icon: 'none' }) }
 async function toggleFavorite(){if(!provider.value||favoriteSubmitting.value)return;if(!requireAuthentication(`/pages/providers/detail?id=${publicId.value}`))return;favoriteSubmitting.value=true;try{if(provider.value.is_favorited)await unfavoriteProvider(publicId.value);else await favoriteProvider(publicId.value);provider.value.is_favorited=!provider.value.is_favorited;uni.showToast({title:provider.value.is_favorited?'收藏成功':'已取消收藏',icon:'success'})}catch(reason){uni.showToast({title:getErrorMessage(reason,'操作失败'),icon:'none'})}finally{favoriteSubmitting.value=false}}
 function openServiceSheet(){pendingServiceId.value=selectedService.value?.id||0;serviceSheetOpen.value=true}
@@ -141,12 +177,26 @@ function startBooking() {
 }
 function localDateKey(value:Date){return `${value.getFullYear()}-${String(value.getMonth()+1).padStart(2,'0')}-${String(value.getDate()).padStart(2,'0')}`}
 async function loadAvailability(){if(!provider.value||!selectedService.value)return;availabilityLoading.value=true;earliest.value=null;try{earliest.value=(await getProviderAvailability(provider.value.public_id,selectedService.value.id,selectedService.value.billing_type==='hourly'?120:undefined)).data.earliest}catch{}finally{availabilityLoading.value=false}}
+async function loadReviews() {
+  if (!publicId.value) return
+  reviewsLoading.value = true
+  reviewError.value = ''
+  try {
+    const response = (await getProviderReviews(publicId.value)).data
+    reviews.value = response.items
+    reviewSummary.value = response.summary
+  } catch (reason) {
+    reviewError.value = getErrorMessage(reason, '评价加载失败')
+  } finally {
+    reviewsLoading.value = false
+  }
+}
 async function loadDetail() {
   if (!publicId.value) return
   loading.value = true; error.value = ''
   lifestylePhotoFailed.value = false
   avatarFailed.value = false
-  try { provider.value = (await getProviderDetail(publicId.value)).data;selectedServiceId.value=provider.value.services[0]?.id||0;if(isAuthenticated())recordProviderView(publicId.value).catch(()=>{}) }
+  try { provider.value = (await getProviderDetail(publicId.value)).data;selectedServiceId.value=provider.value.services[0]?.id||0;loadReviews();if(isAuthenticated())recordProviderView(publicId.value).catch(()=>{}) }
   catch (reason) { error.value = getErrorMessage(reason) }
   finally { loading.value = false }
 }
@@ -207,6 +257,7 @@ watch(selectedServiceId,()=>loadAvailability())
 .introduction{margin-top:40rpx}
 .introduction>text:not(.section-title){display:block;margin-top:14rpx;color:$dz-text-secondary;font-size:22rpx;line-height:36rpx}
 .current-service{margin-top:8rpx}.section-heading{display:block;margin-bottom:18rpx;padding-left:14rpx;border-left:7rpx solid $dz-brand-primary;font-size:29rpx;font-weight:700}.service-summary{position:relative;display:grid;grid-template-columns:76rpx 1fr auto;grid-template-rows:96rpx 58rpx;align-items:center;width:100%;margin:0;padding:14rpx 18rpx 0;border:2rpx solid $dz-brand-primary;border-radius:20rpx;background:linear-gradient(135deg,#fff 35%,#e9fbfa);text-align:left;line-height:1.35;box-sizing:border-box}.service-summary::after,.sheet-title button::after,.sheet-service::after,.confirm-service::after{display:none}.service-summary .service-icon{width:64rpx;height:64rpx}.service-summary .service-copy{gap:6rpx;margin-left:10rpx}.service-summary .service-copy strong{font-size:27rpx}.service-summary .service-copy text{color:$dz-text-secondary;font-size:18rpx}.service-summary .service-cost strong{font-size:31rpx}.service-summary .service-cost text{padding:4rpx 8rpx;border:1rpx solid $dz-brand-primary;border-radius:8rpx;color:$dz-brand-deep;font-size:16rpx}.availability{grid-column:1/4;display:flex;align-items:center;justify-content:space-between;height:58rpx;border-top:1rpx solid rgba(24,199,198,.35);color:$dz-brand-deep;font-size:20rpx}.availability strong{font-size:21rpx}.reviews{margin-top:34rpx}.review-preview{display:grid;grid-template-columns:140rpx 1fr;gap:18rpx;margin-top:18rpx}.review-score{display:flex;flex-direction:column;align-items:center}.review-score strong{color:$dz-brand-deep;font-size:46rpx}.review-score text{color:#ffb623;font-size:19rpx;letter-spacing:1rpx}.review-score small{margin-top:5rpx;color:$dz-text-secondary;font-size:16rpx}.review-copy{position:relative;display:flex;flex-direction:column;gap:8rpx;padding:16rpx 18rpx;border-radius:16rpx;background:$dz-surface-page}.review-copy strong{font-size:19rpx}.review-copy strong text{color:$dz-brand-deep}.review-copy>text{font-size:18rpx;line-height:28rpx}.review-copy small{position:absolute;right:14rpx;top:14rpx;color:$dz-text-tertiary;font-size:15rpx}.sheet-layer{position:fixed;z-index:60;inset:0;background:rgba(15,28,32,.55)}.service-sheet{position:absolute;right:0;bottom:0;left:0;max-width:750px;margin:auto;padding:18rpx 24rpx calc(24rpx + env(safe-area-inset-bottom));border-radius:32rpx 32rpx 0 0;background:#fff;box-sizing:border-box}.sheet-handle{width:72rpx;height:7rpx;margin:0 auto 18rpx;border-radius:4rpx;background:#cbd1d3}.sheet-title{display:flex;align-items:center;justify-content:space-between}.sheet-title strong{font-size:30rpx}.sheet-title button{width:58rpx;height:58rpx;margin:0;padding:0;border:0;background:transparent;color:$dz-text-secondary;font-size:38rpx;line-height:58rpx}.sheet-services{max-height:660rpx;margin-top:15rpx}.sheet-service{display:grid;grid-template-columns:34rpx 76rpx 1fr auto;align-items:center;width:100%;min-height:126rpx;margin:0 0 14rpx;padding:14rpx;border:2rpx solid $dz-border-subtle;border-radius:18rpx;background:#fff;text-align:left;line-height:1.35;box-sizing:border-box}.sheet-service.active{border-color:$dz-brand-primary;background:linear-gradient(135deg,#fff,#e9fbfa)}.radio{display:flex;align-items:center;justify-content:center;width:28rpx;height:28rpx;border:2rpx solid #ccd4d7;border-radius:50%;color:#fff;font-size:17rpx}.active .radio{border-color:$dz-brand-primary;background:$dz-brand-primary}.sheet-icon{display:flex;align-items:center;justify-content:center;width:64rpx;height:64rpx;border-radius:50%;color:$dz-brand-deep;background:$dz-brand-soft;font-size:29rpx}.sheet-copy{display:flex;flex-direction:column;gap:8rpx;margin-left:12rpx}.sheet-copy strong{font-size:24rpx}.sheet-copy text{color:$dz-text-secondary;font-size:17rpx}.sheet-price{display:flex;flex-direction:column;align-items:flex-end;gap:10rpx}.sheet-price strong{color:$dz-price-primary;font-size:28rpx}.sheet-price small{font-size:17rpx}.sheet-price text{padding:4rpx 7rpx;border:1rpx solid $dz-brand-primary;border-radius:7rpx;color:$dz-brand-deep;font-size:15rpx}.confirm-service{height:78rpx;margin:4rpx 0 0;border:0;border-radius:39rpx;color:#fff;background:$dz-gradient-brand;font-size:28rpx;font-weight:700;line-height:78rpx}
+.review-title-row{display:flex;align-items:center;justify-content:space-between}.review-title-row>text:last-child{color:$dz-text-tertiary;font-size:19rpx}.review-layout{display:grid;grid-template-columns:128rpx 1fr;gap:18rpx;margin-top:18rpx}.review-layout .review-score{padding-top:8rpx}.review-breakdown{width:118rpx;margin-top:16rpx}.review-breakdown>view{display:flex;align-items:center;gap:6rpx;height:18rpx}.review-breakdown text{width:12rpx;color:$dz-text-tertiary;font-size:13rpx}.review-breakdown i{overflow:hidden;width:96rpx;height:5rpx;border-radius:3rpx;background:#e5eeee}.review-breakdown b{display:block;height:100%;border-radius:3rpx;background:#ffb623}.review-list{display:flex;flex-direction:column;gap:14rpx}.review-list .review-copy{position:static;gap:9rpx;padding:18rpx;border-radius:18rpx}.review-meta{display:flex;align-items:center;gap:10rpx}.review-meta strong{font-size:20rpx}.review-meta>text{color:#ffb623;font-size:17rpx;letter-spacing:1rpx}.review-meta small{position:static;margin-left:auto;color:$dz-text-tertiary;font-size:15rpx}.review-service{align-self:flex-start;padding:4rpx 9rpx;border-radius:8rpx;color:$dz-brand-deep;background:$dz-brand-soft;font-size:16rpx}.review-copy>.review-content{color:$dz-text-primary;font-size:19rpx;line-height:30rpx}.review-images{display:grid;grid-template-columns:repeat(3,1fr);gap:8rpx}.review-images image{width:100%;height:112rpx;border-radius:12rpx}.review-state,.review-empty{display:flex;align-items:center;justify-content:center;min-height:150rpx;margin-top:16rpx;border-radius:18rpx;color:$dz-text-secondary;background:$dz-surface-page;font-size:19rpx}.review-state--error{color:#d26b38}.review-empty{flex-direction:column;gap:8rpx}.review-empty strong{color:$dz-text-primary;font-size:22rpx}.review-empty text{font-size:17rpx}
 .action-bar{position:fixed;z-index:20;right:0;bottom:0;left:0;display:flex;align-items:center;gap:12rpx;height:calc(118rpx + env(safe-area-inset-bottom));padding:10rpx 24rpx env(safe-area-inset-bottom);border-radius:28rpx 28rpx 0 0;background:rgba(255,255,255,.98);box-shadow:0 -6rpx 24rpx rgba(23,33,38,.08);box-sizing:border-box}
 .action-bar button{margin:0;border:0}
 .secondary{display:flex;flex-direction:column;align-items:center;justify-content:center;width:104rpx;height:86rpx;padding:0;border:1rpx solid $dz-border-subtle!important;border-radius:18rpx;color:$dz-text-primary;background:#fff;font-size:18rpx;line-height:25rpx}

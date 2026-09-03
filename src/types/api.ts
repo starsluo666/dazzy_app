@@ -44,6 +44,26 @@ export interface ProviderDetail extends ProviderListItem {
   is_favorited: boolean
 }
 
+export interface ProviderReview {
+  id: number
+  customer_name: string
+  rating: number
+  content: string
+  service_name: string
+  image_urls: string[]
+  created_at: string
+}
+
+export interface ProviderReviewSummary {
+  rating: string
+  total: number
+  distribution: Record<string, number>
+}
+
+export interface ProviderReviewListResponse extends ListResponse<ProviderReview> {
+  data: ListResponse<ProviderReview>['data'] & { summary: ProviderReviewSummary }
+}
+
 export interface ProviderApplication {
   status: 'draft' | 'pending' | 'approved' | 'rejected' | 'suspended'
   verification_status: CurrentUser['verification_status']
@@ -457,7 +477,25 @@ export interface ProviderOrder {
   confirmation_expires_at: string | null
   customer_confirmed_at: string | null
   auto_confirmed_at: string | null
+  review: ProviderOrderReview | null
   created_at: string
+}
+
+export interface ProviderOrderReview {
+  rating: number
+  content: string
+  customer_name: string
+  image_urls: string[]
+  is_anonymous: boolean
+  created_at: string
+}
+
+export interface MyProviderOrderReview extends ProviderOrderReview {
+  order_no: string
+  provider_public_id: string
+  provider_name: string
+  service_name: string
+  is_visible: boolean
 }
 
 export interface ProviderManagedOrder extends ProviderOrder {

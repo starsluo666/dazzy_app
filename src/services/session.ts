@@ -50,6 +50,7 @@ const protectedRoutes = [
   '/pages/addresses/search',
   '/pages/favorites/index',
   '/pages/history/index',
+  '/pages/reviews/index',
   '/pages/providers/apply',
   '/pages/providers/services',
   '/pages/providers/schedule',

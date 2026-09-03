@@ -127,6 +127,10 @@
     {
       "path": "pages/history/index",
       "style": { "navigationStyle": "custom" }
+    },
+    {
+      "path": "pages/reviews/index",
+      "style": { "navigationStyle": "custom" }
     }
   ],
   "globalStyle": {

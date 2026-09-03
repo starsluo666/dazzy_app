@@ -1,4 +1,4 @@
-import type { DataResponse, ProviderManagedOrder, ProviderOrder, ProviderOrderQuote } from '@/types/api'
+import type { DataResponse, ListResponse, MyProviderOrderReview, ProviderManagedOrder, ProviderOrder, ProviderOrderQuote } from '@/types/api'
 import type { BookingDraft } from './bookingDraft'
 import { request, uploadFile } from './http'
 
@@ -92,8 +92,23 @@ export function confirmProviderOrderCompletion(orderNo: string) {
   })
 }
 
-export function reviewProviderOrder(orderNo: string, data: { rating: number; content: string }) {
+export function uploadReviewImage(filePath: string, file?: unknown) {
+  return uploadFile<DataResponse<{ id: string; url: string }>>(
+    '/media/review-images/', filePath, 'file', file,
+  )
+}
+
+export function reviewProviderOrder(
+  orderNo: string,
+  data: { rating: number; content: string; image_ids: string[]; is_anonymous: boolean },
+) {
   return request<DataResponse<ProviderOrder>>(`/provider-orders/${orderNo}/review/`, {
     method: 'POST', data,
+  })
+}
+
+export function getMyProviderOrderReviews(page = 1, pageSize = 20) {
+  return request<ListResponse<MyProviderOrderReview>>('/users/me/provider-reviews/', {
+    query: { page, page_size: pageSize },
   })
 }

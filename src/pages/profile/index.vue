@@ -153,7 +153,7 @@ const orderEntries = computed(() => [
 const functionEntries: FunctionEntry[] = [
   { label: '我的活动', icon: '/static/functions/my-activities.svg', route: '/pages/activities/mine' },
   { label: '浏览记录', icon: '/static/functions/browsing-history.svg', route: '/pages/history/index' },
-  { label: '我的评价', icon: '/static/functions/my-reviews.svg' },
+  { label: '我的评价', icon: '/static/functions/my-reviews.svg', route: '/pages/reviews/index' },
   { label: '常用地址', icon: '/static/functions/addresses.svg', route: '/pages/addresses/index' },
   { label: '客服中心', icon: '/static/functions/customer-service.svg' },
   { label: '帮助中心', icon: '/static/functions/help-center.svg' },

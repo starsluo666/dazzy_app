@@ -8,6 +8,7 @@ import type {
   ProviderDetail,
   ProviderAvailability,
   ProviderListItem,
+  ProviderReviewListResponse,
 } from '@/types/api'
 
 import { request } from './http'
@@ -53,6 +54,12 @@ export function getHomeDiscovery() {
 
 export function getProviderDetail(publicId: string) {
   return request<DataResponse<ProviderDetail>>(`/providers/${publicId}/`)
+}
+
+export function getProviderReviews(publicId: string, page = 1, pageSize = 3, rating?: number) {
+  return request<ProviderReviewListResponse>(`/providers/${publicId}/reviews/`, {
+    query: { page, page_size: pageSize, rating }, skipAuth: true,
+  })
 }
 
 export function getProviderAvailability(
