@@ -20,6 +20,10 @@
         </view>
 
         <view class="header-actions">
+          <view class="header-action notification-icon" role="button" :aria-label="unreadCount ? `通知中心，${unreadCount}条未读` : '通知中心'" @tap.stop="openNotifications">
+            <image src="/static/notifications/system.svg" mode="aspectFit" aria-hidden="true" />
+            <i v-if="unreadCount"><b>{{ unreadCount > 99 ? '99+' : unreadCount }}</b></i>
+          </view>
           <view class="header-action service-icon" role="button" aria-label="客服中心" @tap.stop="openSupportCenter">
             <text>⌒</text><i />
           </view>
@@ -107,6 +111,7 @@ import { computed, ref } from 'vue'
 import DazzyTabBar from '@/components/DazzyTabBar.vue'
 import { getCurrentUser, getCurrentUserOverview } from '@/services/auth'
 import { getProviderApplication } from '@/services/providers'
+import { getNotificationSummary } from '@/services/notifications'
 import { isAuthenticated, requireAuthentication } from '@/services/session'
 import type { CurrentUser, CurrentUserOverview, ProviderApplication } from '@/types/api'
 
@@ -117,6 +122,7 @@ const profile = ref<CurrentUser | null>(null)
 const overview = ref<CurrentUserOverview | null>(null)
 const providerApplication = ref<ProviderApplication | null>(null)
 const avatarFailed = ref(false)
+const unreadCount = ref(0)
 const displayName = computed(() => profile.value?.nickname || '登录 / 注册')
 const maskedPhone = computed(() => profile.value?.phone.replace(/(\d{3})\d{4}(\d{4})/, '$1****$2') || '')
 const verificationLabel = computed(() => profile.value?.verification_status === 'verified' ? '实名认证' : '未实名认证')
@@ -190,6 +196,11 @@ function openSupportCenter() {
   if (requireAuthentication(route)) uni.navigateTo({ url: route })
 }
 
+function openNotifications() {
+  const route = '/pages/messages/index'
+  if (requireAuthentication(route)) uni.navigateTo({ url: route })
+}
+
 function openProviderCenter() {
   if (providerApplication.value?.status === 'approved') {
     uni.showToast({ title: '达人端小程序即将上线', icon: 'none' })
@@ -208,15 +219,18 @@ async function loadProfile() {
     profile.value = null
     overview.value = null
     providerApplication.value = null
+    unreadCount.value = 0
     return
   }
   try {
-    const [profileResponse, overviewResponse] = await Promise.all([
+    const [profileResponse, overviewResponse, notificationResponse] = await Promise.all([
       getCurrentUser(),
       getCurrentUserOverview(),
+      getNotificationSummary().catch(() => null),
     ])
     profile.value = profileResponse.data
     overview.value = overviewResponse.data
+    unreadCount.value = notificationResponse?.data.unread || 0
     try {
       providerApplication.value = (await getProviderApplication()).data
     } catch {
@@ -226,6 +240,7 @@ async function loadProfile() {
     profile.value = null
     overview.value = null
     providerApplication.value = null
+    unreadCount.value = 0
   }
 }
 
@@ -351,6 +366,10 @@ onShow(loadProfile)
 }
 
 .settings-icon text { font-size: 43rpx; line-height: 1; }
+.notification-icon { position:relative; }
+.notification-icon image { width:42rpx; height:42rpx; }
+.notification-icon i { position:absolute; right:-10rpx; top:-7rpx; display:flex; align-items:center; justify-content:center; min-width:25rpx; height:25rpx; padding:0 5rpx; border:3rpx solid #f3fdfe; border-radius:15rpx; color:#fff; background:#ff4141; box-sizing:border-box; font-style:normal; }
+.notification-icon i b { font-size:15rpx; line-height:1; }
 .service-icon { position: relative; font-size: 36rpx; font-weight: 700; }
 .service-icon text { transform: rotate(180deg); }
 .service-icon::before,

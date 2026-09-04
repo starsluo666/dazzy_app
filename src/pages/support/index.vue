@@ -147,6 +147,7 @@ const submitting = ref(false)
 const uploading = ref(false)
 const uploads = ref<UploadItem[]>([])
 const messageText = ref('')
+const pendingCaseNo = ref('')
 const routePrefill = reactive({
   caseType: 'consultation' as SupportCaseType,
   targetType: 'general' as SupportTargetType,
@@ -237,6 +238,13 @@ async function loadCases() {
   catch (reason) { error.value = getErrorMessage(reason, '工单加载失败') }
   finally { loading.value = false }
 }
+async function loadPage() {
+  await loadCases()
+  if (!pendingCaseNo.value) return
+  try { selected.value = (await getSupportCase(pendingCaseNo.value)).data }
+  catch (reason) { uni.showToast({ title: getErrorMessage(reason, '工单详情加载失败'), icon: 'none' }) }
+  finally { pendingCaseNo.value = '' }
+}
 async function openDetail(item: SupportCase) {
   selected.value = item
   try { selected.value = (await getSupportCase(item.case_no)).data }
@@ -318,9 +326,10 @@ onLoad((query) => {
   if (typeof query?.targetId === 'string') routePrefill.targetId = query.targetId
   if (typeof query?.targetTitle === 'string') routePrefill.targetTitle = decodeURIComponent(query.targetTitle)
   if (typeof query?.reason === 'string' && allowedReasons.includes(query.reason as SupportCaseReason)) routePrefill.reason = query.reason as SupportCaseReason
+  if (typeof query?.caseNo === 'string') pendingCaseNo.value = query.caseNo
   if (query?.mode === 'new') openCreate(routePrefill.caseType)
 })
-onShow(loadCases)
+onShow(loadPage)
 </script>
 
 <style lang="scss" scoped>

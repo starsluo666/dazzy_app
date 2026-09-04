@@ -116,6 +116,62 @@ export interface SupportCase {
   updated_at: string
 }
 
+export type NotificationCategory = 'support' | 'order' | 'activity' | 'system'
+
+export interface UserNotification {
+  public_id: string
+  category: NotificationCategory
+  category_label: string
+  event_type:
+    | 'support_reply'
+    | 'support_result'
+    | 'support_review_result'
+    | 'order_payment_success'
+    | 'order_accepted'
+    | 'order_pending_support'
+    | 'order_departed'
+    | 'order_started'
+    | 'order_completion_submitted'
+    | 'order_auto_confirmed'
+    | 'order_after_sales_started'
+    | 'order_after_sales_result'
+    | 'activity_publish_submitted'
+    | 'activity_review_result'
+    | 'activity_signup_success'
+    | 'activity_formed'
+    | 'activity_refund_completed'
+    | 'activity_cancelled'
+    | 'activity_failed_to_form'
+    | 'activity_started'
+    | 'activity_completed'
+    | 'activity_after_sales_result'
+    | 'activity_settled'
+    | 'provider_application_result'
+    | 'provider_status_changed'
+    | 'provider_credit_changed'
+  event_type_label: string
+  title: string
+  content: string
+  target_type: string
+  target_id: string
+  target_title: string
+  action_text: string
+  action_url: string
+  is_read: boolean
+  read_at: string | null
+  created_at: string
+}
+
+export interface NotificationSummary {
+  total: number
+  unread: number
+  category_unread: Record<NotificationCategory, number>
+}
+
+export interface NotificationListResponse extends ListResponse<UserNotification> {
+  data: ListResponse<UserNotification>['data'] & { summary: NotificationSummary }
+}
+
 export interface ProviderApplication {
   status: 'draft' | 'pending' | 'approved' | 'rejected' | 'suspended'
   verification_status: CurrentUser['verification_status']
