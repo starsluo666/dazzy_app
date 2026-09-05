@@ -29,18 +29,6 @@
       "style": { "navigationStyle": "custom" }
     },
     {
-      "path": "pages/providers/services",
-      "style": { "navigationStyle": "custom" }
-    },
-    {
-      "path": "pages/providers/schedule",
-      "style": { "navigationStyle": "custom" }
-    },
-    {
-      "path": "pages/providers/orders",
-      "style": { "navigationStyle": "custom" }
-    },
-    {
       "path": "pages/booking/confirm",
       "style": { "navigationStyle": "custom" }
     },

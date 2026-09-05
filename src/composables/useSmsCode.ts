@@ -15,7 +15,9 @@ export function useSmsCode(purpose: SmsPurpose) {
       const response = await sendSmsCode(phone, purpose)
       seconds.value = response.data.retry_after
       const debugCode = response.data.debug_code
-      if (debugCode) uni.showToast({ title: `测试验证码：${debugCode}`, icon: 'none', duration: 3000 })
+      if (import.meta.env.DEV && debugCode) {
+        uni.showToast({ title: `测试验证码：${debugCode}`, icon: 'none', duration: 3000 })
+      }
       timer = setInterval(() => {
         seconds.value -= 1
         if (seconds.value <= 0 && timer) {

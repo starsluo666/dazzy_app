@@ -30,7 +30,10 @@ export function clearSession() {
 }
 
 export function isAuthenticated(): boolean {
-  return Boolean(getAccessToken() || import.meta.env.VITE_DEMO_USER_PUBLIC_ID)
+  return Boolean(
+    getAccessToken()
+    || (import.meta.env.DEV && import.meta.env.VITE_DEMO_USER_PUBLIC_ID),
+  )
 }
 
 const protectedRoutes = [
@@ -53,12 +56,20 @@ const protectedRoutes = [
   '/pages/reviews/index',
   '/pages/support/index',
   '/pages/providers/apply',
-  '/pages/providers/services',
-  '/pages/providers/schedule',
-  '/pages/providers/orders',
 ]
 
 let redirectingToLogin = false
+
+export function handleSessionExpired() {
+  const returnUrl = currentPageUrl()
+  clearSession()
+  if (returnUrl.startsWith('/pages/auth/') || redirectingToLogin) return
+  redirectingToLogin = true
+  uni.reLaunch({
+    url: loginUrl(returnUrl),
+    complete: () => setTimeout(() => { redirectingToLogin = false }, 300),
+  })
+}
 
 function normalizeUrl(url: string): string {
   return url.startsWith('/') ? url : `/${url}`
