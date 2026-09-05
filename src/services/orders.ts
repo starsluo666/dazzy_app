@@ -1,4 +1,4 @@
-import type { DataResponse, ListResponse, MyProviderOrderReview, ProviderManagedOrder, ProviderOrder, ProviderOrderQuote } from '@/types/api'
+import type { DataResponse, ListResponse, MyProviderOrderReview, ProviderManagedOrder, ProviderOrder, ProviderOrderAfterSalesCase, ProviderOrderAfterSalesCreateType, ProviderOrderQuote } from '@/types/api'
 import type { BookingDraft } from './bookingDraft'
 import { request, uploadFile } from './http'
 
@@ -31,6 +31,33 @@ export function getProviderOrder(orderNo: string) {
 
 export function getProviderOrders() {
   return request<{ data: { items: ProviderOrder[] } }>('/provider-orders/')
+}
+
+export function getProviderOrderAfterSales(orderNo: string) {
+  return request<{ data: { items: ProviderOrderAfterSalesCase[] } }>(
+    `/provider-orders/${encodeURIComponent(orderNo)}/after-sales/`,
+  )
+}
+
+export function createProviderOrderAfterSales(
+  orderNo: string,
+  data: {
+    case_type: ProviderOrderAfterSalesCreateType
+    requested_amount: number
+    reason: string
+    evidence_asset_ids: string[]
+  },
+) {
+  return request<DataResponse<ProviderOrderAfterSalesCase>>(
+    `/provider-orders/${encodeURIComponent(orderNo)}/after-sales/`,
+    { method: 'POST', data },
+  )
+}
+
+export function uploadProviderOrderAfterSalesEvidence(filePath: string, file?: unknown) {
+  return uploadFile<DataResponse<{ id: string; url: string }>>(
+    '/media/support-attachments/', filePath, 'file', file,
+  )
 }
 
 export function cancelProviderOrder(orderNo: string) {

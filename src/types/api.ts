@@ -586,8 +586,80 @@ export interface ProviderOrder {
   customer_confirmed_at: string | null
   auto_confirmed_at: string | null
   review: ProviderOrderReview | null
+  payment_order: ProviderOrderPaymentSummary | null
+  refund_orders: ProviderOrderRefundSummary[]
+  settlement: ProviderOrderSettlementSummary | null
+  after_sales: ProviderOrderAfterSalesSummary | null
   created_at: string
 }
+
+export interface ProviderOrderPaymentSummary {
+  payment_no: string
+  channel: string
+  channel_label: string
+  status: 'pending_payment' | 'paid' | 'closed' | 'partially_refunded' | 'refunded'
+  status_label: string
+  payable_amount: number
+  paid_at: string | null
+  closed_at: string | null
+}
+
+export interface ProviderOrderRefundSummary {
+  refund_no: string
+  status: 'pending' | 'processing' | 'succeeded' | 'failed'
+  status_label: string
+  refund_amount: number
+  reason: string
+  requested_at: string
+  refunded_at: string | null
+}
+
+export interface ProviderOrderSettlementSummary {
+  settlement_no: string
+  status: 'risk_frozen' | 'dispute_frozen' | 'settled' | 'cancelled'
+  status_label: string
+  platform_commission_amount: number
+  provider_settlement_amount: number
+  freeze_until: string
+  settled_at: string | null
+}
+
+export interface ProviderOrderAfterSalesSummary {
+  case_no: string
+  case_type: string
+  case_type_label: string
+  status: 'pending' | 'processing' | 'approved' | 'refunded' | 'rejected'
+  status_label: string
+  requested_amount: number
+  approved_amount: number | null
+  result_note: string
+  created_at: string
+  updated_at: string
+  refund_no: string | null
+  refund_status: 'pending' | 'processing' | 'succeeded' | 'failed' | null
+  refund_status_label: string | null
+  refund_amount: number | null
+  refunded_at: string | null
+}
+
+export interface ProviderOrderAfterSalesCase {
+  case_no: string
+  case_type: 'refund' | 'service_dispute' | 'provider_cancel' | 'other'
+  case_type_label: string
+  status: 'pending' | 'processing' | 'approved' | 'refunded' | 'rejected'
+  status_label: string
+  requested_amount: number
+  approved_amount: number | null
+  reason: string
+  evidence_urls: string[]
+  result_note: string
+  reviewed_at: string | null
+  refund_order: ProviderOrderRefundSummary | null
+  created_at: string
+  updated_at: string
+}
+
+export type ProviderOrderAfterSalesCreateType = 'refund' | 'service_dispute' | 'other'
 
 export interface ProviderOrderReview {
   rating: number

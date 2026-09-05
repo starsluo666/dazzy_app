@@ -61,6 +61,10 @@
       "style": { "navigationStyle": "custom" }
     },
     {
+      "path": "pages/orders/after-sales",
+      "style": { "navigationStyle": "custom" }
+    },
+    {
       "path": "pages/activities/index",
       "style": { "navigationStyle": "custom" }
     },
