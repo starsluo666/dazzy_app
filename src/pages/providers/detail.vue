@@ -26,7 +26,10 @@
             <text class="name">{{ provider.nickname }}</text>
             <text v-if="genderSymbol" class="gender">{{ genderSymbol }}</text><text v-if="age" class="age">{{ age }}岁</text>
           </view>
-          <view class="certifications"><text v-if="provider.verified">♙ 实名认证</text></view>
+          <view class="certifications">
+            <text v-if="provider.verified">♙ 实名认证</text>
+            <text class="presence" :class="{ offline: !provider.is_online }"><i />{{ provider.is_online ? '在线' : '离线' }}</text>
+          </view>
           <view class="rating-row"><text class="stars">★★★★★</text><strong>{{ provider.rating }}分</strong><i /><text>服务{{ provider.service_count }}次</text></view>
           <view class="tags"><text v-for="tag in profileTags" :key="tag">{{ tag }}</text></view>
         </view>
@@ -37,7 +40,7 @@
             <view class="service-icon">✈</view>
             <view class="service-copy"><strong>{{ selectedService.category }}</strong><text>{{ serviceDescription(selectedService.category) }}</text></view>
             <view class="service-cost"><strong>¥{{ money(selectedService.price_amount) }}<small>{{ selectedService.billing_type==='hourly'?'/小时':'/次' }}</small></strong><text>{{ durationHint(selectedService) }}</text></view>
-            <view class="availability" @tap.stop="openServiceSheet"><text>◷　最早可约：<strong>{{ availabilityLoading?'查询中…':earliestSlot?`${earliestSlot.label} ${earliestSlot.time}`:'暂无档期' }}</strong></text><text>选择服务　›</text></view>
+            <view class="availability" @tap.stop="openServiceSheet"><text>◷　最早可约：<strong>{{ !provider.is_online?'达人当前离线':availabilityLoading?'查询中…':earliestSlot?`${earliestSlot.label} ${earliestSlot.time}`:'暂无档期' }}</strong></text><text>选择服务　›</text></view>
           </button>
         </section>
 
@@ -76,7 +79,7 @@
       <view class="action-bar dz-container">
         <button class="secondary" :disabled="favoriteSubmitting" hover-class="button--pressed" @tap="toggleFavorite"><text class="action-icon">{{ provider.is_favorited?'★':'☆' }}</text><text>{{ provider.is_favorited?'已收藏':'收藏' }}</text></button>
         <button class="secondary" hover-class="button--pressed" @tap="showPending('私信')"><text class="action-icon">◌</text><text>私信</text></button>
-        <button class="primary" hover-class="button--pressed" @tap="startBooking">立即预约</button>
+        <button class="primary" :disabled="!provider.is_online" hover-class="button--pressed" @tap="startBooking">{{ provider.is_online ? '立即预约' : '离线不可预约' }}</button>
       </view>
       <view v-if="serviceSheetOpen" class="sheet-layer" @tap="serviceSheetOpen=false">
         <section class="service-sheet" @tap.stop>
@@ -187,13 +190,14 @@ async function toggleFavorite(){if(!provider.value||favoriteSubmitting.value)ret
 function openServiceSheet(){pendingServiceId.value=selectedService.value?.id||0;serviceSheetOpen.value=true}
 function confirmService(){selectedServiceId.value=pendingServiceId.value;serviceSheetOpen.value=false}
 function startBooking() {
+  if (provider.value && !provider.value.is_online) { uni.showToast({title:'达人当前离线，暂时无法预约',icon:'none'});return }
   if (!provider.value || !selectedService.value || !earliestSlot.value) { uni.showToast({title:'当前暂无可预约时间',icon:'none'});return }
   const today=new Date();const target=new Date(`${earliestSlot.value.date}T00:00:00`);const offset=Math.round((target.getTime()-new Date(today.getFullYear(),today.getMonth(),today.getDate()).getTime())/86400000)
   createBookingDraft(provider.value, selectedService.value, offset, earliestSlot.value.time)
   uni.navigateTo({ url: '/pages/booking/confirm' })
 }
 function localDateKey(value:Date){return `${value.getFullYear()}-${String(value.getMonth()+1).padStart(2,'0')}-${String(value.getDate()).padStart(2,'0')}`}
-async function loadAvailability(){if(!provider.value||!selectedService.value)return;availabilityLoading.value=true;earliest.value=null;try{earliest.value=(await getProviderAvailability(provider.value.public_id,selectedService.value.id,selectedService.value.billing_type==='hourly'?120:undefined)).data.earliest}catch{}finally{availabilityLoading.value=false}}
+async function loadAvailability(){if(!provider.value||!selectedService.value)return;earliest.value=null;if(!provider.value.is_online)return;availabilityLoading.value=true;try{earliest.value=(await getProviderAvailability(provider.value.public_id,selectedService.value.id,selectedService.value.billing_type==='hourly'?120:undefined)).data.earliest}catch{}finally{availabilityLoading.value=false}}
 async function loadReviews() {
   if (!publicId.value) return
   reviewsLoading.value = true
@@ -256,6 +260,7 @@ watch(selectedServiceId,()=>loadAvailability())
 .age{color:$dz-text-secondary;font-size:24rpx}
 .certifications{display:flex;gap:12rpx;margin-top:12rpx}
 .certifications text{padding:5rpx 11rpx;border:1rpx solid $dz-brand-primary;border-radius:8rpx;color:$dz-brand-deep;background:$dz-brand-soft;font-size:18rpx}
+.certifications .presence{display:flex;align-items:center;gap:6rpx;border-color:#bcebd7;color:#12834f;background:#f0fbf5}.certifications .presence i{width:10rpx;height:10rpx;border-radius:50%;background:#16bd62}.certifications .presence.offline{border-color:#dfe4e6;color:#657177;background:#f5f6f7}.certifications .presence.offline i{background:#9aa4aa}
 .rating-row{display:flex;align-items:center;gap:13rpx;margin-top:20rpx;margin-left:-180rpx;color:$dz-text-primary;font-size:23rpx}
 .stars{overflow:hidden;width:148rpx;color:#ffb623;font-size:25rpx;letter-spacing:3rpx;white-space:nowrap}
 .rating-row strong{font-size:24rpx}
@@ -280,6 +285,7 @@ watch(selectedServiceId,()=>loadAvailability())
 .secondary{display:flex;flex-direction:column;align-items:center;justify-content:center;width:104rpx;height:86rpx;padding:0;border:1rpx solid $dz-border-subtle!important;border-radius:18rpx;color:$dz-text-primary;background:#fff;font-size:18rpx;line-height:25rpx}
 .action-icon{font-size:32rpx}
 .primary{flex:1;height:86rpx;border-radius:43rpx;color:#fff;background:$dz-gradient-brand;font-size:29rpx;font-weight:700}
+.primary[disabled]{color:#7b858a;background:#e8ecee}
 .detail-state{min-height:500rpx}
 @media screen and (orientation:landscape) and (max-height:600px){.detail-page{padding-bottom:84px}
 .hero{height:220px}

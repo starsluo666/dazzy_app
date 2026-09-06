@@ -49,7 +49,7 @@
         <view class="photo">
           <image v-if="item.avatar_url" :src="item.avatar_url" mode="aspectFill" />
           <text v-else class="photo-fallback">{{ item.nickname.slice(0, 1) }}</text>
-          <text class="online"><i />在线</text>
+          <text class="online" :class="{ offline: !item.is_online }"><i />{{ item.is_online ? '在线' : '离线' }}</text>
         </view>
 
         <view class="body">
@@ -65,7 +65,13 @@
           <view class="tags"><text>{{ serviceTag(item) }}</text><text>{{ personalityTag(item) }}</text></view>
           <view class="foot">
             <text class="price">¥{{ formatPrice(item) }}<small>/小时</small></text>
-            <view class="book" role="button" @tap.stop="bookProvider(item)">预约</view>
+            <view
+              class="book"
+              :class="{ disabled: !item.is_online }"
+              role="button"
+              :aria-disabled="!item.is_online"
+              @tap.stop="bookProvider(item)"
+            >{{ item.is_online ? '预约' : '不可预约' }}</view>
           </view>
         </view>
       </view>
@@ -166,6 +172,10 @@ function openDetail(publicId: string) {
 }
 
 function bookProvider(item: ProviderListItem) {
+  if (!item.is_online) {
+    uni.showToast({ title: '达人当前离线，暂时无法预约', icon: 'none' })
+    return
+  }
   openDetail(item.public_id)
 }
 
@@ -221,6 +231,8 @@ button::after { display:none; }
 .photo-fallback { font-size:64rpx; }
 .online { position:absolute; left:12rpx; bottom:10rpx; padding:5rpx 12rpx; border-radius:18rpx; color:#1f292d; background:rgba(255,255,255,.88); font-size:18rpx; font-weight:500; }
 .online i { display:inline-block; width:13rpx; height:13rpx; margin-right:7rpx; border-radius:50%; background:#16bd62; }
+.online.offline { color:#667177; }
+.online.offline i { background:#9aa4aa; }
 .favorite { position:absolute; right:10rpx; top:8rpx; color:#fff; font-size:50rpx; line-height:50rpx; text-shadow:0 2rpx 5rpx rgba(0,0,0,.35); }
 .body { padding:13rpx 14rpx 15rpx; }
 .name-row,.profile-row,.foot { display:flex; align-items:center; justify-content:space-between; }
@@ -235,6 +247,7 @@ button::after { display:none; }
 .price { color:#ff501e; font-size:30rpx; font-weight:500; }
 .price small { font-size:17rpx; font-weight:400; }
 .book { display:flex; align-items:center; justify-content:center; min-width:86rpx; height:48rpx; border-radius:25rpx; color:#fff; background:$dz-gradient-brand; font-size:22rpx; font-weight:700; }
+.book.disabled { min-width:110rpx; color:#7b858a; background:#edf0f1; font-size:19rpx; }
 
 @media screen and (min-width:480px) {
   .photo { height:276rpx; }

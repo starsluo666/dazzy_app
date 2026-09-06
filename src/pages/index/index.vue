@@ -58,7 +58,7 @@
         />
       </view>
       <view v-else-if="providerError" class="error-block" @tap="loadDiscovery">{{ providerError }}，点击重试</view>
-      <view v-else-if="!loading" class="empty-block">附近暂时没有可预约达人</view>
+      <view v-else-if="!loading" class="empty-block">附近暂时没有达人</view>
 
       <view class="section-head activity-head"><text>附近活动</text><text class="more" @tap="openActivities()">更多 <i>›</i></text></view>
       <view v-if="activityError" class="error-block" @tap="loadDiscovery">{{ activityError }}，点击重试</view>

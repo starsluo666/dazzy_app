@@ -4,7 +4,7 @@
       <image v-if="item.avatar_url" class="provider-image" :src="item.avatar_url" mode="aspectFill" />
       <view v-else class="provider-fallback">{{ item.nickname.slice(0, 1) }}</view>
       <view class="photo-gradient" />
-      <view class="availability" :class="{ offline: item.availability_status !== 'available' }"><view class="availability-dot" /><text>{{ availabilityLabel }}</text></view>
+      <view class="availability" :class="{ offline: !item.is_online }"><view class="availability-dot" /><text>{{ availabilityLabel }}</text></view>
     </view>
 
     <view class="provider-body">
@@ -29,7 +29,7 @@ import type { HomeProviderListItem } from '@/types/api'
 const props = defineProps<{ item: HomeProviderListItem }>()
 defineEmits<{ select: [id: string] }>()
 
-const availabilityLabel = computed(() => props.item.availability_status === 'available' ? '在线' : '休息中')
+const availabilityLabel = computed(() => props.item.is_online ? '在线' : '离线')
 const serviceName = computed(() => {
   const service = props.item.services[0]
   const labels: Record<string, string> = {
