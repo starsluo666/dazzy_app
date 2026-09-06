@@ -210,9 +210,9 @@ async function cancelParticipation() {
     const refund = result.refund
     await loadDetail(false)
     uni.showModal({
-      title: refund ? '取消与退款已完成' : '报名已取消',
+      title: refund ? '退款申请已提交' : '报名已取消',
       content: refund
-        ? `退款 ¥${money(refund.refund_amount)}（AA本金 ¥${money(refund.principal_refund_amount)}，服务费 ¥${money(refund.service_fee_refund_amount)}）。${refund.retained_principal_amount ? `按规则扣除AA本金 ¥${money(refund.retained_principal_amount)}。` : ''}`
+        ? `预计原路退回 ¥${money(refund.refund_amount)}（AA本金 ¥${money(refund.principal_refund_amount)}，服务费 ¥${money(refund.service_fee_refund_amount)}）。${refund.retained_principal_amount ? `按规则扣除AA本金 ¥${money(refund.retained_principal_amount)}。` : ''}退款结果会通过消息通知。`
         : '待支付报名单已关闭，名额已经释放。',
       showCancel: false,
     })

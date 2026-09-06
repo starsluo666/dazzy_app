@@ -332,6 +332,7 @@ export interface ActivityParticipationRefundOrder {
   retained_principal_destination: 'none' | 'organizer' | 'platform'
   retained_principal_destination_label: string
   reason: string
+  failure_reason: string
   requested_at: string
   refunded_at: string | null
 }
@@ -444,8 +445,10 @@ export interface ActivityPublishOrder {
   aa_principal_amount: number
   platform_service_fee_amount: number
   payable_amount: number
-  status: 'pending_payment' | 'paid' | 'cancelled' | 'refunded'
+  status: 'pending_payment' | 'paid' | 'cancelled' | 'partially_refunded' | 'refunded'
+  expires_at: string
   paid_at: string | null
+  closed_at: string | null
 }
 
 export interface MyActivityListItem extends ActivityListItem {
