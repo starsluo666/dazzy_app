@@ -44,6 +44,7 @@ const protectedRoutes = [
   '/pages/orders/detail',
   '/pages/activities/mine',
   '/pages/activities/publish-payment',
+  '/pages/activities/participation-payment',
   '/pages/publish/index',
   '/pages/messages/index',
   '/pages/settings/index',
