@@ -46,8 +46,8 @@ export function getMyActivities(options: {
   return request<ListResponse<MyActivityListItem>>('/activities/mine/', { query: options })
 }
 
-export function getActivityCategories() {
-  return request<{ data: { items: ActivityCategoryItem[] } }>('/activity-categories/', { query: { city_code: '130400' } })
+export function getActivityCategories(cityCode = '130400') {
+  return request<{ data: { items: ActivityCategoryItem[] } }>('/activity-categories/', { query: { city_code: cityCode } })
 }
 
 export function getActivityCopySource(activityId: number) {

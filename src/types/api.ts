@@ -196,28 +196,6 @@ export interface ServiceCategory {
   slug: string
 }
 
-export interface ProviderManagedService extends ProviderServiceSummary {
-  category_id: number
-  description: string
-  is_active: boolean
-  created_at: string
-  updated_at: string
-}
-
-export interface ProviderSchedulePeriod {
-  id: string | null
-  source: 'weekly' | 'date' | 'order'
-  starts_at: string
-  ends_at: string
-  status: 'available' | 'booked'
-}
-
-export interface ProviderScheduleDay {
-  date: string
-  is_closed: boolean
-  periods: ProviderSchedulePeriod[]
-}
-
 export interface ProviderAvailabilitySlot {
   starts_at: string
   ends_at: string
@@ -469,6 +447,7 @@ export interface LocationItem {
   name: string
   address: string
   city_name: string
+  city_code?: string
   district_name?: string
   contact_name?: string
   contact_gender?: 'mr' | 'ms' | ''
@@ -679,9 +658,4 @@ export interface MyProviderOrderReview extends ProviderOrderReview {
   provider_name: string
   service_name: string
   is_visible: boolean
-}
-
-export interface ProviderManagedOrder extends ProviderOrder {
-  customer_name: string
-  acceptance_expires_at: string | null
 }
