@@ -22,6 +22,7 @@ import { computed } from 'vue'
 
 import type { HomeActivityListItem } from '@/types/api'
 import { formatAmount } from '@/utils/formatters'
+import { businessClock, businessDateKey, businessDateKeyAfter, businessTimeParts } from '@/utils/businessTime'
 
 const props = defineProps<{ items: HomeActivityListItem[] }>()
 defineEmits<{ select: [id: number] }>()
@@ -29,14 +30,12 @@ defineEmits<{ select: [id: number] }>()
 const item = computed(() => props.items[0])
 
 function homeActivityTime(value: string) {
-  const date = new Date(value)
-  const today = new Date()
-  const tomorrow = new Date(today)
-  tomorrow.setDate(today.getDate() + 1)
-  const time = `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`
-  if (date.toDateString() === today.toDateString()) return `今天 ${time}`
-  if (date.toDateString() === tomorrow.toDateString()) return `明天 ${time}`
-  return `${date.getMonth() + 1}月${date.getDate()}日 ${time}`
+  const key = businessDateKey(value)
+  const parts = businessTimeParts(value)
+  const time = businessClock(value)
+  if (key === businessDateKey()) return `今天 ${time}`
+  if (key === businessDateKeyAfter(1)) return `明天 ${time}`
+  return `${parts.month}月${parts.day}日 ${time}`
 }
 </script>
 

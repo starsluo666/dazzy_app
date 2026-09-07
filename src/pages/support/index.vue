@@ -132,7 +132,7 @@ import {
   uploadSupportAttachment,
 } from '@/services/support'
 import type { SupportCase, SupportCaseReason, SupportCaseStatus, SupportCaseType, SupportTargetType } from '@/types/api'
-import { getErrorMessage } from '@/utils/formatters'
+import { formatBusinessDateTime, getErrorMessage } from '@/utils/formatters'
 
 type UploadItem = { id: string; url: string }
 type SheetMode = '' | 'create' | 'reply' | 'review'
@@ -211,9 +211,7 @@ function targetTypeLabel(type: SupportTargetType) {
   return ({ general: '平台服务', provider: '达人', provider_order: '达人订单', activity: '活动', review: '用户评价' } as Record<SupportTargetType, string>)[type]
 }
 function formatDateTime(value: string) {
-  const date = new Date(value)
-  const pad = (part: number) => String(part).padStart(2, '0')
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`
+  return formatBusinessDateTime(value)
 }
 function latestRecord(item: SupportCase) { return item.records[item.records.length - 1] }
 function goBack() {

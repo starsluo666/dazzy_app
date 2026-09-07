@@ -6,8 +6,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'; import { onLoad } from '@dcloudio/uni-app'; import { getProviderOrder } from '@/services/orders'; import type { ProviderOrder } from '@/types/api'; import { formatAmount, getErrorMessage } from '@/utils/formatters'
-const order=ref<ProviderOrder|null>(null),error=ref(''),orderNo=ref('');const money=formatAmount;const timeLabel=computed(()=>order.value?`${new Date(order.value.starts_at).toLocaleString('zh-CN',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false})}—${new Date(order.value.ends_at).toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit',hour12:false})}`:'');const addressLabel=computed(()=>order.value?[order.value.meeting_location_name,order.value.meeting_address].filter((value,index,values)=>value&&values.indexOf(value)===index).join('，'):'')
+import { computed, ref } from 'vue'; import { onLoad } from '@dcloudio/uni-app'; import { getProviderOrder } from '@/services/orders'; import type { ProviderOrder } from '@/types/api'; import { formatAmount, formatOrderTimeRange, getErrorMessage } from '@/utils/formatters'
+const order=ref<ProviderOrder|null>(null),error=ref(''),orderNo=ref('');const money=formatAmount;const timeLabel=computed(()=>order.value?formatOrderTimeRange(order.value.starts_at,order.value.ends_at):'');const addressLabel=computed(()=>order.value?[order.value.meeting_location_name,order.value.meeting_address].filter((value,index,values)=>value&&values.indexOf(value)===index).join('，'):'')
 function goHome(){uni.reLaunch({url:'/pages/index/index'})}function viewOrder(){uni.redirectTo({url:`/pages/orders/detail?orderNo=${orderNo.value}`})}
 onLoad(async query=>{orderNo.value=typeof query?.orderNo==='string'?query.orderNo:'';try{order.value=(await getProviderOrder(orderNo.value)).data}catch(reason){error.value=getErrorMessage(reason)}})
 </script>

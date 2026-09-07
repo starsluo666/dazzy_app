@@ -97,6 +97,7 @@ import { getRecommendedProviders } from '@/services/discovery'
 import { openPage } from '@/services/navigation'
 import type { ProviderListItem } from '@/types/api'
 import { formatAmount, formatDistance, getErrorMessage } from '@/utils/formatters'
+import { businessDateKeyParts, businessTimeParts } from '@/utils/businessTime'
 
 type Ordering = 'recommended' | 'distance' | 'rating' | 'price'
 
@@ -122,10 +123,10 @@ const error = ref('')
 
 function age(birthDate: string | null) {
   if (!birthDate) return null
-  const birth = new Date(birthDate)
-  const today = new Date()
-  let result = today.getFullYear() - birth.getFullYear()
-  if (today.getMonth() < birth.getMonth() || (today.getMonth() === birth.getMonth() && today.getDate() < birth.getDate())) result--
+  const birth = businessDateKeyParts(birthDate)
+  const today = businessTimeParts(Date.now())
+  let result = today.year - birth.year
+  if (today.month < birth.month || (today.month === birth.month && today.day < birth.day)) result--
   return result
 }
 

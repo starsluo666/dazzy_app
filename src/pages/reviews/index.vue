@@ -47,7 +47,7 @@ import { ref } from 'vue'
 import NetworkState from '@/components/NetworkState.vue'
 import { getMyProviderOrderReviews } from '@/services/orders'
 import type { MyProviderOrderReview } from '@/types/api'
-import { getErrorMessage } from '@/utils/formatters'
+import { formatBusinessDate, getErrorMessage } from '@/utils/formatters'
 
 const reviews = ref<MyProviderOrderReview[]>([])
 const loading = ref(true)
@@ -62,8 +62,7 @@ function openOrders() { uni.navigateTo({ url: '/pages/orders/list?status=all' })
 function openProvider(id: string) { uni.navigateTo({ url: `/pages/providers/detail?id=${id}` }) }
 function preview(urls: string[], index: number) { uni.previewImage({ current: urls[index], urls }) }
 function formatDate(value: string) {
-  const date = new Date(value)
-  return `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日`
+  return formatBusinessDate(value)
 }
 async function load(reset = true) {
   if (reset) {

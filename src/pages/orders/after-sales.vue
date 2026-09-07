@@ -113,7 +113,7 @@ import {
   uploadProviderOrderAfterSalesEvidence,
 } from '@/services/orders'
 import type { ProviderOrder, ProviderOrderAfterSalesCase, ProviderOrderAfterSalesCreateType } from '@/types/api'
-import { formatAmount, getErrorMessage } from '@/utils/formatters'
+import { formatAmount, formatBusinessDateTime, getErrorMessage } from '@/utils/formatters'
 
 type CaseType = ProviderOrderAfterSalesCreateType
 type UploadItem = { id: string; url: string }
@@ -165,9 +165,7 @@ const canReapply = computed(() => Boolean(
 
 function goBack() { uni.navigateBack() }
 function formatDateTime(value: string) {
-  const date = new Date(value)
-  const pad = (part: number) => String(part).padStart(2, '0')
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`
+  return formatBusinessDateTime(value)
 }
 function selectCaseType(value: CaseType) {
   caseType.value = value

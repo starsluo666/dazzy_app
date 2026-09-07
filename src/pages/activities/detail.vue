@@ -97,7 +97,7 @@ import { getActivityDetail } from '@/services/discovery'
 import { recordActivityView } from '@/services/engagements'
 import { isAuthenticated, requireAuthentication } from '@/services/session'
 import type { ActivityDetail } from '@/types/api'
-import { formatActivityRange, formatAmount, getErrorMessage } from '@/utils/formatters'
+import { formatActivityRange, formatActivityTime, formatAmount, getErrorMessage } from '@/utils/formatters'
 
 const activity = ref<ActivityDetail | null>(null)
 const activityId = ref(0)
@@ -154,9 +154,7 @@ function statusLabel(status: string) {
 
 const formatRange = formatActivityRange
 function formatDeadline(value: string) {
-  const date = new Date(value)
-  const pad = (part: number) => String(part).padStart(2, '0')
-  return `${pad(date.getMonth() + 1)}月${pad(date.getDate())}日 ${pad(date.getHours())}:${pad(date.getMinutes())}`
+  return formatActivityTime(value)
 }
 
 function goBack() {

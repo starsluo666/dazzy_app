@@ -8,6 +8,7 @@
     "build:h5": "uni build",
     "build:h5:ssr": "uni build --ssr",
     "build:app": "uni build -p app",
+    "test:business-time": "node tests/businessTime.test.cjs",
     "type-check": "vue-tsc --noEmit"
   },
   "dependencies": {

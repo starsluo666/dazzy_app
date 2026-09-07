@@ -21,6 +21,7 @@
 <script setup lang="ts">
 import type { ActivityListItem } from '@/types/api'
 import { formatActivityTime, formatAmount, formatDistance } from '@/utils/formatters'
+import { businessDateKey, businessDateKeyAfter } from '@/utils/businessTime'
 
 withDefaults(defineProps<{ activity: ActivityListItem; showStatus?: boolean }>(), { showStatus: false })
 defineEmits<{ open: [id: number] }>()
@@ -30,12 +31,8 @@ function statusLabel(status: string) {
 }
 
 function formatListTime(value: string) {
-  const date = new Date(value)
-  const today = new Date()
-  const tomorrow = new Date(today)
-  tomorrow.setDate(today.getDate() + 1)
-  const sameDay = (left: Date, right: Date) => left.toDateString() === right.toDateString()
-  const prefix = sameDay(date, today) ? '今天' : sameDay(date, tomorrow) ? '明天' : ''
+  const key = businessDateKey(value)
+  const prefix = key === businessDateKey() ? '今天' : key === businessDateKeyAfter(1) ? '明天' : ''
   return prefix ? `${prefix}${formatActivityTime(value).split(' ')[1]}` : formatActivityTime(value)
 }
 </script>

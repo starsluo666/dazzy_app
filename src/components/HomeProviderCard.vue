@@ -25,6 +25,7 @@
 import { computed } from 'vue'
 
 import type { HomeProviderListItem } from '@/types/api'
+import { businessDateKeyParts, businessTimeParts } from '@/utils/businessTime'
 
 const props = defineProps<{ item: HomeProviderListItem }>()
 defineEmits<{ select: [id: string] }>()
@@ -48,10 +49,10 @@ const traitLabel = computed(() => {
 const locationLabel = computed(() => props.item.service_city_name.replace(/市$/, '') || '同城')
 const ageLabel = computed(() => {
   if (!props.item.birth_date) return '年龄保密'
-  const birth = new Date(`${props.item.birth_date}T00:00:00`)
-  const today = new Date()
-  let age = today.getFullYear() - birth.getFullYear()
-  if (today.getMonth() < birth.getMonth() || (today.getMonth() === birth.getMonth() && today.getDate() < birth.getDate())) age -= 1
+  const birth = businessDateKeyParts(props.item.birth_date)
+  const today = businessTimeParts(Date.now())
+  let age = today.year - birth.year
+  if (today.month < birth.month || (today.month === birth.month && today.day < birth.day)) age -= 1
   return `${Math.max(18, age)}岁`
 })
 </script>

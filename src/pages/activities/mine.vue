@@ -65,7 +65,7 @@ import NetworkState from '@/components/NetworkState.vue'
 import { cancelOrganizedActivity, getMyActivities } from '@/services/activities'
 import { isAuthenticated } from '@/services/session'
 import type { MyActivityListItem } from '@/types/api'
-import { formatAmount, getErrorMessage } from '@/utils/formatters'
+import { formatActivityRange, formatActivityTime, formatAmount, getErrorMessage } from '@/utils/formatters'
 
 type Role = 'joined' | 'organized'
 type State = 'all' | 'upcoming' | 'history'
@@ -85,9 +85,8 @@ function copyActivity(id: number) { uni.navigateTo({ url: `/pages/publish/index?
 function browseActivities() { uni.navigateTo({ url: role.value === 'joined' ? '/pages/activities/list' : '/pages/publish/index' }) }
 function setRole(value: Role) { if (role.value !== value) { role.value = value; state.value = 'all'; loadActivities() } }
 function setState(value: State) { if (state.value !== value) { state.value = value; loadActivities() } }
-function pad(value: number) { return String(value).padStart(2, '0') }
-function formatRange(start: string, end: string) { const left = new Date(start); const right = new Date(end); return `${pad(left.getMonth() + 1)}月${pad(left.getDate())}日 ${pad(left.getHours())}:${pad(left.getMinutes())}–${pad(right.getHours())}:${pad(right.getMinutes())}` }
-function formatJoinedAt(value: string) { const date = new Date(value); return `${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}` }
+const formatRange = formatActivityRange
+const formatJoinedAt = formatActivityTime
 function statusCopy(item: MyActivityListItem) { if (item.participation_status === 'pending_payment') return '待支付'; if (item.participation_status === 'cancelled') return '已取消'; if (item.participation_status === 'expired') return '支付超时'; return ({ draft: '待支付', pending_review: '待审核', rejected: '已驳回', recruiting: '报名中', formed: '已成局', in_progress: '进行中', completed: '已结束', cancelled: '已取消', failed_to_form: '未成局' } as Record<string, string>)[item.status] || '待发布' }
 function statusTone(item: MyActivityListItem) { return ['rejected', 'completed', 'cancelled', 'failed_to_form'].includes(item.status) || ['cancelled', 'expired'].includes(item.participation_status || '') ? 'muted' : item.status === 'formed' ? 'formed' : '' }
 function organizerHint(item: MyActivityListItem) { if (item.status === 'recruiting') return `还需 ${Math.max(0, item.min_participants - item.participant_count)} 人成局`; if (item.settlement) { if (item.settlement.status === 'settled') return `已结算 ¥${money(item.settlement.settlement_amount || 0)}`; return item.settlement.status_label }; return statusCopy(item) }

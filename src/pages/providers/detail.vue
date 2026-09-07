@@ -105,6 +105,7 @@ import { favoriteProvider, recordProviderView, unfavoriteProvider } from '@/serv
 import { isAuthenticated, requireAuthentication } from '@/services/session'
 import type { ProviderAvailabilitySlot, ProviderDetail, ProviderReview, ProviderReviewSummary, ProviderServiceSummary } from '@/types/api'
 import { formatAmount, getErrorMessage } from '@/utils/formatters'
+import { businessClock, businessDateKey, businessDateKeyAfter, businessDateKeyParts, businessDayOffset, businessTimeParts } from '@/utils/businessTime'
 
 const provider = ref<ProviderDetail | null>(null)
 const publicId = ref('')
@@ -136,10 +137,10 @@ const genderSymbol = computed(() =>
 const selectedService = computed(() => provider.value?.services.find(item=>item.id===selectedServiceId.value) || provider.value?.services[0] || null)
 const age = computed(() => {
   if (!provider.value?.birth_date) return null
-  const birth = new Date(provider.value.birth_date)
-  const today = new Date()
-  let value = today.getFullYear() - birth.getFullYear()
-  if (today.getMonth() < birth.getMonth() || (today.getMonth() === birth.getMonth() && today.getDate() < birth.getDate())) value--
+  const birth = businessDateKeyParts(provider.value.birth_date)
+  const today = businessTimeParts(Date.now())
+  let value = today.year - birth.year
+  if (today.month < birth.month || (today.month === birth.month && today.day < birth.day)) value--
   return value
 })
 const profileTags = computed(() => {
@@ -147,7 +148,7 @@ const profileTags = computed(() => {
   const interest = category.replace('陪玩', '').replace('陪伴', '')
   return [category, '健谈开朗', `${interest}爱好者`, `${provider.value?.service_city_name || ''}达人`]
 })
-const earliestSlot = computed(()=>{if(!earliest.value)return null;const slot=new Date(earliest.value.starts_at);const today=new Date();const tomorrow=new Date();tomorrow.setDate(today.getDate()+1);const date=localDateKey(slot);const label=date===localDateKey(today)?'今天':date===localDateKey(tomorrow)?'明天':`${slot.getMonth()+1}月${slot.getDate()}日`;return{label,time:`${String(slot.getHours()).padStart(2,'0')}:${String(slot.getMinutes()).padStart(2,'0')}`,date}})
+const earliestSlot = computed(()=>{if(!earliest.value)return null;const parts=businessTimeParts(earliest.value.starts_at);const date=businessDateKey(earliest.value.starts_at);const label=date===businessDateKey()?'今天':date===businessDateKeyAfter(1)?'明天':`${parts.month}月${parts.day}日`;return{label,time:businessClock(earliest.value.starts_at),date}})
 
 const money = formatAmount
 function handleHeroPhotoError() {
@@ -161,8 +162,8 @@ function serviceDescription(name:string){return name.includes('摄影')?'拍照�
 function durationHint(service:ProviderServiceSummary){return service.billing_type==='hourly'?'最低2小时':`预计${Math.max(1,Math.round((service.estimated_duration_minutes||180)/60))}小时`}
 function goBack() { uni.navigateBack() }
 function reviewDate(value: string) {
-  const date = new Date(value)
-  return `${date.getFullYear()}.${String(date.getMonth() + 1).padStart(2, '0')}.${String(date.getDate()).padStart(2, '0')}`
+  const date = businessTimeParts(value)
+  return `${date.year}.${String(date.month).padStart(2, '0')}.${String(date.day).padStart(2, '0')}`
 }
 function previewReviewImages(urls: string[], index: number) { uni.previewImage({ current: urls[index], urls }) }
 function reviewRatio(star: number) {
@@ -192,11 +193,10 @@ function confirmService(){selectedServiceId.value=pendingServiceId.value;service
 function startBooking() {
   if (provider.value && !provider.value.is_online) { uni.showToast({title:'达人当前离线，暂时无法预约',icon:'none'});return }
   if (!provider.value || !selectedService.value || !earliestSlot.value) { uni.showToast({title:'当前暂无可预约时间',icon:'none'});return }
-  const today=new Date();const target=new Date(`${earliestSlot.value.date}T00:00:00`);const offset=Math.round((target.getTime()-new Date(today.getFullYear(),today.getMonth(),today.getDate()).getTime())/86400000)
+  const offset=businessDayOffset(earliestSlot.value.date)
   createBookingDraft(provider.value, selectedService.value, offset, earliestSlot.value.time)
   uni.navigateTo({ url: '/pages/booking/confirm' })
 }
-function localDateKey(value:Date){return `${value.getFullYear()}-${String(value.getMonth()+1).padStart(2,'0')}-${String(value.getDate()).padStart(2,'0')}`}
 async function loadAvailability(){if(!provider.value||!selectedService.value)return;earliest.value=null;if(!provider.value.is_online)return;availabilityLoading.value=true;try{earliest.value=(await getProviderAvailability(provider.value.public_id,selectedService.value.id,selectedService.value.billing_type==='hourly'?120:undefined)).data.earliest}catch{}finally{availabilityLoading.value=false}}
 async function loadReviews() {
   if (!publicId.value) return

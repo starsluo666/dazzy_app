@@ -74,6 +74,7 @@ import { computed, ref, shallowRef } from 'vue'
 import { getCurrentUser, updateCurrentUser, uploadAvatar } from '@/services/auth'
 import { guardCurrentPage } from '@/services/session'
 import type { CurrentUser } from '@/types/api'
+import { businessDateKey } from '@/utils/businessTime'
 
 type Gender = CurrentUser['gender']
 
@@ -86,7 +87,7 @@ const avatarFilePath = ref('')
 const avatarFile = shallowRef<unknown>()
 const genderSheetVisible = ref(false)
 const saving = ref(false)
-const today = new Date().toISOString().slice(0, 10)
+const today = businessDateKey()
 const genderOptions: Array<{ label: string; value: Gender }> = [
   { label: '保密', value: 'unspecified' },
   { label: '男', value: 'male' },

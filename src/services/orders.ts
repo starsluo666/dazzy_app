@@ -1,12 +1,12 @@
 import type { DataResponse, ListResponse, MyProviderOrderReview, ProviderOrder, ProviderOrderAfterSalesCase, ProviderOrderAfterSalesCreateType, ProviderOrderQuote } from '@/types/api'
 import type { BookingDraft } from './bookingDraft'
 import { request, uploadFile } from './http'
+import { toBusinessDateTime } from '@/utils/businessTime'
 
 function orderPayload(draft: BookingDraft) {
-  const localStart = new Date(`${draft.date}T${draft.startTime}:00`)
   return {
     service_id: draft.serviceId,
-    starts_at: localStart.toISOString(),
+    starts_at: toBusinessDateTime(draft.date, draft.startTime),
     duration_minutes: draft.durationMinutes,
     address_id: draft.addressId,
     note: draft.note,

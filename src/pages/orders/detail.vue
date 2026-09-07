@@ -169,7 +169,7 @@ import {
 import { orderStatusCopy } from '@/services/orderPresentation'
 import { isAuthenticated } from '@/services/session'
 import type { ProviderOrder } from '@/types/api'
-import { formatAmount, getErrorMessage } from '@/utils/formatters'
+import { formatActivityTime, formatAmount, formatBusinessDateTime, formatOrderTimeRange, getErrorMessage } from '@/utils/formatters'
 
 const orderNo = ref('')
 const order = ref<ProviderOrder | null>(null)
@@ -218,14 +218,10 @@ const addressLabel = computed(() => order.value
 
 const timeLabel = computed(() => {
   if (!order.value) return ''
-  const start = new Date(order.value.starts_at)
-  const end = new Date(order.value.ends_at)
-  return `${twoDigits(start.getMonth() + 1)}月${twoDigits(start.getDate())}日 ${twoDigits(start.getHours())}:${twoDigits(start.getMinutes())}—${twoDigits(end.getHours())}:${twoDigits(end.getMinutes())}`
+  return formatOrderTimeRange(order.value.starts_at, order.value.ends_at)
 })
 const createdLabel = computed(() => order.value
-  ? new Date(order.value.created_at).toLocaleString('zh-CN', {
-    year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false,
-  })
+  ? formatBusinessDateTime(order.value.created_at)
   : '')
 const evidenceCopy = computed(() => order.value?.arrival_photo_uploaded_at
   ? `${formatDateTime(order.value.arrival_photo_uploaded_at)}，已留存上传位置`
@@ -236,10 +232,8 @@ const pendingEvidenceCopy = computed(() => {
   return '达人确认出发并到场后上传'
 })
 
-function twoDigits(value: number) { return String(value).padStart(2, '0') }
 function formatDateTime(value: string) {
-  const date = new Date(value)
-  return `${date.getMonth() + 1}月${date.getDate()}日 ${twoDigits(date.getHours())}:${twoDigits(date.getMinutes())}`
+  return formatActivityTime(value)
 }
 function goBack() { uni.navigateBack() }
 function showPending(name: string) { uni.showToast({ title: `${name}功能即将接入`, icon: 'none' }) }

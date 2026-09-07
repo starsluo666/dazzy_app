@@ -203,6 +203,7 @@ import { getSavedAddresses } from '@/services/locations'
 import { createProviderOrder, previewProviderOrder } from '@/services/orders'
 import type { LocationItem, ProviderAvailability, ProviderOrderQuote } from '@/types/api'
 import { formatAmount, getErrorMessage } from '@/utils/formatters'
+import { businessClock, businessTimeParts, toBusinessDateTime } from '@/utils/businessTime'
 
 type Sheet = 'time' | 'address' | null
 
@@ -224,18 +225,17 @@ const addressOptions = ref<LocationItem[]>([])
 const addressLoading = ref(false)
 
 const dates = computed(() => (availability.value?.dates || []).map((item, index) => {
-  const date = new Date(`${item.date}T00:00:00`)
+  const date = businessTimeParts(toBusinessDateTime(item.date, '00:00'))
   return {
     key: item.date,
-    label: ['今天', '明天', '后天'][index] || `周${'日一二三四五六'[date.getDay()]}`,
-    display: `${String(date.getMonth() + 1).padStart(2, '0')}/${String(date.getDate()).padStart(2, '0')}`,
+    label: ['今天', '明天', '后天'][index] || `周${'日一二三四五六'[date.weekday]}`,
+    display: `${String(date.month).padStart(2, '0')}/${String(date.day).padStart(2, '0')}`,
   }
 }))
 const times = computed(() => (
   availability.value?.dates.find(item => item.date === tempDate.value)?.slots || []
 ).map((item) => {
-  const date = new Date(item.starts_at)
-  return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`
+  return businessClock(item.starts_at)
 }))
 const minimumDuration = computed(() => (
   draft.value?.billingType === 'hourly' ? 120 : (draft.value?.durationMinutes || 180)
@@ -267,8 +267,8 @@ const money = formatAmount
 
 function displayRange(date: string, time: string, duration: number) {
   if (!date) return ''
-  const value = new Date(`${date}T00:00:00`)
-  return `${String(value.getMonth() + 1).padStart(2, '0')}月${String(value.getDate()).padStart(2, '0')}日 ${time}—${bookingEndTime(time, duration)}`
+  const [, month, day] = date.split('-')
+  return `${month}月${day}日 ${time}—${bookingEndTime(time, duration)}`
 }
 
 function contactGenderLabel(gender: BookingDraft['contactGender']) {

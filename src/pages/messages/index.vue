@@ -104,6 +104,7 @@ import {
 } from '@/services/notifications'
 import type { NotificationCategory, NotificationSummary, UserNotification } from '@/types/api'
 import { getErrorMessage } from '@/utils/formatters'
+import { businessClock, businessDateKey, businessDateKeyAfter, businessTimeParts } from '@/utils/businessTime'
 
 type CategoryFilter = '' | NotificationCategory
 
@@ -138,11 +139,7 @@ const todayItems = computed(() => items.value.filter((item) => isToday(item.crea
 const olderItems = computed(() => items.value.filter((item) => !isToday(item.created_at)))
 
 function isToday(value: string) {
-  const date = new Date(value)
-  const now = new Date()
-  return date.getFullYear() === now.getFullYear()
-    && date.getMonth() === now.getMonth()
-    && date.getDate() === now.getDate()
+  return businessDateKey(value) === businessDateKey()
 }
 function notificationIcon(item: UserNotification) {
   if (item.event_type === 'support_result') return '/static/notifications/support-result.svg'
@@ -150,15 +147,13 @@ function notificationIcon(item: UserNotification) {
   return `/static/notifications/${item.category}.svg`
 }
 function formatTime(value: string) {
-  const date = new Date(value)
-  const now = new Date()
+  const date = businessTimeParts(value)
   const pad = (part: number) => String(part).padStart(2, '0')
-  if (isToday(value)) return `${pad(date.getHours())}:${pad(date.getMinutes())}`
-  const yesterday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1)
-  if (date.getFullYear() === yesterday.getFullYear() && date.getMonth() === yesterday.getMonth() && date.getDate() === yesterday.getDate()) {
-    return `昨天 ${pad(date.getHours())}:${pad(date.getMinutes())}`
+  if (isToday(value)) return businessClock(value)
+  if (businessDateKey(value) === businessDateKeyAfter(-1)) {
+    return `昨天 ${businessClock(value)}`
   }
-  return `${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`
+  return `${pad(date.month)}-${pad(date.day)} ${businessClock(value)}`
 }
 function goBack() {
   uni.navigateBack({ fail: () => uni.reLaunch({ url: '/pages/index/index' }) })

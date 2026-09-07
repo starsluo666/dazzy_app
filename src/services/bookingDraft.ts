@@ -1,4 +1,5 @@
 import type { ProviderDetail, ProviderServiceSummary } from '@/types/api'
+import { businessDateKeyAfter } from '@/utils/businessTime'
 
 const STORAGE_KEY = 'dazzy-provider-booking-draft-v1'
 
@@ -27,12 +28,7 @@ export interface BookingDraft {
 }
 
 function dateKey(offset = 0) {
-  const date = new Date()
-  date.setDate(date.getDate() + offset)
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-  return `${year}-${month}-${day}`
+  return businessDateKeyAfter(offset)
 }
 
 export function createBookingDraft(provider: ProviderDetail, service: ProviderServiceSummary, dateOffset: number, startTime: string) {

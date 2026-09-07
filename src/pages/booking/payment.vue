@@ -15,9 +15,9 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onUnmounted, ref } from 'vue'; import { onLoad } from '@dcloudio/uni-app'; import { getProviderOrder, simulateProviderOrderPayment } from '@/services/orders'; import type { ProviderOrder } from '@/types/api'; import { formatAmount, getErrorMessage } from '@/utils/formatters'
+import { computed, onUnmounted, ref } from 'vue'; import { onLoad } from '@dcloudio/uni-app'; import { getProviderOrder, simulateProviderOrderPayment } from '@/services/orders'; import type { ProviderOrder } from '@/types/api'; import { formatAmount, formatOrderTimeRange, getErrorMessage } from '@/utils/formatters'
 const orderNo=ref(''),order=ref<ProviderOrder|null>(null),loading=ref(true),error=ref(''),paying=ref(false),method=ref<'wechat'|'alipay'>('wechat'),secondsLeft=ref(0);let timer:number|undefined
-const expired=computed(()=>secondsLeft.value<=0),countdown=computed(()=>`${String(Math.floor(secondsLeft.value/60)).padStart(2,'0')}:${String(secondsLeft.value%60).padStart(2,'0')}`),timeLabel=computed(()=>order.value?`${new Date(order.value.starts_at).toLocaleString('zh-CN',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false})}—${new Date(order.value.ends_at).toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit',hour12:false})}`:'')
+const expired=computed(()=>secondsLeft.value<=0),countdown=computed(()=>`${String(Math.floor(secondsLeft.value/60)).padStart(2,'0')}:${String(secondsLeft.value%60).padStart(2,'0')}`),timeLabel=computed(()=>order.value?formatOrderTimeRange(order.value.starts_at,order.value.ends_at):'')
 const money=formatAmount
 function goBack(){uni.navigateBack()}
 function startTimer(){if(!order.value)return;const tick=()=>{secondsLeft.value=Math.max(0,Math.floor((new Date(order.value!.payment_expires_at).getTime()-Date.now())/1000))};tick();timer=setInterval(tick,1000) as unknown as number}
