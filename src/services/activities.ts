@@ -1,4 +1,4 @@
-import type { ActivityAfterSalesCase, ActivityCategoryItem, ActivityCopySource, ActivityDraftResult, ActivityParticipationCancellationResult, ActivityParticipationCheckout, ActivityParticipationPaymentResult, ActivityPublishOrder, ActivityReportReceipt, DataResponse, ListResponse, MyActivityListItem } from '@/types/api'
+import type { ActivityAfterSalesCase, ActivityCategoryItem, ActivityCopySource, ActivityDraftResult, ActivityParticipationCancellationResult, ActivityParticipationCheckout, ActivityParticipationPaymentResult, ActivityPublishOrder, ActivityPublishRules, ActivityReportReceipt, DataResponse, ListResponse, MyActivityListItem } from '@/types/api'
 
 import { request, uploadFile } from './http'
 
@@ -48,6 +48,10 @@ export function getMyActivities(options: {
 
 export function getActivityCategories(cityCode = '130400') {
   return request<{ data: { items: ActivityCategoryItem[] } }>('/activity-categories/', { query: { city_code: cityCode } })
+}
+
+export function getActivityPublishRules() {
+  return request<DataResponse<ActivityPublishRules>>('/activity-publish-rules/', { skipAuth: true })
 }
 
 export function getActivityCopySource(activityId: number) {

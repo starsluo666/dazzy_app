@@ -24,9 +24,6 @@
             <image src="/static/notifications/system.svg" mode="aspectFit" aria-hidden="true" />
             <i v-if="unreadCount"><b>{{ unreadCount > 99 ? '99+' : unreadCount }}</b></i>
           </view>
-          <view class="header-action service-icon" role="button" aria-label="客服中心" @tap.stop="openSupportCenter">
-            <text>⌒</text><i />
-          </view>
           <view class="header-action settings-icon" role="button" aria-label="设置" @tap.stop="openSettings">
             <text>⚙</text>
           </view>
@@ -100,7 +97,7 @@
       </section>
     </main>
 
-    <DazzyTabBar active="profile" />
+    <DazzyTabBar active="profile" :unread-count="unreadCount" />
   </view>
 </template>
 
@@ -189,11 +186,6 @@ function openFunction(item: FunctionEntry) {
 
 function openSettings() {
   if (requireAuthentication('/pages/settings/index')) uni.navigateTo({ url: '/pages/settings/index' })
-}
-
-function openSupportCenter() {
-  const route = '/pages/support/index'
-  if (requireAuthentication(route)) uni.navigateTo({ url: route })
 }
 
 function openNotifications() {
@@ -370,22 +362,6 @@ onShow(loadProfile)
 .notification-icon image { width:42rpx; height:42rpx; }
 .notification-icon i { position:absolute; right:-10rpx; top:-7rpx; display:flex; align-items:center; justify-content:center; min-width:25rpx; height:25rpx; padding:0 5rpx; border:3rpx solid #f3fdfe; border-radius:15rpx; color:#fff; background:#ff4141; box-sizing:border-box; font-style:normal; }
 .notification-icon i b { font-size:15rpx; line-height:1; }
-.service-icon { position: relative; font-size: 36rpx; font-weight: 700; }
-.service-icon text { transform: rotate(180deg); }
-.service-icon::before,
-.service-icon::after {
-  position: absolute;
-  top: 19rpx;
-  width: 5rpx;
-  height: 21rpx;
-  border: 3rpx solid currentColor;
-  border-radius: 7rpx;
-  content: '';
-}
-.service-icon::before { left: 7rpx; border-right: 0; }
-.service-icon::after { right: 7rpx; border-left: 0; }
-.service-icon i { position: absolute; right: 7rpx; bottom: 8rpx; width: 13rpx; height: 4rpx; border-radius: 2rpx; background: currentColor; }
-
 .profile-content {
   padding-bottom: 60rpx;
 }

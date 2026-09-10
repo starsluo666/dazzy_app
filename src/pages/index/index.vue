@@ -4,9 +4,6 @@
     <view class="topbar dz-container">
       <button class="city">邯郸市 <text class="city-arrow">▾</text></button>
       <view class="search"><text class="search-icon">⌕</text><text>搜索达人、活动、场馆</text></view>
-      <button class="message" :aria-label="unreadCount ? `通知中心，${unreadCount}条未读` : '通知中心'" @tap="openMessages">
-        <text>•••</text><i v-if="unreadCount"><b>{{ unreadCount > 99 ? '99+' : unreadCount }}</b></i>
-      </button>
     </view>
 
     <main class="content dz-container">
@@ -71,7 +68,7 @@
 </template>
 
 <script setup lang="ts">
-import { onLoad, onShow } from '@dcloudio/uni-app'
+import { onLoad } from '@dcloudio/uni-app'
 import { ref } from 'vue'
 
 import DazzyTabBar from '@/components/DazzyTabBar.vue'
@@ -79,8 +76,6 @@ import HomeActivityCarousel from '@/components/HomeActivityCarousel.vue'
 import HomeProviderCard from '@/components/HomeProviderCard.vue'
 import { getHomeDiscovery } from '@/services/discovery'
 import { openPage } from '@/services/navigation'
-import { getNotificationSummary } from '@/services/notifications'
-import { isAuthenticated, requireAuthentication } from '@/services/session'
 import type { HomeActivityListItem, HomeCardAssets, HomeProviderListItem } from '@/types/api'
 import { getErrorMessage } from '@/utils/formatters'
 
@@ -100,7 +95,6 @@ const loading = ref(true)
 const activityError = ref('')
 const providerError = ref('')
 const homeCardAssets = ref<HomeCardAssets | null>(null)
-const unreadCount = ref(0)
 
 function openProviders(category?: string) {
   openPage(`/pages/providers/list${category ? `?category=${category}` : ''}`)
@@ -116,17 +110,6 @@ function openProviderDetail(publicId: string) {
 
 function openActivityDetail(id: number) {
   openPage(`/pages/activities/detail?id=${id}`)
-}
-
-function openMessages() {
-  const route = '/pages/messages/index'
-  if (requireAuthentication(route)) openPage(route)
-}
-
-async function loadUnreadCount() {
-  if (!isAuthenticated()) { unreadCount.value = 0; return }
-  try { unreadCount.value = (await getNotificationSummary()).data.unread }
-  catch { unreadCount.value = 0 }
 }
 
 async function loadDiscovery() {
@@ -153,7 +136,6 @@ async function loadDiscovery() {
 }
 
 onLoad(loadDiscovery)
-onShow(loadUnreadCount)
 </script>
 
 <style lang="scss" scoped>
@@ -161,15 +143,12 @@ onShow(loadUnreadCount)
 
 .topbar { display:flex; align-items:center; gap:32rpx; height:94rpx; }
 button { margin:0; padding:0; line-height:1; background:transparent; }
-.city,.message { border:0; outline:0; box-shadow:none; }
-.city::after,.message::after { display:none; }
+.city { border:0; outline:0; box-shadow:none; }
+.city::after { display:none; }
 .city { flex:0 0 auto; height:70rpx; color:#111; font-size:28rpx; font-weight:800; }
 .city-arrow { font-size:20rpx; }
 .search { display:flex; align-items:center; flex:1; min-width:0; gap:12rpx; height:62rpx; padding:0 23rpx; border:1rpx solid #dfe4e6; border-radius:34rpx; color:#737c81; background:#fff; font-size:22rpx; box-sizing:border-box; white-space:nowrap; }
 .search-icon { color:#68747a; font-size:31rpx; }
-.message { position:relative; display:flex; flex:0 0 50rpx; align-items:center; justify-content:center; width:50rpx; height:50rpx; border:3rpx solid #171d20; border-radius:48% 48% 48% 41%; color:#171d20; font-size:15rpx; }
-.message i { position:absolute; right:-15rpx; top:-13rpx; display:flex; align-items:center; justify-content:center; min-width:25rpx; height:25rpx; padding:0 5rpx; border:3rpx solid #fff; border-radius:15rpx; color:#fff; background:#ff4141; box-sizing:border-box; font-style:normal; }
-.message i b { font-size:15rpx; font-weight:700; line-height:1; }
 .content { display:block; padding-right:22rpx; padding-left:22rpx; }
 .hero { position:relative; overflow:hidden; display:flex; flex-direction:column; justify-content:center; height:232rpx; padding:0 30rpx; border-radius:24rpx; color:#075b67; box-sizing:border-box; }
 .hero-art { position:absolute; width:100%; height:100%; inset:0; }

@@ -9,6 +9,7 @@ import type {
   ProviderAvailability,
   ProviderListItem,
   ProviderReviewListResponse,
+  ServiceCategory,
 } from '@/types/api'
 
 import { request } from './http'
@@ -19,7 +20,12 @@ const DEMO_LOCATION = {
 }
 
 interface ProviderQuery {
+  keyword?: string
   category?: string
+  gender?: 'male' | 'female'
+  online_only?: 1
+  min_rating?: number
+  max_price_amount?: number
   ordering?: 'recommended' | 'distance' | 'rating' | 'price'
   page_size?: number
 }
@@ -33,6 +39,12 @@ interface ActivityQuery {
 export function getRecommendedProviders(query: ProviderQuery = {}) {
   return request<ListResponse<ProviderListItem>>('/providers/', {
     query: { ...DEMO_LOCATION, city_code: '130400', page_size: 8, ...query },
+  })
+}
+
+export function getServiceCategories() {
+  return request<{ data: { items: ServiceCategory[] } }>('/service-categories/', {
+    skipAuth: true,
   })
 }
 

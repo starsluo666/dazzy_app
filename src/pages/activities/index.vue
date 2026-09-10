@@ -148,11 +148,14 @@ onLoad(loadActivities)
 .sorts>view.active { color:$dz-brand-deep; font-weight:800; }
 .sorts>view.active::after { position:absolute; right:5rpx; bottom:8rpx; left:5rpx; height:4rpx; border-radius:2rpx; background:$dz-brand-primary; content:''; }
 .activity-list { display:flex; flex-direction:column; gap:14rpx; }
-.publish { position:fixed; z-index:9; bottom:calc(95rpx + env(safe-area-inset-bottom)); left:50%; display:flex; align-items:center; justify-content:center; gap:10rpx; width:244rpx; height:66rpx; transform:translateX(-50%); border-radius:34rpx; color:#fff; background:$dz-gradient-brand; box-shadow:0 8rpx 24rpx rgba(24,199,198,.28); font-size:26rpx; font-weight:700; }
+.publish { position:fixed; z-index:9; bottom:calc(132rpx + env(safe-area-inset-bottom)); left:50%; display:flex; align-items:center; justify-content:center; gap:10rpx; width:244rpx; height:66rpx; transform:translateX(-50%); border-radius:34rpx; color:#fff; background:$dz-gradient-brand; box-shadow:0 8rpx 24rpx rgba(24,199,198,.28); font-size:26rpx; font-weight:700; }
 .publish text { font-size:39rpx; font-weight:300; }
 
 @media screen and (max-width:360px) {
   .sorts { gap:48rpx; }
   .category-icon { width:56rpx; height:56rpx; }
+}
+@media screen and (orientation:landscape) and (max-height:600px) {
+  .publish { bottom:calc(112rpx + env(safe-area-inset-bottom)); }
 }
 </style>

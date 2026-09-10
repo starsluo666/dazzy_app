@@ -375,6 +375,11 @@ export interface ActivityCategoryItem {
   content_guidance: string
 }
 
+export interface ActivityPublishRules {
+  minimum_advance_hours: number
+  maximum_advance_days: number
+}
+
 export interface ActivityCopySource {
   id: number
   category_slug: string

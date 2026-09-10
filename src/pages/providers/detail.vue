@@ -78,7 +78,6 @@
 
       <view class="action-bar dz-container">
         <button class="secondary" :disabled="favoriteSubmitting" hover-class="button--pressed" @tap="toggleFavorite"><text class="action-icon">{{ provider.is_favorited?'★':'☆' }}</text><text>{{ provider.is_favorited?'已收藏':'收藏' }}</text></button>
-        <button class="secondary" hover-class="button--pressed" @tap="showPending('私信')"><text class="action-icon">◌</text><text>私信</text></button>
         <button class="primary" :disabled="!provider.is_online" hover-class="button--pressed" @tap="startBooking">{{ provider.is_online ? '立即预约' : '离线不可预约' }}</button>
       </view>
       <view v-if="serviceSheetOpen" class="sheet-layer" @tap="serviceSheetOpen=false">
