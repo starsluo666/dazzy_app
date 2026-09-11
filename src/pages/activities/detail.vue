@@ -34,7 +34,7 @@
           <text class="organizer-label">组织者</text>
           <image v-if="activity.organizer_avatar_url" :src="activity.organizer_avatar_url" mode="aspectFill" />
           <view v-else class="avatar-fallback">{{ activity.organizer_nickname.slice(0,1) }}</view>
-          <view class="organizer-copy"><strong>{{ activity.organizer_nickname }}</strong><text v-if="activity.organizer_verified">◆ 实名认证</text></view>
+          <view class="organizer-copy"><strong>{{ activity.organizer_nickname }}</strong></view>
           <view v-if="activity.organizer_rating" class="organizer-rating"><text>★</text><strong>{{ activity.organizer_rating }}分</strong><i>›</i></view>
         </section>
 

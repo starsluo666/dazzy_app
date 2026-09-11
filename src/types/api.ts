@@ -174,11 +174,8 @@ export interface NotificationListResponse extends ListResponse<UserNotification>
 
 export interface ProviderApplication {
   status: 'draft' | 'pending' | 'approved' | 'rejected' | 'suspended'
-  verification_status: CurrentUser['verification_status']
   gender: CurrentUser['gender']
   bio: string
-  lifestyle_photo_id: string | null
-  lifestyle_photo_url: string | null
   service_city_code: string
   service_city_name: string
   max_service_radius_km: number
@@ -259,7 +256,6 @@ export interface ActivityDetail extends ActivityListItem {
   participant_count: number
   platform_service_fee_amount: number
   payable_amount: number
-  organizer_verified: boolean
   organizer_rating: string | null
   is_joined: boolean
   is_organizer: boolean
@@ -494,7 +490,6 @@ export interface CurrentUser {
   gender: 'unspecified' | 'male' | 'female'
   birth_date: string | null
   avatar_url: string | null
-  verification_status: 'unverified' | 'pending' | 'verified' | 'rejected'
   account_status: 'active' | 'restricted' | 'suspended' | 'closed'
 }
 

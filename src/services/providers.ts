@@ -1,10 +1,9 @@
-import { request, uploadFile } from './http'
+import { request } from './http'
 import type { DataResponse, ProviderApplication, ServiceCategory } from '@/types/api'
 
 export type ProviderApplicationDraft = Pick<
   ProviderApplication,
   | 'bio'
-  | 'lifestyle_photo_id'
   | 'service_city_code'
   | 'service_city_name'
   | 'max_service_radius_km'
@@ -21,11 +20,6 @@ export const submitProviderApplication = () =>
   request<DataResponse<ProviderApplication>>('/providers/me/application/submit/', {
     method: 'POST', data: { agreement_accepted: true },
   })
-
-export const uploadProviderLifestylePhoto = (filePath: string, file?: unknown) =>
-  uploadFile<DataResponse<{ id: string; url: string }>>(
-    '/media/provider-lifestyle-photos/', filePath, 'file', file,
-  )
 
 export const getServiceCategories = () =>
   request<{ data: { items: ServiceCategory[] } }>('/service-categories/', { skipAuth: true })

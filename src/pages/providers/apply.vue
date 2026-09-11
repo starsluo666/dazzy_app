@@ -43,40 +43,11 @@
         </section>
 
         <view class="section-heading">
-          <strong>申请资料</strong>
-          <text>生活照、简介和服务城市为必填</text>
+          <strong>入驻意向</strong>
+          <text>提交基础信息，正式资料在达人端完善</text>
         </view>
 
         <section class="form-card">
-          <view class="photo-field">
-            <view class="field-head">
-              <text>生活照</text>
-              <small>必填 · 1 张</small>
-            </view>
-            <button
-              class="photo-upload"
-              :aria-label="lifestylePhotoPreview ? '更换生活照' : '上传生活照'"
-              @tap="chooseLifestylePhoto"
-            >
-              <image
-                v-if="lifestylePhotoPreview"
-                class="photo-thumbnail"
-                :src="lifestylePhotoPreview"
-                mode="aspectFill"
-                aria-label="生活照预览"
-              />
-              <view v-else class="photo-empty">
-                <i aria-hidden="true" />
-              </view>
-              <view class="photo-copy">
-                <strong>{{ lifestylePhotoPreview ? '生活照已选择' : '上传一张生活照' }}</strong>
-                <text>{{ lifestylePhotoPreview ? '点击可重新选择照片' : '清晰自然的半身或全身照' }}</text>
-              </view>
-              <text class="photo-action">{{ lifestylePhotoPreview ? '更换' : '选择' }} ›</text>
-            </button>
-            <small class="photo-help">用于平台审核及达人主页展示，支持 JPG、PNG、WebP，最大 8MB</small>
-          </view>
-
           <view class="row">
             <view class="row-label">
               <text>性别</text>
@@ -124,10 +95,10 @@
         </section>
 
         <section class="tips">
-          <strong>提交前请确认</strong>
-          <text>• 生活照和个人资料真实完整</text>
-          <text>• 未完成实名认证时可提交申请，但平台不能审核通过</text>
-          <text>• 审核通过后，服务配置与接单将在达人端小程序完成</text>
+          <strong>申请流程</strong>
+          <text>• 客服先审核本次达人入驻意向</text>
+          <text>• 初审通过后，在达人端完成实名认证和资料上传</text>
+          <text>• 实名及资料完成后，再配置服务并开启接单</text>
         </section>
 
         <view class="agreement" role="checkbox" :aria-checked="agreed" @tap="agreed = !agreed">
@@ -144,7 +115,7 @@
 
 <script setup lang="ts">
 import { onLoad } from '@dcloudio/uni-app'
-import { computed, reactive, ref, shallowRef } from 'vue'
+import { computed, reactive, ref } from 'vue'
 
 import NetworkState from '@/components/NetworkState.vue'
 import { getCurrentUser, updateCurrentUser } from '@/services/auth'
@@ -152,7 +123,6 @@ import {
   getProviderApplication,
   saveProviderApplication,
   submitProviderApplication,
-  uploadProviderLifestylePhoto,
 } from '@/services/providers'
 import { guardCurrentPage } from '@/services/session'
 import type { CurrentUser, ProviderApplication } from '@/types/api'
@@ -178,12 +148,8 @@ const agreed = ref(false)
 const application = ref<ProviderApplication | null>(null)
 const gender = ref<Gender>('unspecified')
 const originalGender = ref<Gender>('unspecified')
-const lifestylePhotoPreview = ref('')
-const lifestylePhotoFilePath = ref('')
-const lifestylePhotoFile = shallowRef<unknown>()
 const form = reactive({
   bio: '',
-  lifestyle_photo_id: null as string | null,
   service_city_code: '130400',
   service_city_name: '邯郸市',
   max_service_radius_km: 10,
@@ -198,7 +164,6 @@ const locked = computed(() =>
 const canSubmit = computed(() =>
   form.bio.trim().length >= 10
   && Boolean(form.service_city_code)
-  && Boolean(form.lifestyle_photo_id || lifestylePhotoFilePath.value)
   && agreed.value,
 )
 const genderLabel = computed(() =>
@@ -212,17 +177,17 @@ const heroTitle = computed(() =>
 )
 const heroText = computed(() =>
   application.value?.status === 'approved'
-    ? '达人端小程序正在准备中'
-    : '完善资料并提交审核，审核通过后即可发布服务',
+    ? '请前往达人端完成实名认证与资料'
+    : '提交入驻意向，审核通过后进入达人端认证',
 )
 const statusTitle = computed(() =>
   application.value?.status === 'approved'
-    ? '达人认证已通过'
+    ? '入驻申请已通过'
     : application.value?.status === 'suspended' ? '达人资格已暂停' : '资料审核中',
 )
 const statusText = computed(() =>
   application.value?.status === 'approved'
-    ? '达人端小程序将在后续开放，请耐心等待。'
+    ? '请使用同一手机号登录达人端，完成实名认证、生活照和服务资料。'
     : application.value?.status === 'suspended'
       ? '请联系客服了解详情。'
       : '我们会尽快完成审核，结果将通过消息通知你。',
@@ -244,21 +209,6 @@ function chooseGender(event: { detail: { value: string } }) {
 function changeRadius(event: { detail: { value: number } }) {
   form.max_service_radius_km = Number(event.detail.value)
 }
-function chooseLifestylePhoto() {
-  uni.chooseImage({
-    count: 1,
-    sizeType: ['compressed'],
-    sourceType: ['album', 'camera'],
-    success: ({ tempFilePaths, tempFiles }) => {
-      const file = Array.isArray(tempFiles) ? tempFiles[0] : tempFiles
-      if (file?.size && file.size > 8 * 1024 * 1024) return warn('生活照大小不能超过8MB')
-      lifestylePhotoFilePath.value = tempFilePaths[0]
-      lifestylePhotoFile.value = file
-      lifestylePhotoPreview.value = tempFilePaths[0]
-    },
-  })
-}
-
 async function load() {
   loading.value = true
   error.value = ''
@@ -273,13 +223,11 @@ async function load() {
     if (application.value) {
       Object.assign(form, {
         bio: application.value.bio,
-        lifestyle_photo_id: application.value.lifestyle_photo_id,
         service_city_code: application.value.service_city_code || '130400',
         service_city_name: application.value.service_city_name || '邯郸市',
         max_service_radius_km: application.value.max_service_radius_km,
         invitation_code: application.value.invitation_code,
       })
-      lifestylePhotoPreview.value = application.value.lifestyle_photo_url || ''
     }
   } catch (loadError) {
     error.value = getErrorMessage(loadError)
@@ -295,16 +243,6 @@ async function submit() {
     if (gender.value !== originalGender.value) {
       await updateCurrentUser({ gender: gender.value })
       originalGender.value = gender.value
-    }
-    if (lifestylePhotoFilePath.value) {
-      const uploaded = await uploadProviderLifestylePhoto(
-        lifestylePhotoFilePath.value,
-        lifestylePhotoFile.value,
-      )
-      form.lifestyle_photo_id = uploaded.data.id
-      lifestylePhotoPreview.value = uploaded.data.url
-      lifestylePhotoFilePath.value = ''
-      lifestylePhotoFile.value = undefined
     }
     await saveProviderApplication({
       ...form,

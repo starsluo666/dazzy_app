@@ -15,7 +15,6 @@
 
         <view class="identity-copy">
           <text class="name">{{ displayName }}</text>
-          <view v-if="profile" class="verified"><text class="verified-icon">✓</text><text>{{ verificationLabel }}</text></view>
           <text class="slogan">{{ profile ? maskedPhone : '登录后查看订单、活动和收藏' }}</text>
         </view>
 
@@ -122,11 +121,10 @@ const avatarFailed = ref(false)
 const unreadCount = ref(0)
 const displayName = computed(() => profile.value?.nickname || '登录 / 注册')
 const maskedPhone = computed(() => profile.value?.phone.replace(/(\d{3})\d{4}(\d{4})/, '$1****$2') || '')
-const verificationLabel = computed(() => profile.value?.verification_status === 'verified' ? '实名认证' : '未实名认证')
 const providerEntry = computed(() => {
   switch (providerApplication.value?.status) {
     case 'approved':
-      return { title: '达人认证已通过', description: '达人端小程序正在准备中', action: '敬请期待' }
+      return { title: '达人申请已通过', description: '请在达人端完成实名与资料', action: '查看说明' }
     case 'pending':
       return { title: '达人申请审核中', description: '审核结果会在这里同步更新', action: '查看进度' }
     case 'rejected':
