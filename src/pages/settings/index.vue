@@ -45,7 +45,7 @@ import { getCurrentUser, logout } from '@/services/auth'
 import { guardCurrentPage, isAuthenticated } from '@/services/session'
 import type { CurrentUser } from '@/types/api'
 
-type SettingItem = { label: string; icon: string; value?: string; action?: 'cache' | 'profile' }
+type SettingItem = { label: string; icon: string; value?: string; action?: 'cache' | 'profile' | 'security' }
 
 const user = ref<CurrentUser | null>(null)
 const avatarFailed = ref(false)
@@ -54,7 +54,7 @@ const maskedPhone = computed(() => user.value?.phone.replace(/(\d{3})\d{4}(\d{4}
 const settingGroups: SettingItem[][] = [
   [
     { label: '编辑个人资料', icon: '人', action: 'profile' },
-    { label: '账号与安全', icon: '盾' },
+    { label: '账号与安全', icon: '盾', action: 'security' },
     { label: '隐私设置', icon: '锁' },
   ],
   [
@@ -72,6 +72,7 @@ function goBack() { uni.navigateBack({ fail: () => uni.reLaunch({ url: '/pages/p
 function openProfileEditor() { uni.navigateTo({ url: '/pages/profile/edit' }) }
 function openSetting(item: SettingItem) {
   if (item.action === 'profile') return openProfileEditor()
+  if (item.action === 'security') return uni.navigateTo({ url: '/pages/security/index' })
   if (item.action === 'cache') {
     uni.showToast({ title: '缓存已清理', icon: 'success' })
     return

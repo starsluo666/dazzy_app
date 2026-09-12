@@ -499,6 +499,13 @@ export interface AuthSession {
   user: CurrentUser
 }
 
+export interface AccountSecurity {
+  phone_masked: string
+  password_set: boolean
+  account_status: CurrentUser['account_status']
+  account_status_label: string
+}
+
 export interface CurrentUserOverview {
   balance_amount: number | null
   coupon_count: number | null

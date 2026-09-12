@@ -97,6 +97,10 @@
       "style": { "navigationStyle": "custom" }
     },
     {
+      "path": "pages/security/index",
+      "style": { "navigationStyle": "custom" }
+    },
+    {
       "path": "pages/profile/edit",
       "style": { "navigationStyle": "custom" }
     },

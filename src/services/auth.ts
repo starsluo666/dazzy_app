@@ -1,4 +1,4 @@
-import type { AuthSession, CurrentUser, CurrentUserOverview, DataResponse, SmsPurpose } from '@/types/api'
+import type { AccountSecurity, AuthSession, CurrentUser, CurrentUserOverview, DataResponse, SmsPurpose } from '@/types/api'
 
 import { request, uploadFile } from './http'
 import { clearSession, getRefreshToken, saveSession } from './session'
@@ -41,6 +41,28 @@ export function resetPassword(phone: string, code: string, newPassword: string) 
 
 export function getCurrentUser() {
   return request<DataResponse<CurrentUser>>('/users/me/')
+}
+
+export function getAccountSecurity() {
+  return request<DataResponse<AccountSecurity>>('/auth/security/')
+}
+
+export function changePassword(currentPassword: string, newPassword: string) {
+  return request<DataResponse<AuthSession>>('/auth/password/change/', {
+    method: 'POST', data: { current_password: currentPassword, new_password: newPassword },
+  }).then((response) => { saveSession(response.data); return response })
+}
+
+export function logoutOtherSessions(currentPassword: string) {
+  return request<DataResponse<AuthSession>>('/auth/sessions/logout-others/', {
+    method: 'POST', data: { current_password: currentPassword },
+  }).then((response) => { saveSession(response.data); return response })
+}
+
+export function closeAccount(currentPassword: string) {
+  return request<DataResponse<{ closed: boolean }>>('/auth/account/close/', {
+    method: 'POST', data: { current_password: currentPassword },
+  })
 }
 
 export function updateCurrentUser(payload: Partial<Pick<CurrentUser, 'nickname' | 'gender' | 'birth_date'>>) {
