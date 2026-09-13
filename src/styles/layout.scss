@@ -145,6 +145,47 @@
 }
 /* #endif */
 
+/* 流程页自绘导航行：返回按钮左置、标题居中、与导航行垂直对齐。 */
+.dz-page .dz-page-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: $dz-navbar-height;
+}
+
+.dz-page .dz-page-head strong {
+  overflow: hidden;
+  max-width: 60%;
+  color: $dz-text-primary;
+  font-size: $dz-fs-body-strong;
+  font-weight: $dz-fw-semibold;
+  line-height: $dz-lh-body-strong;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dz-page .dz-page-head button {
+  display: flex;
+  flex: 0 0 auto;
+  width: 72rpx;
+  height: 72rpx;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: $dz-radius-full;
+  color: $dz-text-primary;
+  background: transparent;
+  font-size: $dz-fs-price-lg;
+  line-height: 1;
+}
+
+.dz-page .dz-page-head button::after {
+  border: 0;
+}
+
 @media screen and (min-width: 480px) {
   .dz-container {
     max-width: 430px;
