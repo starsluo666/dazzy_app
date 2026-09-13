@@ -5,12 +5,15 @@
   min-height: 100vh;
   min-height: 100dvh;
   color: $dz-text-primary;
-  background: $dz-surface-card;
+  background:
+    radial-gradient(circle at 8% -4%, rgba(24, 199, 198, 0.055), transparent 28%),
+    radial-gradient(circle at 96% 34%, rgba(255, 100, 51, 0.035), transparent 24%),
+    linear-gradient(180deg, #f5f7f8 0%, #eef2f3 100%);
   box-sizing: border-box;
 }
 
 .dz-page--with-tabbar {
-  padding-bottom: calc(128rpx + env(safe-area-inset-bottom));
+  padding-bottom: calc(#{$dz-tabbar-height} + env(safe-area-inset-bottom));
 }
 
 .dz-safe-top {
@@ -19,9 +22,90 @@
   box-sizing: border-box;
 }
 
+/* 功能层使用半透明材质，正文卡片保持不透明白色。 */
+.dz-page .page-head,
+.dz-page .booking-footer,
+.dz-page .order-footer,
+.dz-page .payment-footer,
+.dz-page .submit-footer,
+.dz-page .page-footer,
+.dz-page .support-footer,
+.dz-page .detail-footer,
+.dz-page .action-bar {
+  border-color: $dz-border-material;
+  background-color: $dz-surface-glass-strong;
+}
+
+.dz-page .booking-footer,
+.dz-page .order-footer,
+.dz-page .payment-footer,
+.dz-page .submit-footer,
+.dz-page .page-footer,
+.dz-page .support-footer,
+.dz-page .detail-footer,
+.dz-page .action-bar {
+  border-top: 1rpx solid $dz-border-material;
+  box-shadow: 0 -1rpx 0 rgba(255, 255, 255, .7), 0 -14rpx 40rpx rgba(31, 65, 72, .08);
+}
+
+.dz-page .bottom-sheet,
+.dz-page .service-sheet,
+.dz-page .review-sheet,
+.dz-page .form-sheet,
+.dz-page .schedule-selector-sheet {
+  border: 1rpx solid $dz-border-material;
+  border-bottom: 0;
+  background-color: $dz-surface-glass-strong;
+  box-shadow: $dz-shadow-floating;
+}
+
+/* 内容表面统一为轻边缘 + 低位阴影，层级交给材质和留白表达。 */
+.dz-page .panel,
+.dz-page .card,
+.dz-page .order-card,
+.dz-page .address-card,
+.dz-page .review-card,
+.dz-page .form-panel,
+.dz-page .finance-panel,
+.dz-page .default-panel,
+.dz-page .schedule-panel,
+.dz-page .category-panel {
+  border: 1rpx solid $dz-border-subtle;
+  box-shadow: $dz-shadow-card, inset 0 1rpx 0 $dz-surface-highlight;
+}
+
 /* #ifdef H5 */
 .dz-safe-top {
   min-height: max(8px, env(safe-area-inset-top));
+}
+
+/* 玻璃只属于悬浮功能层；内容卡片保持实体，避免连续叠加透明材质。 */
+.dz-navbar,
+.tabbar,
+.dz-page .page-head,
+.dz-page .booking-footer,
+.dz-page .order-footer,
+.dz-page .payment-footer,
+.dz-page .submit-footer,
+.dz-page .page-footer,
+.dz-page .support-footer,
+.dz-page .detail-footer,
+.dz-page .action-bar,
+.dz-page .search,
+.dz-page .bottom-sheet,
+.dz-page .service-sheet,
+.dz-page .review-sheet,
+.dz-page .form-sheet,
+.dz-page .schedule-selector-sheet {
+  -webkit-backdrop-filter: saturate(180%) blur(22px);
+  backdrop-filter: saturate(180%) blur(22px);
+}
+
+.dz-page .sheet-mask,
+.dz-page .sheet-layer,
+.dz-page .review-mask {
+  -webkit-backdrop-filter: blur(3px);
+  backdrop-filter: blur(3px);
 }
 /* #endif */
 
@@ -52,6 +136,106 @@
 
 @media screen and (orientation: landscape) and (max-height: 600px) {
   .dz-page--with-tabbar {
-    padding-bottom: calc(104rpx + env(safe-area-inset-bottom));
+    padding-bottom: calc(124rpx + env(safe-area-inset-bottom));
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .dz-navbar,
+  .tabbar,
+  .dz-page .page-head,
+  .dz-page .booking-footer,
+  .dz-page .order-footer,
+  .dz-page .payment-footer,
+  .dz-page .submit-footer,
+  .dz-page .page-footer,
+  .dz-page .support-footer,
+  .dz-page .detail-footer,
+  .dz-page .action-bar,
+  .dz-page .search,
+  .dz-page .bottom-sheet,
+  .dz-page .service-sheet,
+  .dz-page .review-sheet,
+  .dz-page .form-sheet,
+  .dz-page .schedule-selector-sheet {
+    background-color: rgba(255, 255, 255, 0.98) !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
+
+  .dz-page .sheet-mask,
+  .dz-page .sheet-layer,
+  .dz-page .review-mask {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
+}
+
+@media (prefers-contrast: more) {
+  .dz-navbar,
+  .tabbar,
+  .dz-page .page-head,
+  .dz-page .booking-footer,
+  .dz-page .order-footer,
+  .dz-page .payment-footer,
+  .dz-page .submit-footer,
+  .dz-page .page-footer,
+  .dz-page .support-footer,
+  .dz-page .detail-footer,
+  .dz-page .action-bar,
+  .dz-page .search,
+  .dz-page .bottom-sheet,
+  .dz-page .service-sheet,
+  .dz-page .review-sheet,
+  .dz-page .form-sheet,
+  .dz-page .schedule-selector-sheet {
+    border-color: rgba(23, 33, 38, 0.2) !important;
+    background-color: rgba(255, 255, 255, 0.96) !important;
+  }
+}
+
+/* 其余流程页的命名变体也接入同一套悬浮材质。 */
+.dz-page .checkout-footer,
+.dz-page .publish-footer,
+.dz-page .dz-page-head,
+.dz-page .sheet {
+  border-color: $dz-border-material;
+  background-color: $dz-surface-glass-strong;
+}
+
+.dz-page .checkout-footer,
+.dz-page .publish-footer {
+  border-top: 1rpx solid $dz-border-material;
+  box-shadow: 0 -1rpx 0 rgba(255, 255, 255, .7), 0 -14rpx 40rpx rgba(31, 65, 72, .08);
+}
+
+/* #ifdef H5 */
+.dz-page .checkout-footer,
+.dz-page .publish-footer,
+.dz-page .dz-page-head,
+.dz-page .sheet {
+  -webkit-backdrop-filter: saturate(180%) blur(22px);
+  backdrop-filter: saturate(180%) blur(22px);
+}
+
+.dz-page .mask {
+  -webkit-backdrop-filter: blur(3px);
+  backdrop-filter: blur(3px);
+}
+/* #endif */
+
+@media (prefers-reduced-transparency: reduce) {
+  .dz-page .checkout-footer,
+  .dz-page .publish-footer,
+  .dz-page .dz-page-head,
+  .dz-page .sheet {
+    background-color: rgba(255, 255, 255, .98) !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
+
+  .dz-page .mask {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
   }
 }

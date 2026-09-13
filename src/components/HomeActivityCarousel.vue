@@ -42,16 +42,16 @@ function homeActivityTime(value: string) {
 <style lang="scss" scoped>
 @use '../styles/tokens.scss' as *;
 
-.activity-card { display:grid; grid-template-columns:238rpx minmax(0,1fr); overflow:hidden; height:210rpx; border:1rpx solid rgba(23,33,38,.055); border-radius:23rpx; background:#fff; box-shadow:0 8rpx 26rpx rgba(31,65,72,.075); transition:transform .18s ease,box-shadow .18s ease; }
-.activity-card--pressed { transform:scale(.99); box-shadow:0 4rpx 14rpx rgba(31,65,72,.06); }
-.activity-media { position:relative; overflow:hidden; min-width:0; background:linear-gradient(145deg,#badfe4,#397f83); }
-.activity-cover,.activity-placeholder { position:absolute; width:100%; height:100%; inset:0; }
-.activity-placeholder { display:flex; align-items:center; justify-content:center; color:#fff; font-size:27rpx; font-weight:700; }
-.activity-info { position:relative; min-width:0; padding:16rpx 18rpx 13rpx; box-sizing:border-box; }
-.activity-title { display:block; overflow:hidden; color:$dz-text-primary; font-size:27rpx; line-height:35rpx; font-weight:800; text-overflow:ellipsis; white-space:nowrap; }
-.meta-row { display:flex; align-items:center; min-width:0; gap:10rpx; margin-top:8rpx; color:#6d767c; font-size:20rpx; line-height:24rpx; }
+.activity-card { display:grid; grid-template-columns:232rpx minmax(0,1fr); overflow:hidden; height:220rpx; border:1rpx solid $dz-border-material; border-radius:$dz-radius-lg; background:$dz-surface-card; box-shadow:$dz-shadow-card,inset 0 1rpx 0 $dz-surface-highlight; transform-origin:center; transition:transform $dz-duration-fast $dz-ease-out, opacity $dz-duration-fast $dz-ease-standard; will-change:transform; }
+.activity-card--pressed { transform:scale(0.985); opacity:0.94; }
+.activity-media { position:relative; overflow:hidden; min-width:0; margin:10rpx; border-radius:30rpx; background:linear-gradient(145deg,$dz-brand-soft,$dz-brand-deep); }
+.activity-cover,.activity-placeholder { position:absolute; width:100%; height:100%; top:0; right:0; bottom:0; left:0; }
+.activity-placeholder { display:flex; align-items:center; justify-content:center; color:$dz-text-inverse; font-size:$dz-fs-body; font-weight:$dz-fw-semibold; }
+.activity-info { position:relative; min-width:0; padding:18rpx 18rpx 15rpx 8rpx; box-sizing:border-box; }
+.activity-title { display:block; overflow:hidden; color:$dz-text-primary; font-size:$dz-fs-body; line-height:35rpx; font-weight:$dz-fw-semibold; text-overflow:ellipsis; white-space:nowrap; }
+.meta-row { display:flex; align-items:center; min-width:0; gap:10rpx; margin-top:8rpx; color:$dz-text-secondary; font-size:$dz-fs-micro; line-height:24rpx; }
 .meta-row text { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.meta-icon { position:relative; display:block; flex:0 0 19rpx; width:19rpx; height:19rpx; color:#7b848a; box-sizing:border-box; font-style:normal; }
+.meta-icon { position:relative; display:block; flex:0 0 19rpx; width:19rpx; height:19rpx; color:$dz-text-tertiary; box-sizing:border-box; font-style:normal; }
 .meta-icon.pin { width:16rpx; height:16rpx; margin:0 1rpx 4rpx 2rpx; border:3rpx solid currentColor; border-radius:50% 50% 50% 0; transform:rotate(-45deg); }
 .meta-icon.pin::after { position:absolute; width:4rpx; height:4rpx; top:3rpx; left:3rpx; border-radius:50%; background:currentColor; content:''; }
 .meta-icon.clock { border:3rpx solid currentColor; border-radius:50%; }
@@ -59,14 +59,14 @@ function homeActivityTime(value: string) {
 .meta-icon.clock::after { position:absolute; width:5rpx; height:2rpx; top:8rpx; left:7rpx; background:currentColor; transform:rotate(26deg); transform-origin:left center; content:''; }
 .meta-icon.people::before,.meta-icon.people::after { position:absolute; border:2rpx solid currentColor; content:''; box-sizing:border-box; }
 .meta-icon.people::before { width:8rpx; height:8rpx; top:0; left:5rpx; border-radius:50%; }
-.meta-icon.people::after { width:18rpx; height:10rpx; bottom:0; left:0; border-bottom:0; border-radius:12rpx 12rpx 0 0; }
+.meta-icon.people::after { width:18rpx; height:10rpx; bottom:0; left:0; border-bottom:0; border-radius:$dz-radius-sm 12rpx 0 0; }
 .activity-footer { position:absolute; right:17rpx; bottom:13rpx; left:17rpx; display:flex; align-items:flex-end; justify-content:space-between; gap:8rpx; }
 .activity-tags { display:flex; min-width:0; gap:7rpx; }
-.category-tag,.friendly-tag,.aa-tag { height:27rpx; padding:0 8rpx; border:1rpx solid #42d8d5; border-radius:5rpx; color:#08aeb4; background:#f8ffff; font-size:17rpx; line-height:26rpx; box-sizing:border-box; white-space:nowrap; }
-.friendly-tag { border-color:#dfe4e6; color:#707980; background:#fafafa; }
-.activity-price { display:flex; flex:0 0 auto; align-items:flex-end; gap:4rpx; color:$dz-price-primary; font-size:38rpx; line-height:38rpx; font-weight:800; white-space:nowrap; }
-.activity-price .aa-tag { margin-right:3rpx; border-color:#ffccb9; color:$dz-price-primary; background:#fff; font-size:16rpx; line-height:25rpx; font-weight:500; }
-.price-symbol { font-size:23rpx; line-height:32rpx; }
+.category-tag,.friendly-tag,.aa-tag { height:27rpx; padding:0 8rpx; border:1rpx solid $dz-brand-primary; border-radius:$dz-radius-full; color:$dz-brand-deep; background:$dz-brand-soft; font-size:$dz-fs-micro; line-height:26rpx; box-sizing:border-box; white-space:nowrap; }
+.friendly-tag { border-color:$dz-border-subtle; color:$dz-text-secondary; background:$dz-surface-page; }
+.activity-price { display:flex; flex:0 0 auto; align-items:flex-end; gap:4rpx; color:$dz-price-primary; font-size:$dz-fs-price-md; line-height:38rpx; font-weight:$dz-fw-bold; white-space:nowrap; }
+.activity-price .aa-tag { margin-right:3rpx; border-color:#ffccb9; color:$dz-price-primary; background:$dz-surface-card; font-size:$dz-fs-micro; line-height:25rpx; font-weight:$dz-fw-medium; }
+.price-symbol { font-size:$dz-fs-caption; line-height:32rpx; }
 
 @media (prefers-reduced-motion: reduce) {
   .activity-card { transition:none; }

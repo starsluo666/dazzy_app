@@ -4,7 +4,7 @@
   min-height: 100vh;
   min-height: 100dvh;
   padding-bottom: calc(36rpx + env(safe-area-inset-bottom));
-  background: #fff;
+  background: $dz-surface-card;
   box-sizing: border-box;
 }
 
@@ -36,9 +36,9 @@
 .auth-heading h1 {
   display: block;
   margin: 0;
-  color: #111b20;
-  font-size: 48rpx;
-  font-weight: 700;
+  color: $dz-text-primary;
+  font-size: $dz-fs-price-lg;
+  font-weight: $dz-fw-bold;
   line-height: 1.25;
 }
 
@@ -46,7 +46,7 @@
   display: block;
   margin-top: 14rpx;
   color: $dz-text-secondary;
-  font-size: 25rpx;
+  font-size: $dz-fs-caption;
   line-height: 1.5;
 }
 
@@ -57,7 +57,7 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   margin-bottom: 36rpx;
-  border-bottom: 1rpx solid #dfe6e8;
+  border-bottom: 1rpx solid $dz-border-subtle;
 }
 
 .auth-tab {
@@ -70,14 +70,14 @@
   font-size: 28rpx;
 }
 
-.auth-tab.active { color: #121c21; font-weight: 650; }
+.auth-tab.active { color: $dz-text-primary; font-weight: $dz-fw-semibold; }
 .auth-tab.active::after {
   position: absolute;
   right: 28%;
   bottom: -1rpx;
   left: 28%;
   height: 5rpx;
-  border-radius: 5rpx;
+  border-radius: $dz-radius-full;
   background: $dz-brand-primary;
   content: '';
 }
@@ -88,10 +88,10 @@
   min-height: 98rpx;
   margin-bottom: 24rpx;
   padding: 0 26rpx;
-  border: 2rpx solid #e0e6e8;
-  border-radius: 18rpx;
-  background: #fff;
-  transition: border-color .18s, box-shadow .18s;
+  border: 2rpx solid $dz-border-subtle;
+  border-radius: $dz-radius-sm;
+  background: $dz-surface-card;
+  transition: border-color $dz-duration-base $dz-ease-standard, box-shadow $dz-duration-base $dz-ease-standard;
   box-sizing: border-box;
 }
 
@@ -105,7 +105,7 @@
   height: 94rpx;
   flex: 1;
   color: $dz-text-primary;
-  font-size: 27rpx;
+  font-size: $dz-fs-body;
 }
 
 .auth-field-action {
@@ -117,12 +117,12 @@
   margin-right: -18rpx;
   padding: 0 12rpx;
   color: $dz-brand-deep;
-  font-size: 25rpx;
+  font-size: $dz-fs-caption;
   white-space: nowrap;
 }
 
 .auth-field-action.disabled { color: $dz-text-tertiary; }
-.password-eye { min-width: 72rpx; color: $dz-text-secondary; font-size: 29rpx; }
+.password-eye { min-width: 72rpx; color: $dz-text-secondary; font-size: $dz-fs-body; }
 
 .auth-inline-link {
   display: flex;
@@ -140,12 +140,12 @@
   width: 100%;
   height: 102rpx;
   margin-top: 28rpx;
-  border-radius: 18rpx;
+  border-radius: $dz-radius-sm;
   color: #fff;
   background: $dz-gradient-brand;
   font-size: 31rpx;
-  font-weight: 650;
-  box-shadow: 0 12rpx 28rpx rgba(8, 181, 194, .18);
+  font-weight: $dz-fw-semibold;
+  box-shadow: $dz-shadow-brand;
 }
 
 .auth-primary[disabled] { opacity: .58; }
@@ -168,7 +168,7 @@
   justify-content: center;
   margin-top: 54rpx;
   color: $dz-text-secondary;
-  font-size: 21rpx;
+  font-size: $dz-fs-caption;
   line-height: 1.65;
 }
 
@@ -180,7 +180,7 @@
   width: 30rpx;
   height: 30rpx;
   margin: 2rpx 12rpx 0 0;
-  border: 2rpx solid #cbd5d8;
+  border: 2rpx solid $dz-text-tertiary;
   border-radius: 50%;
   color: #fff;
   font-size: 20rpx;
@@ -196,7 +196,7 @@
   justify-content: center;
   margin-top: 52rpx;
   color: $dz-text-secondary;
-  font-size: 22rpx;
+  font-size: $dz-fs-caption;
 }
 .auth-security-note i { margin-right: 12rpx; color: $dz-brand-deep; font-style: normal; }
 
@@ -208,4 +208,18 @@
   .auth-field { min-height: 88rpx; margin-bottom: 18rpx; }
   .auth-field input { height: 84rpx; }
   .auth-primary { height: 92rpx; margin-top: 20rpx; }
+}
+
+.auth-primary {
+  transition: transform $dz-duration-fast $dz-ease-out, opacity $dz-duration-fast $dz-ease-standard;
+}
+
+.auth-primary:not([disabled]):active {
+  transform: scale(0.97);
+  opacity: 0.92;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-primary { transition: none; }
+  .auth-primary:not([disabled]):active { transform: none; opacity: 0.85; }
 }

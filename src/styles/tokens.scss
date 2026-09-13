@@ -1,18 +1,105 @@
+/**
+ * DAZZY 设计令牌（设计真相源：design-effects/selected-aqua-orange/DESIGN-SYSTEM.md）
+ *
+ * 使用约定：
+ * - 颜色一律引用令牌，禁止在页面样式里硬编码 hex/rgba。
+ * - 动效只允许 transform / opacity；入场 ease-out，时长不超过 300ms；
+ *   高频操作（tabBar、键盘类）不做动画；新动效必须同时给出 reduced-motion 降级。
+ * - 字阶/间距统一取档，不使用档位外的裸数值。
+ */
+
+/* ============ 色彩 ============ */
 $dz-brand-primary: #18c7c6;
 $dz-brand-deep: #08aeb4;
 $dz-brand-soft: #ddf8f7;
 $dz-price-primary: #ff6433;
+$dz-price-deep: #e8501f;
 $dz-price-soft: #fff0e8;
+$dz-gradient-price: linear-gradient(135deg, #ff8533 0%, #f04e18 100%);
 $dz-status-success: #21b66f;
+$dz-status-success-deep: #087e84;
+$dz-status-success-soft: #e2f7ec;
 $dz-status-warning: #f5a623;
+$dz-status-warning-deep: #a86a00;
+$dz-status-warning-soft: #fef4e0;
+$dz-status-danger: #ff4141;
+$dz-status-danger-deep: #c9472a;
+$dz-status-danger-soft: #ffecec;
 $dz-text-primary: #172126;
 $dz-text-secondary: #66737a;
 $dz-text-tertiary: #9aa4aa;
-$dz-surface-page: #f5f7f8;
+$dz-text-inverse: #ffffff;
+$dz-surface-page: #f3f5f6;
 $dz-surface-card: #ffffff;
-$dz-border-subtle: #e9eef0;
-$dz-gradient-brand: linear-gradient(135deg, #48ddd7 0%, #14c8d0 55%, #08b5c2 100%);
-$dz-shadow-card: 0 12rpx 40rpx rgba(31, 65, 72, 0.08);
-$dz-radius-sm: 16rpx;
-$dz-radius-md: 24rpx;
-$dz-radius-lg: 32rpx;
+$dz-surface-raised: rgba(251, 252, 252, 0.96);
+$dz-surface-dim: rgba(23, 33, 38, 0.45);
+$dz-surface-glass: rgba(248, 251, 251, 0.72);
+$dz-surface-glass-strong: rgba(250, 252, 252, 0.86);
+$dz-surface-highlight: rgba(255, 255, 255, 0.88);
+$dz-border-subtle: rgba(23, 33, 38, 0.08);
+$dz-border-material: rgba(255, 255, 255, 0.82);
+$dz-gradient-brand: linear-gradient(145deg, #55ddd8 0%, #18c7c6 52%, #08aeb4 100%);
+
+/*
+ * 允许的字面色例外（不做令牌化）：
+ * - 第三方品牌色：微信支付绿 #11b94d、支付宝蓝 #1688f5 等支付渠道标识色；
+ * - 运行时字符串：confirmColor 等原生弹窗属性（统一用 @/utils/brand 常量）；
+ * - 英雄图上的深青文字 #075b67（依赖底图，无法归入令牌）；
+ * - 装饰性多段渐变的中间色标与一次性浅底 tint（数量已收敛至个位数，随页面重绘逐步归档）。
+ * - SVG 资源文件内部的填色（归资产层管理）。
+ */
+
+/* ============ 字阶（rpx = px 设计值 × 2） ============ */
+$dz-fs-title: 40rpx; // 页面主标题 20px
+$dz-lh-title: 56rpx;
+$dz-fs-heading: 34rpx; // 模块标题 17px
+$dz-lh-heading: 48rpx;
+$dz-fs-body-strong: 30rpx; // 卡片标题 15px
+$dz-lh-body-strong: 42rpx;
+$dz-fs-body: 28rpx; // 正文 14px
+$dz-lh-body: 40rpx;
+$dz-fs-caption: 24rpx; // 辅助信息 12px
+$dz-lh-caption: 34rpx;
+$dz-fs-micro: 20rpx; // 角标/极弱信息 10px
+$dz-lh-micro: 28rpx;
+$dz-fs-price-lg: 48rpx; // 大价格 24px
+$dz-fs-price-md: 36rpx; // 常规价格 18px
+$dz-fw-regular: 400;
+$dz-fw-medium: 500;
+$dz-fw-semibold: 600;
+$dz-fw-bold: 700;
+
+/* ============ 间距（4px 基准档） ============ */
+$dz-space-1: 8rpx; // 4px
+$dz-space-2: 16rpx; // 8px
+$dz-space-3: 24rpx; // 12px
+$dz-space-4: 32rpx; // 16px
+$dz-space-5: 48rpx; // 24px
+$dz-space-6: 64rpx; // 32px
+
+/* ============ 圆角 ============ */
+$dz-radius-sm: 20rpx; // 标签/输入 10px
+$dz-radius-md: 28rpx; // 列表卡/按钮 14px
+$dz-radius-lg: 40rpx; // 主卡片 20px
+$dz-radius-full: 999rpx; // 胶囊/圆形
+
+/* ============ 阴影（禁止厚重黑影） ============ */
+$dz-shadow-card: 0 1rpx 2rpx rgba(19, 34, 40, 0.035), 0 12rpx 34rpx rgba(31, 65, 72, 0.075); // 常规卡片
+$dz-shadow-raised: 0 2rpx 6rpx rgba(19, 34, 40, 0.045), 0 14rpx 38rpx rgba(31, 65, 72, 0.105); // 小浮层/下拉/吸顶
+$dz-shadow-floating: 0 4rpx 12rpx rgba(19, 34, 40, 0.075), 0 26rpx 72rpx rgba(31, 65, 72, 0.17); // 底部弹层/悬浮操作栏
+$dz-shadow-brand: 0 10rpx 26rpx rgba(24, 199, 198, 0.22), inset 0 1rpx 0 rgba(255, 255, 255, 0.42); // 主 CTA 品牌光
+
+/* ============ 动效 ============ */
+$dz-duration-fast: 140ms; // 按压反馈
+$dz-duration-base: 200ms; // 淡入/小元素入场
+$dz-duration-slow: 260ms; // 面板/内容块
+$dz-duration-sheet: 380ms; // 底部弹层
+$dz-ease-out: cubic-bezier(0.2, 0.8, 0.2, 1); // 入场/出场默认
+$dz-ease-in-out: cubic-bezier(0.77, 0, 0.175, 1); // 屏内移动
+$dz-ease-drawer: cubic-bezier(0.22, 1, 0.36, 1); // 底部抽屉
+$dz-ease-standard: ease; // 颜色/透明度过渡
+
+/* ============ 布局常量 ============ */
+$dz-navbar-height: 88rpx; // 自绘导航栏高度
+$dz-tabbar-height: 152rpx; // 悬浮 Dock + 外边距，与 .dz-page--with-tabbar 保持一致
+$dz-touch-min: 88rpx; // 最小触控区 44px

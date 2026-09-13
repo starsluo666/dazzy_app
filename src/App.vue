@@ -12,12 +12,21 @@ onShow(() => setTimeout(guardCurrentPage, 0))
 <style lang="scss">
 @use './styles/tokens.scss' as *;
 @use './styles/layout.scss';
+@use './styles/motion.scss';
 
 page {
   min-height: 100%;
   color: $dz-text-primary;
   background: $dz-surface-page;
-  font-family: 'PingFang SC', 'HarmonyOS Sans SC', 'Microsoft YaHei', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'PingFang SC', 'HarmonyOS Sans SC', 'Microsoft YaHei', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  font-optical-sizing: auto;
+  text-rendering: optimizeLegibility;
+}
+
+button {
+  font: inherit;
+  -webkit-tap-highlight-color: transparent;
 }
 
 button::after { border: 0; }

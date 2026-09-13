@@ -129,27 +129,27 @@ onLoad(loadActivities)
 <style lang="scss" scoped>
 @use '../../styles/tokens.scss' as *;
 
-.activity-channel { background:#fff; }
+.activity-channel { background:$dz-surface-page; }
 .topbar { display:flex; align-items:center; justify-content:space-between; height:94rpx; }
-.city { color:#172126; font-size:31rpx; font-weight:600; }
-.search { color:#172126; font-size:47rpx; }
-.hero { position:relative; overflow:hidden; height:242rpx; border-radius:24rpx; color:#fff; }
+.city { color:$dz-text-primary; font-size:$dz-fs-body-strong; font-weight:$dz-fw-semibold; }
+.search { color:$dz-text-primary; font-size:$dz-fs-price-lg; }
+.hero { position:relative; overflow:hidden; height:242rpx; border:1rpx solid $dz-border-material; border-radius:$dz-radius-lg; color:$dz-text-inverse; box-shadow:$dz-shadow-card; }
 .hero image { position:absolute; width:100%; height:100%; inset:0; }
 .hero-title,.hero-subtitle { position:relative; z-index:1; display:block; margin-left:36rpx; text-shadow:0 3rpx 8rpx rgba(0,94,103,.2); }
-.hero-title { padding-top:62rpx; font-size:43rpx; font-weight:900; }
-.hero-subtitle { margin-top:18rpx; font-size:24rpx; font-weight:600; }
-.category-panel { display:grid; grid-template-columns:repeat(6,1fr); margin-top:20rpx; padding:22rpx 8rpx 18rpx; border-radius:22rpx; background:#fff; box-shadow:0 8rpx 28rpx rgba(31,65,72,.08); }
-.category { display:flex; flex-direction:column; align-items:center; gap:10rpx; color:#283136; font-size:20rpx; }
-.category-icon { display:flex; align-items:center; justify-content:center; width:62rpx; height:62rpx; border-radius:50%; color:#172126; background:#dff9f8; font-size:28rpx; font-weight:700; }
-.category-icon.all { color:#fff; background:$dz-gradient-brand; }
-.category-icon.billiards { color:#fff; background:#152127; }
+.hero-title { padding-top:62rpx; font-size:43rpx; font-weight:$dz-fw-bold; }
+.hero-subtitle { margin-top:18rpx; font-size:$dz-fs-caption; font-weight:$dz-fw-semibold; }
+.category-panel { display:grid; grid-template-columns:repeat(6,1fr); margin-top:20rpx; padding:22rpx 8rpx 18rpx; border:1rpx solid $dz-border-material; border-radius:$dz-radius-lg; background:$dz-surface-card; box-shadow:$dz-shadow-card,inset 0 1rpx 0 $dz-surface-highlight; }
+.category { display:flex; flex-direction:column; align-items:center; gap:10rpx; color:$dz-text-primary; font-size:$dz-fs-caption; }
+.category-icon { display:flex; align-items:center; justify-content:center; width:62rpx; height:62rpx; border:1rpx solid $dz-border-material; border-radius:22rpx; color:$dz-text-primary; background:#dff9f8; box-shadow:inset 0 1rpx 0 $dz-surface-highlight; font-size:$dz-fs-body; font-weight:$dz-fw-bold; }
+.category-icon.all { color:$dz-text-inverse; background:$dz-gradient-brand; }
+.category-icon.billiards { color:$dz-text-inverse; background:#152127; }
 .sorts { display:flex; align-items:stretch; gap:66rpx; height:82rpx; margin:12rpx 22rpx 0; }
-.sorts>view { position:relative; display:flex; align-items:center; color:#354046; font-size:23rpx; }
-.sorts>view.active { color:$dz-brand-deep; font-weight:800; }
+.sorts>view { position:relative; display:flex; align-items:center; color:#354046; font-size:$dz-fs-caption; }
+.sorts>view.active { color:$dz-brand-deep; font-weight:$dz-fw-bold; }
 .sorts>view.active::after { position:absolute; right:5rpx; bottom:8rpx; left:5rpx; height:4rpx; border-radius:2rpx; background:$dz-brand-primary; content:''; }
 .activity-list { display:flex; flex-direction:column; gap:14rpx; }
-.publish { position:fixed; z-index:9; bottom:calc(132rpx + env(safe-area-inset-bottom)); left:50%; display:flex; align-items:center; justify-content:center; gap:10rpx; width:244rpx; height:66rpx; transform:translateX(-50%); border-radius:34rpx; color:#fff; background:$dz-gradient-brand; box-shadow:0 8rpx 24rpx rgba(24,199,198,.28); font-size:26rpx; font-weight:700; }
-.publish text { font-size:39rpx; font-weight:300; }
+.publish { position:fixed; z-index:95; bottom:calc(160rpx + env(safe-area-inset-bottom)); left:50%; display:flex; align-items:center; justify-content:center; gap:10rpx; width:244rpx; height:70rpx; transform:translateX(-50%); border:1rpx solid rgba(255,255,255,.36); border-radius:$dz-radius-full; color:$dz-text-inverse; background:$dz-gradient-brand; box-shadow:$dz-shadow-brand; font-size:$dz-fs-body; font-weight:$dz-fw-bold; }
+.publish text { font-size:$dz-fs-title; font-weight:300; }
 
 @media screen and (max-width:360px) {
   .sorts { gap:48rpx; }

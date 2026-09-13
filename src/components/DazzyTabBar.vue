@@ -54,24 +54,92 @@ onMounted(loadUnreadCount)
 
 <style lang="scss" scoped>
 @use '../styles/tokens.scss' as *;
-.tabbar { position: fixed; z-index: 10; right: 0; bottom: 0; left: 0; display: grid; grid-template-columns: repeat(4,1fr); height: calc(112rpx + env(safe-area-inset-bottom)); padding-bottom: env(safe-area-inset-bottom); border-top: 1rpx solid $dz-border-subtle; background: rgba(255,255,255,.97); box-sizing: border-box; }
-.tab { display: flex; min-height: 88rpx; align-items: center; justify-content: center; color: $dz-text-secondary; font-size: 19rpx; touch-action: manipulation; flex-direction: column; }
-.tab-icon-shell { position: relative; display: flex; width: 92rpx; height: 48rpx; align-items: center; justify-content: center; margin-bottom: 4rpx; border-radius: 24rpx; transition: background-color .18s ease-out, opacity .18s ease-out; }
-.tab-icon { display: block; width: 44rpx; height: 44rpx; }
-.notification-dot { position: absolute; top: -1rpx; right: 17rpx; width: 15rpx; height: 15rpx; border: 3rpx solid #fff; border-radius: 50%; background: #ff4141; box-sizing: border-box; }
-.tab.active { color: $dz-brand-primary; font-weight: 600; }
-.tab.active .tab-icon-shell { background: $dz-brand-soft; }
-.tab--pressed .tab-icon-shell { opacity: .68; background: $dz-brand-soft; }
+
+.tabbar {
+  position: fixed;
+  z-index: 100;
+  right: 0;
+  bottom: calc(16rpx + env(safe-area-inset-bottom));
+  left: 0;
+  display: grid;
+  width: calc(100% - 48rpx);
+  height: 112rpx;
+  grid-template-columns: repeat(4, 1fr);
+  margin: 0 auto;
+  padding: 8rpx;
+  border: 1rpx solid $dz-border-material;
+  border-radius: 36rpx;
+  background: rgba(250, 252, 252, 0.95);
+  box-shadow: $dz-shadow-floating;
+  box-sizing: border-box;
+  isolation: isolate;
+}
+
+.tabbar::before {
+  position: absolute;
+  z-index: -1;
+  top: 1rpx;
+  right: 28rpx;
+  left: 28rpx;
+  height: 1rpx;
+  background: rgba(255, 255, 255, 0.96);
+  content: '';
+  pointer-events: none;
+}
+
+/* #ifdef H5 */
+.tabbar {
+  background: $dz-surface-glass;
+  -webkit-backdrop-filter: saturate(180%) blur(24px);
+  backdrop-filter: saturate(180%) blur(24px);
+}
+/* #endif */
+
+.tab {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 28rpx;
+  color: $dz-text-secondary;
+  font-size: $dz-fs-micro;
+  touch-action: manipulation;
+  flex-direction: column;
+  transition:
+    transform $dz-duration-fast $dz-ease-out,
+    opacity $dz-duration-fast $dz-ease-standard,
+    background-color $dz-duration-base $dz-ease-standard;
+}
+
+.tab-icon-shell {
+  position: relative;
+  display: flex;
+  width: 76rpx;
+  height: 48rpx;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 2rpx;
+}
+
+.tab-icon { display: block; width: 42rpx; height: 42rpx; }
+.notification-dot { position: absolute; top: -2rpx; right: 9rpx; width: 16rpx; height: 16rpx; border: 3rpx solid $dz-surface-card; border-radius: 50%; background:$dz-status-danger; box-sizing: border-box; }
+.tab.active { color: $dz-brand-deep; background: rgba(24, 199, 198, 0.11); box-shadow: inset 0 1rpx 0 $dz-surface-highlight, 0 5rpx 14rpx rgba(8,174,180,.07); font-weight: $dz-fw-semibold; }
+.tab--pressed { transform: scale(0.95); opacity: .82; }
 @media screen and (min-width: 480px) and (max-width: 767px) {
-  .tabbar { max-width: 430px; margin-right: auto; margin-left: auto; border-right: 1rpx solid $dz-border-subtle; border-left: 1rpx solid $dz-border-subtle; }
+  .tabbar { max-width: 406px; }
 }
 @media screen and (min-width: 768px) {
-  .tabbar { max-width: 720px; margin-right: auto; margin-left: auto; border-right: 1rpx solid $dz-border-subtle; border-left: 1rpx solid $dz-border-subtle; }
+  .tabbar { max-width: 672px; }
 }
 @media screen and (orientation: landscape) and (max-height: 600px) {
-  .tabbar { height: calc(96rpx + env(safe-area-inset-bottom)); }
+  .tabbar { bottom: calc(10rpx + env(safe-area-inset-bottom)); height: 96rpx; }
+  .tab-icon-shell { height: 40rpx; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .tab-icon-shell { transition: none; }
+  .tab { transition: none; }
+  .tab--pressed { transform: none; }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .tabbar { background: $dz-surface-raised; -webkit-backdrop-filter: none; backdrop-filter: none; }
 }
 </style>

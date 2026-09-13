@@ -1,21 +1,27 @@
 @use './tokens.scss' as *;
 
-.booking-page{min-height:100vh;padding-bottom:calc(132rpx + env(safe-area-inset-bottom));background:linear-gradient(180deg,#fafdfe 0,#f5f7f8 42%)}
-.booking-head{position:relative;display:flex;align-items:center;justify-content:center;height:104rpx;padding-top:env(safe-area-inset-top);background:rgba(255,255,255,.92)}
+.booking-page{min-height:100vh;padding-bottom:calc(132rpx + env(safe-area-inset-bottom));background:$dz-surface-page}
+.booking-head{position:relative;display:flex;align-items:center;justify-content:center;height:104rpx;padding-top:env(safe-area-inset-top);background:$dz-surface-glass}
 .booking-head button{position:absolute;left:22rpx;bottom:12rpx;display:flex;align-items:center;justify-content:center;width:72rpx;height:72rpx;margin:0;padding:0;border:0;background:transparent;font-size:52rpx;line-height:1}
 .booking-head button::after,.booking-footer button::after{display:none}
-.booking-head text{font-size:32rpx;font-weight:700}
-.booking-content{padding:22rpx 24rpx}
-.booking-card{border:1rpx solid rgba(220,231,234,.85);border-radius:24rpx;background:#fff;box-shadow:$dz-shadow-card}
-.booking-section-title{display:flex;align-items:center;gap:12rpx;margin:34rpx 4rpx 20rpx;font-size:29rpx;font-weight:700}
-.booking-section-title::before{width:7rpx;height:34rpx;border-radius:5rpx;background:$dz-brand-primary;content:''}
-.booking-footer{position:fixed;z-index:30;right:0;bottom:0;left:0;display:flex;align-items:center;gap:20rpx;max-width:750px;height:calc(116rpx + env(safe-area-inset-bottom));margin:auto;padding:12rpx 24rpx env(safe-area-inset-bottom);background:rgba(255,255,255,.97);box-shadow:0 -8rpx 30rpx rgba(31,65,72,.08);box-sizing:border-box}
-.booking-footer button{flex:1;height:78rpx;margin:0;border:0;border-radius:39rpx;color:#fff;background:$dz-gradient-brand;font-size:29rpx;font-weight:700;line-height:78rpx}
+.booking-head text{font-size:$dz-fs-body-strong;font-weight:$dz-fw-semibold}
+.booking-content{padding:$dz-space-3 $dz-space-3}
+.booking-card{border:1rpx solid $dz-border-subtle;border-radius:$dz-radius-md;background:$dz-surface-card;box-shadow:$dz-shadow-card}
+.booking-section-title{display:flex;align-items:center;gap:12rpx;margin:$dz-space-4 4rpx $dz-space-3;font-size:$dz-fs-body-strong;font-weight:$dz-fw-semibold}
+.booking-section-title::before{width:7rpx;height:34rpx;border-radius:$dz-radius-full;background:$dz-brand-primary;content:''}
+.booking-footer{position:fixed;z-index:30;right:0;bottom:0;left:0;display:flex;align-items:center;gap:$dz-space-3;max-width:750px;height:calc(116rpx + env(safe-area-inset-bottom));margin:auto;padding:$dz-space-3 $dz-space-3 env(safe-area-inset-bottom);background:$dz-surface-glass;border-top:1rpx solid $dz-border-subtle;box-sizing:border-box}
+.booking-footer button{flex:1;height:80rpx;margin:0;border:0;border-radius:$dz-radius-full;color:$dz-text-inverse;background:$dz-gradient-brand;font-size:$dz-fs-body;font-weight:$dz-fw-semibold;line-height:80rpx;transition:transform $dz-duration-fast $dz-ease-out,opacity $dz-duration-fast $dz-ease-standard}
+.booking-footer button:not([disabled]):active{transform:scale(0.97);opacity:0.92}
 .booking-footer button[disabled]{opacity:.48}
-.booking-price{min-width:240rpx;color:$dz-text-secondary;font-size:21rpx}
-.booking-price strong{display:block;margin-top:4rpx;color:$dz-price-primary;font-size:36rpx}
-.booking-price small{font-size:20rpx;font-weight:500}
-.booking-avatar{overflow:hidden;border-radius:18rpx;background:$dz-brand-soft}
+.booking-price{min-width:240rpx;color:$dz-text-secondary;font-size:$dz-fs-caption}
+.booking-price strong{display:block;margin-top:4rpx;color:$dz-price-primary;font-size:$dz-fs-price-md}
+.booking-price small{font-size:$dz-fs-micro;font-weight:$dz-fw-medium}
+.booking-avatar{overflow:hidden;border-radius:$dz-radius-sm;background:$dz-brand-soft}
 .booking-avatar image,.booking-avatar view{width:100%;height:100%}
-.booking-avatar view{display:flex;align-items:center;justify-content:center;color:$dz-brand-deep;font-size:38rpx;font-weight:700}
-.booking-empty{padding:160rpx 30rpx;text-align:center;color:$dz-text-secondary;font-size:26rpx}
+.booking-avatar view{display:flex;align-items:center;justify-content:center;color:$dz-brand-deep;font-size:38rpx;font-weight:$dz-fw-bold}
+.booking-empty{padding:160rpx 30rpx;text-align:center;color:$dz-text-secondary;font-size:$dz-fs-body}
+
+@media (prefers-reduced-motion: reduce) {
+  .booking-footer button{transition:none}
+  .booking-footer button:not([disabled]):active{transform:none;opacity:.85}
+}

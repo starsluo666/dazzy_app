@@ -1,0 +1,78 @@
+/**
+ * 全局动效工具类（规则来源：tokens.scss 动效约定）
+ * 用法：容器加 .dz-anim-stagger，列表项加 .dz-anim-fade-up；
+ *      可按压元素加 .dz-tappable，并配 hover-class="dz-pressed"。
+ */
+@use './tokens.scss' as *;
+
+.dz-tappable {
+  transform-origin: center;
+  transition:
+    transform $dz-duration-fast $dz-ease-out,
+    opacity $dz-duration-fast $dz-ease-standard;
+  will-change: transform;
+}
+
+.dz-pressed {
+  transform: scale(0.98);
+  opacity: 0.94;
+}
+
+.dz-anim-fade-up {
+  animation: dz-fade-up $dz-duration-base $dz-ease-out both;
+}
+
+@keyframes dz-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(16rpx);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.dz-anim-stagger > .dz-anim-fade-up:nth-child(2) { animation-delay: 40ms; }
+.dz-anim-stagger > .dz-anim-fade-up:nth-child(3) { animation-delay: 80ms; }
+.dz-anim-stagger > .dz-anim-fade-up:nth-child(4) { animation-delay: 120ms; }
+.dz-anim-stagger > .dz-anim-fade-up:nth-child(5) { animation-delay: 160ms; }
+
+/* 骨架屏微光 */
+.dz-skeleton {
+  background: linear-gradient(90deg, #eef2f4 25%, #f7fafb 45%, #eef2f4 65%);
+  background-size: 400% 100%;
+  animation: dz-shimmer 1.4s ease infinite;
+  border-radius: $dz-radius-sm;
+}
+
+@keyframes dz-shimmer {
+  0% {
+    background-position: 100% 0;
+  }
+
+  100% {
+    background-position: 0 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dz-tappable,
+  .dz-pressed {
+    transform: none;
+    transition: opacity $dz-duration-fast $dz-ease-standard;
+  }
+
+  .dz-pressed {
+    opacity: 0.85;
+  }
+
+  .dz-anim-fade-up {
+    animation: none;
+  }
+
+  .dz-skeleton {
+    animation: none;
+  }
+}

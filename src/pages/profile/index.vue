@@ -19,11 +19,11 @@
         </view>
 
         <view class="header-actions">
-          <view class="header-action notification-icon" role="button" :aria-label="unreadCount ? `通知中心，${unreadCount}条未读` : '通知中心'" @tap.stop="openNotifications">
+          <view class="header-action notification-icon" hover-class="header-action--pressed" role="button" :aria-label="unreadCount ? `通知中心，${unreadCount}条未读` : '通知中心'" @tap.stop="openNotifications">
             <image src="/static/notifications/system.svg" mode="aspectFit" aria-hidden="true" />
             <i v-if="unreadCount"><b>{{ unreadCount > 99 ? '99+' : unreadCount }}</b></i>
           </view>
-          <view class="header-action settings-icon" role="button" aria-label="设置" @tap.stop="openSettings">
+          <view class="header-action settings-icon" hover-class="header-action--pressed" role="button" aria-label="设置" @tap.stop="openSettings">
             <text>⚙</text>
           </view>
         </view>
@@ -32,7 +32,7 @@
 
     <main class="profile-content dz-container">
       <section class="account-card panel">
-        <view class="provider-strip" role="button" aria-label="申请成为达人" @tap="openProviderCenter">
+        <view class="provider-strip" hover-class="provider-strip--pressed" role="button" aria-label="申请成为达人" @tap="openProviderCenter">
           <view class="provider-copy">
             <strong>{{ providerEntry.title }}</strong>
             <text>{{ providerEntry.description }}</text>
@@ -72,7 +72,7 @@
         </view>
       </section>
 
-      <section class="invite-banner" role="button" aria-label="邀请好友一起玩" @tap="showPending('邀请奖励')">
+      <section class="invite-banner" hover-class="invite-banner--pressed" role="button" aria-label="邀请好友一起玩" @tap="showPending('邀请奖励')">
         <view class="invite-art"><text>¥</text><i>✦</i></view>
         <view class="invite-copy"><strong>邀请好友一起玩</strong><text>双方可得优惠券</text></view>
         <view class="invite-action">去邀请 <text>›</text></view>
@@ -243,7 +243,7 @@ onShow(loadProfile)
 .profile-page {
   min-height: 100vh;
   color: #111b20;
-  background: #fff;
+  background: $dz-surface-page;
 }
 
 .profile-header {
@@ -252,7 +252,7 @@ onShow(loadProfile)
   overflow: hidden;
   background:
     radial-gradient(circle at 18% 86%, rgba(82, 220, 218, .12), transparent 31%),
-    linear-gradient(146deg, #fff 8%, #f3fdfe 56%, #e9fafc 100%);
+    linear-gradient(146deg, #fff 8%,$dz-brand-soft 56%, #e9fafc 100%);
 }
 
 .profile-header::after {
@@ -286,7 +286,7 @@ onShow(loadProfile)
   border-radius: 50%;
   color: $dz-brand-deep;
   background: $dz-brand-soft;
-  font-size: 42rpx;
+  font-size:$dz-fs-title;
   box-shadow: 0 8rpx 24rpx rgba(37, 105, 113, .12);
 }
 
@@ -300,7 +300,7 @@ onShow(loadProfile)
   margin-left: 24rpx;
 }
 
-.name { font-size: 37rpx; font-weight: 800; line-height: 1.15; }
+.name { font-size: 37rpx; font-weight:$dz-fw-bold; line-height: 1.15; }
 
 .verified {
   display: flex;
@@ -308,10 +308,10 @@ onShow(loadProfile)
   height: 38rpx;
   margin-top: 12rpx;
   padding: 0 14rpx 0 8rpx;
-  border-radius: 20rpx;
+  border-radius:$dz-radius-md;
   color: $dz-brand-deep;
   background: #fff;
-  font-size: 20rpx;
+  font-size:$dz-fs-caption;
   box-shadow: 0 4rpx 14rpx rgba(31, 65, 72, .05);
 }
 
@@ -325,8 +325,8 @@ onShow(loadProfile)
   border-radius: 7rpx;
   color: #fff;
   background: $dz-brand-primary;
-  font-size: 15rpx;
-  font-weight: 800;
+  font-size:$dz-fs-micro;
+  font-weight:$dz-fw-bold;
 }
 
 .slogan {
@@ -334,7 +334,7 @@ onShow(loadProfile)
   max-width: 380rpx;
   margin-top: 14rpx;
   color: #536064;
-  font-size: 21rpx;
+  font-size:$dz-fs-caption;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -352,22 +352,34 @@ onShow(loadProfile)
   justify-content: center;
   width: 56rpx;
   height: 56rpx;
+  border: 1rpx solid $dz-border-material;
+  border-radius: 50%;
   color: #111;
+  background: $dz-surface-glass;
+  box-shadow: $dz-shadow-raised, inset 0 1rpx 0 $dz-surface-highlight;
+  transition: transform $dz-duration-fast $dz-ease-out, opacity $dz-duration-fast $dz-ease-standard;
 }
+
+.header-action--pressed { transform: scale(.92); opacity: .8; }
+
+/* #ifdef H5 */
+.header-action { -webkit-backdrop-filter:saturate(180%) blur(16px); backdrop-filter:saturate(180%) blur(16px); }
+/* #endif */
 
 .settings-icon text { font-size: 43rpx; line-height: 1; }
 .notification-icon { position:relative; }
 .notification-icon image { width:42rpx; height:42rpx; }
-.notification-icon i { position:absolute; right:-10rpx; top:-7rpx; display:flex; align-items:center; justify-content:center; min-width:25rpx; height:25rpx; padding:0 5rpx; border:3rpx solid #f3fdfe; border-radius:15rpx; color:#fff; background:#ff4141; box-sizing:border-box; font-style:normal; }
-.notification-icon i b { font-size:15rpx; line-height:1; }
+.notification-icon i { position:absolute; right:-10rpx; top:-7rpx; display:flex; align-items:center; justify-content:center; min-width:25rpx; height:25rpx; padding:0 5rpx; border:3rpx solid #f3fdfe; border-radius:$dz-radius-sm; color:$dz-text-inverse; background:$dz-status-danger; box-sizing:border-box; font-style:normal; }
+.notification-icon i b { font-size:$dz-fs-micro; line-height:1; }
 .profile-content {
   padding-bottom: 60rpx;
 }
 
 .panel {
-  border-radius: 26rpx;
+  border: 1rpx solid $dz-border-material;
+  border-radius:$dz-radius-lg;
   background: #fff;
-  box-shadow: 0 10rpx 34rpx rgba(31, 65, 72, .075);
+  box-shadow: $dz-shadow-card, inset 0 1rpx 0 $dz-surface-highlight;
 }
 
 .account-card { overflow: hidden; }
@@ -380,9 +392,12 @@ onShow(loadProfile)
   overflow: hidden;
   padding: 0 22rpx;
   color: #fff;
-  background: linear-gradient(95deg, #3dd5d0 0%, #21c7d2 54%, #25b7e8 100%);
+  background: $dz-gradient-brand;
   box-sizing: border-box;
+  transition: transform $dz-duration-fast $dz-ease-out, opacity $dz-duration-fast $dz-ease-standard;
 }
+
+.provider-strip--pressed { transform: scale(.99); opacity: .9; }
 
 .provider-copy {
   position: relative;
@@ -392,8 +407,8 @@ onShow(loadProfile)
   align-items: center;
 }
 
-.provider-copy strong { flex: 0 0 auto; font-size: 28rpx; }
-.provider-copy text { overflow: hidden; margin-left: 13rpx; font-size: 17rpx; text-overflow: ellipsis; white-space: nowrap; }
+.provider-copy strong { flex: 0 0 auto; font-size:$dz-fs-body; }
+.provider-copy text { overflow: hidden; margin-left: 13rpx; font-size:$dz-fs-micro; text-overflow: ellipsis; white-space: nowrap; }
 
 .provider-apply {
   position: relative;
@@ -406,16 +421,16 @@ onShow(loadProfile)
   height: 46rpx;
   margin-left: auto;
   padding: 0 13rpx;
-  border-radius: 24rpx;
+  border-radius:$dz-radius-md;
   color: #0baab5;
   background: #fff;
   box-shadow: 0 5rpx 14rpx rgba(5, 110, 130, .12);
-  font-size: 20rpx;
+  font-size:$dz-fs-caption;
   box-sizing: border-box;
 }
 
-.provider-apply text { margin-left: 5rpx; font-size: 29rpx; line-height: 1; }
-.provider-star { position: relative; z-index: 1; margin-left: 10rpx; color: rgba(255, 255, 255, .9); font-size: 28rpx; }
+.provider-apply text { margin-left: 5rpx; font-size:$dz-fs-body-strong; line-height: 1; }
+.provider-star { position: relative; z-index: 1; margin-left: 10rpx; color: rgba(255, 255, 255, .9); font-size:$dz-fs-body; }
 
 .account-grid {
   display: grid;
@@ -435,17 +450,17 @@ onShow(loadProfile)
 }
 
 .account-grid > view:last-child { border-right: 0; }
-.account-grid strong { font-size: 34rpx; font-weight: 600; line-height: 1; }
-.account-grid strong.balance { color: #f65720; font-size: 31rpx; }
-.account-grid text { margin-top: 21rpx; color: #273136; font-size: 20rpx; white-space: nowrap; }
+.account-grid strong { font-size:$dz-fs-heading; font-weight:$dz-fw-semibold; line-height: 1; }
+.account-grid strong.balance { color: #f65720; font-size:$dz-fs-body-strong; }
+.account-grid text { margin-top: 21rpx; color: #273136; font-size:$dz-fs-caption; white-space: nowrap; }
 
 .orders { margin-top: 24rpx; padding: 28rpx 24rpx 35rpx; }
 
 .section-head { display: flex; align-items: center; justify-content: space-between; }
 .section-head > text,
-.section-title { font-size: 29rpx; font-weight: 800; }
-.section-head > view { display: flex; align-items: center; color: #707b80; font-size: 21rpx; }
-.section-head > view text { margin-left: 8rpx; font-size: 30rpx; line-height: 1; }
+.section-title { font-size:$dz-fs-body-strong; font-weight:$dz-fw-bold; }
+.section-head > view { display: flex; align-items: center; color: #707b80; font-size:$dz-fs-caption; }
+.section-head > view text { margin-left: 8rpx; font-size:$dz-fs-body-strong; line-height: 1; }
 
 .order-grid {
   display: grid;
@@ -462,7 +477,7 @@ onShow(loadProfile)
   justify-content: center;
   border-right: 1rpx solid $dz-border-subtle;
   color: #303a3f;
-  font-size: 20rpx;
+  font-size:$dz-fs-caption;
 }
 
 .order-grid > view:last-child { border-right: 0; }
@@ -494,7 +509,7 @@ onShow(loadProfile)
   border-radius: 50%;
   color: #fff;
   background: #ff4f13;
-  font-size: 17rpx;
+  font-size:$dz-fs-micro;
   font-style: normal;
   box-sizing: border-box;
 }
@@ -505,11 +520,15 @@ onShow(loadProfile)
   height: 104rpx;
   margin-top: 24rpx;
   padding: 0 24rpx;
-  border-radius: 24rpx;
+  border: 1rpx solid rgba(255,255,255,.7);
+  border-radius:$dz-radius-lg;
   background: linear-gradient(90deg, #fff7ef 0%, #fffaf6 56%, #fff4e9 100%);
-  box-shadow: 0 8rpx 26rpx rgba(180, 91, 30, .055);
+  box-shadow: $dz-shadow-card, inset 0 1rpx 0 rgba(255,255,255,.8);
   box-sizing: border-box;
+  transition: transform $dz-duration-fast $dz-ease-out, opacity $dz-duration-fast $dz-ease-standard;
 }
+
+.invite-banner--pressed { transform: scale(.985); opacity: .92; }
 
 .invite-art {
   position: relative;
@@ -519,21 +538,21 @@ onShow(loadProfile)
   justify-content: center;
   width: 64rpx;
   height: 56rpx;
-  border-radius: 12rpx 12rpx 17rpx 17rpx;
+  border-radius:$dz-radius-sm 12rpx 17rpx 17rpx;
   color: #ff5b20;
   background: linear-gradient(150deg, #ffd2b0, #ff7b35);
   box-shadow: 0 6rpx 14rpx rgba(255, 91, 32, .18);
 }
 
 .invite-art::before { position: absolute; top: -12rpx; width: 36rpx; height: 15rpx; border: 5rpx solid #ff7a34; border-bottom: 0; border-radius: 50% 50% 0 0; content: ''; }
-.invite-art text { display: flex; align-items: center; justify-content: center; width: 33rpx; height: 33rpx; border-radius: 50%; background: #fff5e9; font-size: 20rpx; font-weight: 800; }
-.invite-art i { position: absolute; top: -9rpx; right: -14rpx; color: #ffc64f; font-size: 17rpx; font-style: normal; }
+.invite-art text { display: flex; align-items: center; justify-content: center; width: 33rpx; height: 33rpx; border-radius: 50%; background: #fff5e9; font-size:$dz-fs-caption; font-weight:$dz-fw-bold; }
+.invite-art i { position: absolute; top: -9rpx; right: -14rpx; color: #ffc64f; font-size:$dz-fs-micro; font-style: normal; }
 
 .invite-copy { display: flex; min-width: 0; flex-direction: column; margin-left: 23rpx; }
-.invite-copy strong { color: #f04e18; font-size: 25rpx; }
-.invite-copy text { margin-top: 6rpx; color: #687177; font-size: 17rpx; }
-.invite-action { display: flex; align-items: center; margin-left: auto; color: #f04e18; font-size: 23rpx; white-space: nowrap; }
-.invite-action text { margin-left: 8rpx; font-size: 31rpx; }
+.invite-copy strong { color:$dz-price-primary; font-size:$dz-fs-caption; }
+.invite-copy text { margin-top: 6rpx; color: #687177; font-size:$dz-fs-micro; }
+.invite-action { display: flex; align-items: center; margin-left: auto; color:$dz-price-primary; font-size:$dz-fs-caption; white-space: nowrap; }
+.invite-action text { margin-left: 8rpx; font-size:$dz-fs-body-strong; }
 
 .functions { margin-top: 24rpx; padding: 29rpx 20rpx 23rpx; }
 .section-title { display: block; margin-left: 4rpx; }
@@ -553,7 +572,7 @@ onShow(loadProfile)
   border-right: 1rpx solid $dz-border-subtle;
   border-bottom: 1rpx solid $dz-border-subtle;
   color: #30393e;
-  font-size: 19rpx;
+  font-size:$dz-fs-caption;
 }
 
 .function-grid > view:nth-child(4n) { border-right: 0; }
@@ -575,7 +594,16 @@ onShow(loadProfile)
   .provider-copy text { max-width: 220rpx; }
   .provider-apply { min-width: 116rpx; padding: 0 10rpx; }
   .provider-star { display: none; }
-  .account-grid text { font-size: 18rpx; }
+  .account-grid text { font-size:$dz-fs-micro; }
   .invite-copy { margin-left: 16rpx; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .header-action,.provider-strip,.invite-banner { transition:none; }
+  .header-action--pressed,.provider-strip--pressed,.invite-banner--pressed { transform:none; opacity:.85; }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .header-action { background:$dz-surface-raised; -webkit-backdrop-filter:none; backdrop-filter:none; }
 }
 </style>

@@ -25,7 +25,7 @@ defineEmits<{ retry: [] }>()
   border-radius: $dz-radius-sm;
   color: $dz-text-secondary;
   background: $dz-surface-page;
-  font-size: 23rpx;
+  font-size:$dz-fs-caption;
 }
 
 .network-state--error {

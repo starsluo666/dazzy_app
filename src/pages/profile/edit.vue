@@ -155,39 +155,39 @@ onLoad(async () => {
 <style lang="scss" scoped>
 @use '../../styles/tokens.scss' as *;
 
-.edit-profile-page { background: #f5f7f8; }
-.edit-hero { background: linear-gradient(150deg, #ecfcfc, #fff); }
-.page-nav { display: flex; align-items: center; justify-content: space-between; height: 94rpx; font-size: 34rpx; font-weight: 800; }
+.edit-profile-page { background:$dz-surface-page; }
+.edit-hero { background: linear-gradient(150deg,$dz-brand-soft, #fff); }
+.page-nav { display: flex; align-items: center; justify-content: space-between; height: 94rpx; font-size:$dz-fs-heading; font-weight:$dz-fw-bold; }
 .back, .nav-spacer { width: 64rpx; }
 .back { font-size: 58rpx; font-weight: 300; line-height: 1; }
 .edit-content { padding-top: 30rpx; padding-bottom: calc(40rpx + env(safe-area-inset-bottom)); }
 .avatar-section { display: flex; flex-direction: column; align-items: center; padding: 22rpx 0 34rpx; }
-.avatar { position: relative; display: flex; width: 154rpx; height: 154rpx; align-items: center; justify-content: center; border: 6rpx solid #fff; border-radius: 50%; color: $dz-brand-deep; background: $dz-brand-soft; font-size: 48rpx; font-weight: 800; box-shadow: 0 12rpx 32rpx rgba(31, 65, 72, .13); }
+.avatar { position: relative; display: flex; width: 154rpx; height: 154rpx; align-items: center; justify-content: center; border: 6rpx solid #fff; border-radius: 50%; color: $dz-brand-deep; background: $dz-brand-soft; font-size:$dz-fs-price-lg; font-weight:$dz-fw-bold; box-shadow: 0 12rpx 32rpx rgba(31, 65, 72, .13); }
 .avatar image { width: 100%; height: 100%; border-radius: 50%; }
-.camera { position: absolute; right: -4rpx; bottom: 2rpx; display: flex; width: 48rpx; height: 48rpx; align-items: center; justify-content: center; border: 4rpx solid #fff; border-radius: 50%; color: #fff; background: $dz-brand-primary; font-size: 15rpx; }
-.avatar-section strong { margin-top: 19rpx; font-size: 27rpx; }
-.avatar-section > text { margin-top: 8rpx; color: $dz-text-tertiary; font-size: 20rpx; }
-.form-panel { overflow: hidden; padding: 0 26rpx; border-radius: 26rpx; background: #fff; box-shadow: $dz-shadow-card; }
+.camera { position: absolute; right: -4rpx; bottom: 2rpx; display: flex; width: 48rpx; height: 48rpx; align-items: center; justify-content: center; border: 4rpx solid #fff; border-radius: 50%; color: #fff; background: $dz-brand-primary; font-size:$dz-fs-micro; }
+.avatar-section strong { margin-top: 19rpx; font-size:$dz-fs-body; }
+.avatar-section > text { margin-top: 8rpx; color: $dz-text-tertiary; font-size:$dz-fs-caption; }
+.form-panel { overflow: hidden; padding: 0 26rpx; border-radius:$dz-radius-md; background: #fff; box-shadow: $dz-shadow-card; }
 .form-row { display: flex; align-items: center; min-height: 102rpx; border-bottom: 1rpx solid $dz-border-subtle; box-sizing: border-box; }
 .form-row:last-child { border-bottom: 0; }
-.form-row > text:first-child { width: 112rpx; font-size: 27rpx; font-weight: 650; }
-.form-row input, .field-value { min-width: 0; flex: 1; color: $dz-text-primary; font-size: 26rpx; text-align: right; }
+.form-row > text:first-child { width: 112rpx; font-size:$dz-fs-body; font-weight:$dz-fw-semibold; }
+.form-row input, .field-value { min-width: 0; flex: 1; color: $dz-text-primary; font-size:$dz-fs-body; text-align: right; }
 .form-row input { height: 98rpx; }
 .field-value.placeholder { color: $dz-text-tertiary; }
-.form-row small { margin-left: 14rpx; color: $dz-text-tertiary; font-size: 20rpx; }
-.chevron { margin-left: 12rpx; color: #b3bdc1; font-size: 38rpx; font-weight: 300; }
+.form-row small { margin-left: 14rpx; color: $dz-text-tertiary; font-size:$dz-fs-caption; }
+.chevron { margin-left: 12rpx; color:$dz-text-tertiary; font-size:$dz-fs-title; font-weight: 300; }
 .readonly .field-value { color: $dz-text-secondary; }
-.save-button { height: 92rpx; margin-top: 34rpx; border-radius: 46rpx; color: #fff; background: $dz-gradient-brand; font-size: 29rpx; font-weight: 750; box-shadow: 0 12rpx 28rpx rgba(8, 181, 194, .18); }
+.save-button { height: 92rpx; margin-top: 34rpx; border-radius:$dz-radius-full; color: #fff; background: $dz-gradient-brand; font-size:$dz-fs-body-strong; font-weight: 750; box-shadow: 0 12rpx 28rpx rgba(8, 181, 194, .18); }
 .save-button[disabled] { opacity: .5; }
 .sheet-mask { position: fixed; z-index: 80; inset: 0; background: rgba(18, 31, 35, .5); }
-.bottom-sheet { position: absolute; right: 0; bottom: 0; left: 0; max-width: 750px; margin: auto; padding: 16rpx 28rpx calc(30rpx + env(safe-area-inset-bottom)); border-radius: 34rpx 34rpx 0 0; background: #fff; }
-.sheet-handle { width: 72rpx; height: 7rpx; margin: 0 auto 22rpx; border-radius: 4rpx; background: #cbd1d3; }
+.bottom-sheet { position: absolute; right: 0; bottom: 0; left: 0; max-width: 750px; margin: auto; padding: 16rpx 28rpx calc(30rpx + env(safe-area-inset-bottom)); border-radius:$dz-radius-lg 34rpx 0 0; background: #fff; }
+.sheet-handle { width: 72rpx; height: 7rpx; margin: 0 auto 22rpx; border-radius: 4rpx; background:$dz-border-subtle; }
 .bottom-sheet header { display: flex; align-items: center; justify-content: space-between; height: 70rpx; }
-.bottom-sheet header strong { font-size: 30rpx; }
-.bottom-sheet header text { padding: 12rpx; color: $dz-text-secondary; font-size: 38rpx; }
+.bottom-sheet header strong { font-size:$dz-fs-body-strong; }
+.bottom-sheet header text { padding: 12rpx; color: $dz-text-secondary; font-size:$dz-fs-title; }
 .gender-options { margin-top: 8rpx; }
-.gender-options button { display: flex; align-items: center; justify-content: space-between; width: 100%; height: 88rpx; margin: 0; padding: 0 8rpx; border: 0; border-bottom: 1rpx solid $dz-border-subtle; background: #fff; font-size: 27rpx; text-align: left; }
+.gender-options button { display: flex; align-items: center; justify-content: space-between; width: 100%; height: 88rpx; margin: 0; padding: 0 8rpx; border: 0; border-bottom: 1rpx solid $dz-border-subtle; background: #fff; font-size:$dz-fs-body; text-align: left; }
 .gender-options button::after { display: none; }
-.gender-options button.active { color: $dz-brand-deep; font-weight: 700; }
+.gender-options button.active { color: $dz-brand-deep; font-weight:$dz-fw-bold; }
 .gender-options i { color: $dz-brand-primary; font-style: normal; }
 </style>

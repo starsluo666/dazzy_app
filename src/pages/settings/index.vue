@@ -111,27 +111,27 @@ onShow(loadUser)
 <style lang="scss" scoped>
 @use '../../styles/tokens.scss' as *;
 
-.settings-page { background: #f5f7f8; }
-.settings-hero { background: linear-gradient(150deg, #effdfc, #fff); }
-.settings-nav { display: flex; align-items: center; justify-content: space-between; height: 94rpx; font-size: 34rpx; font-weight: 800; }
+.settings-page { background:$dz-surface-page; }
+.settings-hero { background: linear-gradient(150deg,$dz-brand-soft, #fff); }
+.settings-nav { display: flex; align-items: center; justify-content: space-between; height: 94rpx; font-size:$dz-fs-heading; font-weight:$dz-fw-bold; }
 .back, .nav-spacer { width: 64rpx; }
 .back { color: #26343a; font-size: 58rpx; font-weight: 300; line-height: 1; }
 .settings-content { padding-top: 24rpx; padding-bottom: calc(40rpx + env(safe-area-inset-bottom)); }
-.account-card, .setting-group { border: 1rpx solid rgba(24, 55, 61, .04); border-radius: 26rpx; background: #fff; box-shadow: 0 10rpx 32rpx rgba(31, 65, 72, .055); }
+.account-card, .setting-group { border: 1rpx solid rgba(24, 55, 61, .04); border-radius:$dz-radius-md; background: #fff; box-shadow: 0 10rpx 32rpx rgba(31, 65, 72, .055); }
 .account-card { display: flex; align-items: center; min-height: 142rpx; padding: 20rpx 28rpx; box-sizing: border-box; }
-.avatar { display: flex; width: 92rpx; height: 92rpx; align-items: center; justify-content: center; overflow: hidden; border-radius: 50%; color: $dz-brand-deep; background: $dz-brand-soft; font-size: 34rpx; font-weight: 800; }
+.avatar { display: flex; width: 92rpx; height: 92rpx; align-items: center; justify-content: center; overflow: hidden; border-radius: 50%; color: $dz-brand-deep; background: $dz-brand-soft; font-size:$dz-fs-heading; font-weight:$dz-fw-bold; }
 .avatar image { width: 100%; height: 100%; }
 .account-copy { display: flex; min-width: 0; flex: 1; flex-direction: column; margin-left: 22rpx; }
-.account-copy strong { font-size: 30rpx; }
-.account-copy text { margin-top: 8rpx; color: $dz-text-tertiary; font-size: 23rpx; }
-.chevron { color: #b3bdc1; font-size: 38rpx; font-weight: 300; }
+.account-copy strong { font-size:$dz-fs-body-strong; }
+.account-copy text { margin-top: 8rpx; color: $dz-text-tertiary; font-size:$dz-fs-caption; }
+.chevron { color:$dz-text-tertiary; font-size:$dz-fs-title; font-weight: 300; }
 .setting-group { overflow: hidden; margin-top: 22rpx; padding: 0 26rpx; }
-.setting-row { display: flex; align-items: center; justify-content: space-between; min-height: 94rpx; border-bottom: 1rpx solid $dz-border-subtle; font-size: 28rpx; }
+.setting-row { display: flex; align-items: center; justify-content: space-between; min-height: 94rpx; border-bottom: 1rpx solid $dz-border-subtle; font-size:$dz-fs-body; }
 .setting-row:last-child { border-bottom: 0; }
 .row-copy, .row-tail { display: flex; align-items: center; }
-.row-icon { display: flex; width: 48rpx; height: 48rpx; align-items: center; justify-content: center; margin-right: 20rpx; border-radius: 15rpx; color: $dz-brand-deep; background: $dz-brand-soft; font-size: 21rpx; font-weight: 700; }
-.row-tail { gap: 12rpx; color: $dz-text-tertiary; font-size: 23rpx; }
-.logout-button { height: 88rpx; margin-top: 34rpx; border-radius: 24rpx; color: #ef5a4f; background: #fff; font-size: 29rpx; font-weight: 700; box-shadow: 0 8rpx 26rpx rgba(31, 65, 72, .045); }
+.row-icon { display: flex; width: 48rpx; height: 48rpx; align-items: center; justify-content: center; margin-right: 20rpx; border-radius:$dz-radius-sm; color: $dz-brand-deep; background: $dz-brand-soft; font-size:$dz-fs-caption; font-weight:$dz-fw-bold; }
+.row-tail { gap: 12rpx; color: $dz-text-tertiary; font-size:$dz-fs-caption; }
+.logout-button { height: 88rpx; margin-top: 34rpx; border-radius:$dz-radius-md; color:$dz-status-danger; background: #fff; font-size:$dz-fs-body-strong; font-weight:$dz-fw-bold; box-shadow: 0 8rpx 26rpx rgba(31, 65, 72, .045); }
 .logout-button[disabled] { opacity: .55; }
-.version { display: block; margin-top: 24rpx; color: #b0b9bd; font-size: 21rpx; text-align: center; }
+.version { display: block; margin-top: 24rpx; color: #b0b9bd; font-size:$dz-fs-caption; text-align: center; }
 </style>

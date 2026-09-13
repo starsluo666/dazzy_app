@@ -81,7 +81,7 @@
               :value="form.max_service_radius_km"
               min="10"
               max="70"
-              activeColor="#18c7c6"
+              :activeColor="BRAND_PRIMARY"
               backgroundColor="#dfe9ea"
               block-size="20"
               @change="changeRadius"
@@ -118,6 +118,7 @@ import { onLoad } from '@dcloudio/uni-app'
 import { computed, reactive, ref } from 'vue'
 
 import NetworkState from '@/components/NetworkState.vue'
+import { BRAND_PRIMARY } from '@/utils/brand'
 import { getCurrentUser, updateCurrentUser } from '@/services/auth'
 import {
   getProviderApplication,
@@ -270,67 +271,67 @@ onLoad(() => { if (guardCurrentPage()) load() })
 .nav button, .nav > view { width: 64rpx; }
 .nav button { height: 64rpx; margin: 0; padding: 0; border: 0; background: transparent; font-size: 55rpx; line-height: 64rpx; }
 .nav button::after, .photo-upload::after { display: none; }
-.nav strong { font-size: 31rpx; }
-.poster-frame { position: relative; overflow: hidden; width: 100%; aspect-ratio: 2 / 1; border-radius: 30rpx; background: #dffafa; box-shadow: 0 16rpx 42rpx rgba(18, 125, 132, .14); }
+.nav strong { font-size:$dz-fs-body-strong; }
+.poster-frame { position: relative; overflow: hidden; width: 100%; aspect-ratio: 2 / 1; border-radius:$dz-radius-lg; background: #dffafa; box-shadow: 0 16rpx 42rpx rgba(18, 125, 132, .14); }
 .poster-frame > image { position: absolute; width: 100%; height: 100%; inset: 0; }
 .hero-copy { position: absolute; z-index: 1; top: 50%; left: 28rpx; display: flex; width: 46%; flex-direction: column; gap: 14rpx; transform: translateY(-50%); }
-.hero-copy strong { color: #124950; font-size: 37rpx; font-weight: 800; line-height: 1.28; letter-spacing: -.8rpx; white-space: pre-line; }
-.hero-copy text { color: #3e686e; font-size: 20rpx; line-height: 1.5; }
+.hero-copy strong { color: #124950; font-size: 37rpx; font-weight:$dz-fw-bold; line-height: 1.28; letter-spacing: -.8rpx; white-space: pre-line; }
+.hero-copy text { color: #3e686e; font-size:$dz-fs-caption; line-height: 1.5; }
 .content { padding-top: 22rpx; padding-bottom: calc(50rpx + env(safe-area-inset-bottom)); }
 .section-heading { display: flex; align-items: flex-end; justify-content: space-between; margin: 4rpx 4rpx 18rpx; }
-.section-heading strong { font-size: 30rpx; }
-.section-heading text { color: $dz-text-tertiary; font-size: 18rpx; }
-.form-card, .tips, .status-card, .reject { border-radius: 24rpx; background: #fff; box-shadow: $dz-shadow-card; }
+.section-heading strong { font-size:$dz-fs-body-strong; }
+.section-heading text { color: $dz-text-tertiary; font-size:$dz-fs-micro; }
+.form-card, .tips, .status-card, .reject { border-radius:$dz-radius-md; background: #fff; box-shadow: $dz-shadow-card; }
 .form-card { padding: 0 25rpx; }
 .form-card label, .row, .radius, .photo-field { display: block; padding: 24rpx 0; border-bottom: 1rpx solid $dz-border-subtle; }
 .form-card > :last-child { border-bottom: 0; }
-.form-card label > text, .row > text, .row-label > text, .radius > view > text, .field-head > text { font-size: 25rpx; font-weight: 700; }
+.form-card label > text, .row > text, .row-label > text, .radius > view > text, .field-head > text { font-size:$dz-fs-caption; font-weight:$dz-fw-bold; }
 .field-head { display: flex; align-items: center; justify-content: space-between; }
-.field-head small { color: $dz-price-primary; font-size: 18rpx; }
-.photo-upload { display: flex; width: 100%; height: 152rpx; align-items: center; margin: 18rpx 0 0; padding: 14rpx; border: 1rpx dashed #9bdedc; border-radius: 20rpx; background: #effcfc; line-height: normal; touch-action: manipulation; }
-.photo-thumbnail, .photo-empty { overflow: hidden; width: 116rpx; height: 116rpx; flex: none; border-radius: 16rpx; background: #d8f7f5; }
+.field-head small { color: $dz-price-primary; font-size:$dz-fs-micro; }
+.photo-upload { display: flex; width: 100%; height: 152rpx; align-items: center; margin: 18rpx 0 0; padding: 14rpx; border: 1rpx dashed #9bdedc; border-radius:$dz-radius-md; background: #effcfc; line-height: normal; touch-action: manipulation; }
+.photo-thumbnail, .photo-empty { overflow: hidden; width: 116rpx; height: 116rpx; flex: none; border-radius:$dz-radius-sm; background: #d8f7f5; }
 .photo-thumbnail { display: block; }
 .photo-empty { display: flex; align-items: center; justify-content: center; }
 .photo-empty i { position: relative; width: 54rpx; height: 54rpx; border-radius: 50%; background: rgba(255, 255, 255, .7); }
 .photo-empty i::before, .photo-empty i::after { position: absolute; top: 50%; left: 50%; width: 24rpx; height: 4rpx; border-radius: 2rpx; background: $dz-brand-deep; content: ''; transform: translate(-50%, -50%); }
 .photo-empty i::after { transform: translate(-50%, -50%) rotate(90deg); }
 .photo-copy { display: flex; min-width: 0; flex: 1; align-items: flex-start; margin-left: 18rpx; text-align: left; flex-direction: column; }
-.photo-copy strong { color: $dz-brand-deep; font-size: 23rpx; line-height: 1.4; }
-.photo-copy text { margin-top: 7rpx; overflow: hidden; color: $dz-text-secondary; font-size: 18rpx; line-height: 1.4; text-overflow: ellipsis; white-space: nowrap; }
-.photo-action { flex: none; margin-left: 12rpx; color: $dz-brand-deep; font-size: 19rpx; font-weight: 700; }
-.photo-help { display: block; margin-top: 12rpx; color: $dz-text-tertiary; font-size: 18rpx; line-height: 1.5; }
-.form-card textarea { width: 100%; height: 150rpx; margin-top: 17rpx; font-size: 23rpx; line-height: 1.55; }
-.form-card label > small { display: block; color: $dz-text-tertiary; text-align: right; font-size: 18rpx; }
+.photo-copy strong { color: $dz-brand-deep; font-size:$dz-fs-caption; line-height: 1.4; }
+.photo-copy text { margin-top: 7rpx; overflow: hidden; color: $dz-text-secondary; font-size:$dz-fs-micro; line-height: 1.4; text-overflow: ellipsis; white-space: nowrap; }
+.photo-action { flex: none; margin-left: 12rpx; color: $dz-brand-deep; font-size:$dz-fs-caption; font-weight:$dz-fw-bold; }
+.photo-help { display: block; margin-top: 12rpx; color: $dz-text-tertiary; font-size:$dz-fs-micro; line-height: 1.5; }
+.form-card textarea { width: 100%; height: 150rpx; margin-top: 17rpx; font-size:$dz-fs-caption; line-height: 1.55; }
+.form-card label > small { display: block; color: $dz-text-tertiary; text-align: right; font-size:$dz-fs-micro; }
 .row { display: flex; min-height: 54rpx; align-items: center; justify-content: space-between; }
 .row-label { display: flex; flex-direction: column; gap: 7rpx; }
-.row-label small { color: $dz-text-tertiary; font-size: 17rpx; font-weight: 400; }
-.row picker view { color: $dz-text-secondary; font-size: 23rpx; }
-.row b { margin-left: 12rpx; font-size: 32rpx; font-weight: 300; }
+.row-label small { color: $dz-text-tertiary; font-size:$dz-fs-micro; font-weight:$dz-fw-regular; }
+.row picker view { color: $dz-text-secondary; font-size:$dz-fs-caption; }
+.row b { margin-left: 12rpx; font-size:$dz-fs-heading; font-weight: 300; }
 .radius > view { display: flex; justify-content: space-between; }
-.radius strong { color: $dz-brand-deep; font-size: 23rpx; }
+.radius strong { color: $dz-brand-deep; font-size:$dz-fs-caption; }
 .radius slider { margin: 20rpx 0 0; }
 .input-row { display: flex !important; align-items: center; }
-.input-row input { min-height: 54rpx; flex: 1; text-align: right; font-size: 23rpx; }
+.input-row input { min-height: 54rpx; flex: 1; text-align: right; font-size:$dz-fs-caption; }
 .tips { display: flex; flex-direction: column; gap: 10rpx; margin-top: 20rpx; padding: 23rpx 25rpx; }
-.tips strong { font-size: 24rpx; }
-.tips text { color: $dz-text-secondary; font-size: 20rpx; }
-.agreement { display: flex; min-height: 72rpx; align-items: center; margin: 12rpx 8rpx; color: $dz-text-secondary; font-size: 19rpx; line-height: 1.5; }
+.tips strong { font-size:$dz-fs-caption; }
+.tips text { color: $dz-text-secondary; font-size:$dz-fs-caption; }
+.agreement { display: flex; min-height: 72rpx; align-items: center; margin: 12rpx 8rpx; color: $dz-text-secondary; font-size:$dz-fs-caption; line-height: 1.5; }
 .agreement i { display: flex; width: 32rpx; height: 32rpx; flex: none; align-items: center; justify-content: center; margin-right: 10rpx; border: 2rpx solid #c8d2d4; border-radius: 50%; font-style: normal; }
 .agreement i.active { border-color: $dz-brand-primary; color: #fff; background: $dz-brand-primary; }
-.submit, .status-card button { height: 84rpx; border: 0; border-radius: 42rpx; color: #fff; background: $dz-gradient-brand; font-size: 27rpx; font-weight: 700; line-height: 84rpx; }
+.submit, .status-card button { height: 84rpx; border: 0; border-radius:$dz-radius-full; color: #fff; background: $dz-gradient-brand; font-size:$dz-fs-body; font-weight:$dz-fw-bold; line-height: 84rpx; }
 .submit[disabled] { opacity: .45; }
-.reject { display: flex; flex-direction: column; gap: 8rpx; margin-bottom: 18rpx; padding: 20rpx 24rpx; border-left: 6rpx solid #ff6433; }
-.reject strong { color: #e95329; font-size: 24rpx; }
-.reject text { color: $dz-text-secondary; font-size: 20rpx; }
+.reject { display: flex; flex-direction: column; gap: 8rpx; margin-bottom: 18rpx; padding: 20rpx 24rpx; border-left: 6rpx solid $dz-price-primary; }
+.reject strong { color: $dz-status-danger-deep; font-size:$dz-fs-caption; }
+.reject text { color: $dz-text-secondary; font-size:$dz-fs-caption; }
 .status-card { display: flex; flex-direction: column; align-items: center; padding: 62rpx 28rpx; text-align: center; }
-.status-icon { display: flex; width: 110rpx; height: 110rpx; align-items: center; justify-content: center; border-radius: 50%; color: #fff; background: $dz-gradient-brand; font-size: 48rpx; }
-.status-card > strong { margin-top: 25rpx; font-size: 31rpx; }
-.status-card > text { margin-top: 12rpx; color: $dz-text-secondary; font-size: 21rpx; line-height: 1.6; }
+.status-icon { display: flex; width: 110rpx; height: 110rpx; align-items: center; justify-content: center; border-radius: 50%; color: #fff; background: $dz-gradient-brand; font-size:$dz-fs-price-lg; }
+.status-card > strong { margin-top: 25rpx; font-size:$dz-fs-body-strong; }
+.status-card > text { margin-top: 12rpx; color: $dz-text-secondary; font-size:$dz-fs-caption; line-height: 1.6; }
 .status-card button { width: 100%; margin-top: 38rpx; }
 
 @media screen and (max-width: 360px) {
-  .hero-copy strong { font-size: 34rpx; }
-  .hero-copy text { font-size: 18rpx; }
+  .hero-copy strong { font-size:$dz-fs-heading; }
+  .hero-copy text { font-size:$dz-fs-micro; }
   .section-heading text { max-width: 52%; text-align: right; }
 }
 
