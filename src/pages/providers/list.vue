@@ -1,18 +1,20 @@
 <template>
   <view class="dz-page dz-page--with-tabbar">
-    <view class="dz-safe-top" />
+    <view class="dz-sticky-head">
+      <view class="dz-safe-top" />
 
-    <header class="header dz-container">
-      <text class="brand">DAZZY<text>搭子</text><i>◆</i></text>
-      <label class="search">
-        <text>⌕</text>
-        <input v-model="keyword" type="text" confirm-type="search" placeholder="搜索达人或服务" @confirm="loadProviders" />
-        <button v-if="keyword" aria-label="清空搜索" @tap.stop="clearKeyword">×</button>
-      </label>
-      <button class="filter-button" :class="{ active: activeFilterCount }" :aria-label="activeFilterCount ? `筛选，已选${activeFilterCount}项` : '筛选'" @tap="openFilter">
-        <i /><i /><i /><b v-if="activeFilterCount">{{ activeFilterCount }}</b>
-      </button>
-    </header>
+      <header class="header dz-container">
+        <text class="brand">DAZZY<text>搭子</text><i>◆</i></text>
+        <label class="search">
+          <text>⌕</text>
+          <input v-model="keyword" type="text" confirm-type="search" placeholder="搜索达人或服务" @confirm="loadProviders" />
+          <button v-if="keyword" aria-label="清空搜索" @tap.stop="clearKeyword">×</button>
+        </label>
+        <button class="filter-button" :class="{ active: activeFilterCount }" :aria-label="activeFilterCount ? `筛选，已选${activeFilterCount}项` : '筛选'" @tap="openFilter">
+          <i /><i /><i /><b v-if="activeFilterCount">{{ activeFilterCount }}</b>
+        </button>
+      </header>
+    </view>
 
     <scroll-view scroll-x class="category-rail" :show-scrollbar="false">
       <view class="categories dz-container">
@@ -21,6 +23,7 @@
           :key="item.value"
           class="category"
           :class="{ active: category === item.value }"
+          hover-class="category--pressed"
           role="button"
           @tap="changeCategory(item.value)"
         >{{ item.label }}</view>
@@ -33,11 +36,12 @@
           v-for="item in sorts"
           :key="item.value"
           :class="{ active: ordering === item.value }"
+          hover-class="sort--pressed"
           role="button"
           @tap="changeOrdering(item.value)"
         >{{ item.label }}</view>
       </view>
-      <view class="city" role="button" @tap="showCityPending">⌖ 邯郸市⌄</view>
+      <view class="city" role="button" hover-class="sort--pressed" @tap="showCityPending">⌖ 邯郸市⌄</view>
     </view>
 
     <view v-if="activeFilterCount" class="filter-summary dz-container">
@@ -382,11 +386,13 @@ button::after { display:none; }
 .filter-button b { position:absolute; right:-2rpx; top:-3rpx; display:flex; align-items:center; justify-content:center; min-width:28rpx; height:28rpx; padding:0 6rpx; border:3rpx solid #fff; border-radius:$dz-radius-sm; color:$dz-text-inverse; background:$dz-price-primary; box-sizing:border-box; font-size:$dz-fs-micro; line-height:1; }
 .category-rail { white-space:nowrap; }
 .categories { display:flex; gap:16rpx; padding-top:12rpx; padding-bottom:18rpx; }
-.category { display:flex; align-items:center; justify-content:center; flex:0 0 auto; min-width:116rpx; height:58rpx; padding:0 24rpx; border:1rpx solid $dz-border-material; border-radius:$dz-radius-full; color:$dz-text-primary; background:$dz-surface-raised; box-shadow:inset 0 1rpx 0 $dz-surface-highlight; font-size:$dz-fs-caption; box-sizing:border-box; }
+.category { display:flex; align-items:center; justify-content:center; flex:0 0 auto; min-width:116rpx; height:58rpx; padding:0 24rpx; border:1rpx solid $dz-border-material; border-radius:$dz-radius-full; color:$dz-text-primary; background:$dz-surface-raised; box-shadow:inset 0 1rpx 0 $dz-surface-highlight; font-size:$dz-fs-caption; box-sizing:border-box; transition:transform $dz-duration-fast $dz-ease-out, opacity $dz-duration-fast $dz-ease-standard; }
+.category--pressed { transform:scale(.95); opacity:.8; }
 .category.active { border-color:transparent; color:$dz-text-inverse; background:$dz-gradient-brand; box-shadow:$dz-shadow-brand; font-weight:$dz-fw-bold; }
 .sort-row { display:flex; align-items:center; justify-content:space-between; min-height:78rpx; }
 .sorts { display:flex; align-items:stretch; gap:38rpx; height:78rpx; }
-.sorts>view { position:relative; display:flex; align-items:center; color:$dz-text-primary; font-size:$dz-fs-caption; }
+.sorts>view { position:relative; display:flex; align-items:center; color:$dz-text-primary; font-size:$dz-fs-caption; transition:opacity $dz-duration-fast $dz-ease-standard; }
+.sort--pressed { opacity:.6; }
 .sorts>view.active { color:$dz-brand-deep; font-weight:$dz-fw-bold; }
 .sorts>view.active::before { position:absolute; right:4rpx; bottom:8rpx; left:4rpx; height:4rpx; border-radius:2rpx; background:$dz-brand-primary; content:''; }
 .city { flex:0 0 auto; color:$dz-text-secondary; font-size:$dz-fs-caption; }
@@ -415,12 +421,12 @@ button::after { display:none; }
 .profile-row { margin-top:8rpx; color:$dz-text-secondary; font-size:$dz-fs-micro; }
 .profile-row text:nth-child(2) { display:none; }
 .tags { display:flex; gap:8rpx; margin-top:12rpx; }
-.tags text { padding:4rpx 10rpx; border:1rpx solid $dz-brand-primary; border-radius:$dz-radius-sm; color:$dz-brand-deep; font-size:$dz-fs-micro; }
+.tags text { padding:4rpx 12rpx; border-radius:$dz-radius-full; color:$dz-brand-deep; background:$dz-brand-soft; font-size:$dz-fs-micro; }
 .foot { margin-top:14rpx; }
 .price { color:$dz-price-primary; font-size:$dz-fs-body-strong; font-weight:$dz-fw-medium; }
 .price small { font-size:$dz-fs-micro; font-weight:$dz-fw-regular; }
 .book { display:flex; align-items:center; justify-content:center; min-width:86rpx; height:48rpx; border:1rpx solid rgba(255,255,255,.34); border-radius:$dz-radius-full; color:$dz-text-inverse; background:$dz-gradient-brand; box-shadow:$dz-shadow-brand; font-size:$dz-fs-caption; font-weight:$dz-fw-bold; box-sizing:border-box; }
-.book.disabled { min-width:110rpx; color: $dz-text-secondary; background:$dz-border-subtle; font-size:$dz-fs-caption; }
+.book.disabled { min-width:110rpx; border:1rpx solid $dz-border-subtle; color:$dz-text-secondary; background:$dz-surface-page; box-shadow:none; font-size:$dz-fs-caption; }
 .filter-section { padding:$dz-space-3 0 8rpx; }
 .filter-section>strong { display:block; margin-bottom:15rpx; color:$dz-text-primary; font-size:$dz-fs-caption; }
 .filter-options { display:grid; grid-template-columns:repeat(3,1fr); gap:12rpx; }

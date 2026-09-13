@@ -1,11 +1,21 @@
 <template>
-  <view class="dz-sheet" :class="{ 'dz-sheet--visible': visible }">
-    <view class="dz-sheet__mask" @tap="$emit('close')" />
-    <view class="dz-sheet__panel">
-      <view class="dz-sheet__grabber" />
-      <view v-if="title || closable" class="dz-sheet__header">
-        <text class="dz-sheet__title">{{ title }}</text>
-        <text v-if="closable" class="dz-sheet__close" hover-class="dz-sheet__close--pressed" @tap="$emit('close')">✕</text>
+  <view class="dz-sheet" :class="{ 'dz-sheet--visible': visible, 'dz-sheet--dragging': dragging }">
+    <view
+      class="dz-sheet__mask"
+      :style="dragging ? { opacity: maskProgress, transition: 'none' } : undefined"
+      @tap="$emit('close')"
+    />
+    <view
+      class="dz-sheet__panel"
+      :style="dragging ? { transform: `translateY(${dragOffset}px)`, transition: 'none' } : undefined"
+    >
+      <view class="dz-sheet__dragzone" @touchstart="onTouchStart" @touchmove.prevent="onTouchMove" @touchend="onTouchEnd" @touchcancel="onTouchEnd">
+        <view class="dz-sheet__grabber" />
+        <view v-if="title || closable" class="dz-sheet__header">
+          <text class="dz-sheet__title">{{ title }}</text>
+          <text v-if="closable" class="dz-sheet__close" hover-class="dz-sheet__close--pressed" @tap="$emit('close')">✕</text>
+        </view>
+        <view v-else class="dz-sheet__dragzone-pad" />
       </view>
       <scroll-view class="dz-sheet__body" scroll-y>
         <slot />
@@ -15,11 +25,68 @@
 </template>
 
 <script setup lang="ts">
-withDefaults(defineProps<{ visible: boolean; title?: string; closable?: boolean }>(), {
+import { ref } from 'vue'
+
+const props = withDefaults(defineProps<{ visible: boolean; title?: string; closable?: boolean }>(), {
   title: '',
   closable: true,
 })
-defineEmits<{ close: [] }>()
+const emit = defineEmits<{ close: [] }>()
+
+/*
+ * 拖拽规则（见 tokens.scss 动效约定）：
+ * - 拖动 1:1 跟手，仅把手和标题区可拖，避免与内容滚动冲突；
+ * - 上方越界走橡皮筋阻尼，下方越界 1:1；
+ * - 松手按「最近约 100ms 的速度符号 + 位移比例」决策收起或回弹；
+ * - 拖动过程中遮罩透明度随位移同步衰减；reduced-motion 下拖拽照常（直接操纵），仅回弹动画降级。
+ */
+const dragging = ref(false)
+const dragOffset = ref(0)
+const maskProgress = ref(1)
+
+let startY = 0
+let panelHeight = 0
+let history: Array<{ y: number; t: number }> = []
+
+function rubberBand(overshoot: number, dimension: number, constant = 0.55) {
+  return (overshoot * dimension * constant) / (dimension + constant * Math.abs(overshoot))
+}
+
+function onTouchStart(e: TouchEvent) {
+  if (!props.visible) return
+  const touch = e.touches[0]
+  startY = touch.clientY
+  history = [{ y: touch.clientY, t: Date.now() }]
+  panelHeight = Math.max(1, typeof window !== 'undefined' ? window.innerHeight : 667)
+  dragging.value = true
+  dragOffset.value = 0
+}
+
+function onTouchMove(e: TouchEvent) {
+  if (!dragging.value) return
+  const touch = e.touches[0]
+  history.push({ y: touch.clientY, t: Date.now() })
+  if (history.length > 8) history.shift()
+  let dy = touch.clientY - startY
+  if (dy < 0) dy = -rubberBand(-dy, panelHeight)
+  dragOffset.value = dy
+  maskProgress.value = Math.max(0, 1 - dy / (panelHeight * 0.6))
+}
+
+function onTouchEnd() {
+  if (!dragging.value) return
+  const now = Date.now()
+  const recent = history.find((item) => now - item.t <= 120) ?? history[0]
+  const elapsed = Math.max(1, now - recent.t)
+  const velocity = (history[history.length - 1].y - recent.y) / elapsed // px/ms，向下为正
+  const dy = dragOffset.value
+
+  dragging.value = false
+  dragOffset.value = 0
+  maskProgress.value = 1
+
+  if (dy > 0 && (velocity > 0.35 || dy > Math.min(panelHeight * 0.32, 260))) emit('close')
+}
 </script>
 
 <style lang="scss" scoped>
@@ -80,14 +147,27 @@ defineEmits<{ close: [] }>()
   transform: translateY(0) scale(1);
 }
 
+.dz-sheet__dragzone {
+  flex: 0 0 auto;
+  cursor: grab;
+  touch-action: none;
+}
+
+.dz-sheet__dragzone:active {
+  cursor: grabbing;
+}
+
 .dz-sheet__grabber {
   align-self: center;
-  flex: 0 0 auto;
   width: 72rpx;
   height: 10rpx;
   margin-top: 12rpx;
   border-radius: $dz-radius-full;
   background: rgba(102, 115, 122, 0.24);
+}
+
+.dz-sheet__dragzone-pad {
+  height: 20rpx;
 }
 
 .dz-sheet__header {

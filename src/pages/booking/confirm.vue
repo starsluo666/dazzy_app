@@ -103,94 +103,89 @@
       </button>
     </footer>
 
-    <view v-if="activeSheet" class="sheet-mask" @tap="closeSheet">
-      <section v-if="activeSheet === 'time'" class="bottom-sheet time-sheet" @tap.stop>
-        <view class="handle" />
-        <view class="sheet-head"><strong>选择预约时间</strong><button @tap="closeSheet">×</button></view>
-        <scroll-view scroll-x class="date-scroll" :show-scrollbar="false">
-          <view class="date-options">
-            <button
-              v-for="item in dates"
-              :key="item.key"
-              :class="{ active: tempDate === item.key }"
-              @tap="chooseDate(item.key)"
-            >
-              <text>{{ item.label }}</text><strong>{{ item.display }}</strong>
-            </button>
-          </view>
-        </scroll-view>
-        <text class="field-title">选择开始时间</text>
-        <view v-if="availabilityLoading" class="slot-state">正在查询真实档期…</view>
-        <view v-else-if="!times.length" class="slot-state">当天暂无连续可预约时间</view>
-        <view v-else class="time-options">
-          <button v-for="time in times" :key="time" :class="{ active: tempTime === time }" @tap="tempTime = time">{{ time }}</button>
-        </view>
-        <text class="field-title">服务时长</text>
-        <view class="duration">
-          <button :disabled="tempDuration <= minimumDuration" @tap="changeDuration(-30)">−</button>
-          <strong>{{ durationLabel }}</strong>
-          <button @tap="changeDuration(30)">＋</button>
-        </view>
-        <text class="duration-tip">最低{{ minimumDuration / 60 }}小时 · 30分钟粒度</text>
-        <view class="time-summary">
-          <text>服务时间</text>
-          <strong>{{ times.includes(tempTime) ? tempTimeLabel : '请先选择可预约时间' }}</strong>
-        </view>
-        <button class="sheet-confirm" :disabled="!times.includes(tempTime)" @tap="confirmTime">确认时间</button>
-      </section>
-
-      <section v-else class="bottom-sheet address-sheet" @tap.stop>
-        <view class="handle" />
-        <view class="sheet-head"><strong>选择地址</strong><button @tap="closeSheet">×</button></view>
-        <view v-if="addressLoading" class="slot-state">正在加载常用地址…</view>
-        <template v-else>
-          <view v-if="!addressOptions.length" class="address-empty">
-            <view class="empty-pin"><i /></view>
-            <strong>还没有常用地址</strong>
-            <text>添加后即可快速选择并带入联系人</text>
-          </view>
-          <scroll-view v-else scroll-y class="address-results">
-            <view class="address-list">
-              <button
-                v-for="item in addressOptions"
-                :key="item.id"
-                :class="{ active: Number(item.id) === Number(tempLocation?.id) }"
-                @tap="chooseAddress(item)"
-              >
-                <i>{{ Number(item.id) === Number(tempLocation?.id) ? '✓' : '' }}</i>
-                <view>
-                  <view class="address-option-title">
-                    <strong>{{ item.name }}</strong>
-                    <text v-if="item.is_default">默认</text>
-                  </view>
-                  <text>{{ item.city_name }} {{ item.address }}</text>
-                  <small v-if="hasCompleteContact(item)">{{ item.contact_name }}{{ itemGenderLabel(item) }} · {{ maskedPhone(item.contact_phone || '') }}</small>
-                  <small v-else class="incomplete">联系人信息未补全，点击编辑</small>
-                </view>
-                <b>›</b>
-              </button>
-            </view>
-          </scroll-view>
-        </template>
-        <view class="address-sheet-actions">
-          <button class="sheet-add" @tap="addAddress"><text>＋</text>添加地址</button>
+    <DzBottomSheet :visible="activeSheet === 'time'" title="选择预约时间" @close="closeSheet">
+      <scroll-view scroll-x class="date-scroll" :show-scrollbar="false">
+        <view class="date-options">
           <button
-            v-if="addressOptions.length"
-            class="sheet-confirm"
-            :disabled="!tempLocation || !hasCompleteContact(tempLocation)"
-            @tap="confirmAddress"
+            v-for="item in dates"
+            :key="item.key"
+            :class="{ active: tempDate === item.key }"
+            @tap="chooseDate(item.key)"
           >
-            使用该地址
+            <text>{{ item.label }}</text><strong>{{ item.display }}</strong>
           </button>
         </view>
-      </section>
-    </view>
+      </scroll-view>
+      <text class="field-title">选择开始时间</text>
+      <view v-if="availabilityLoading" class="slot-state">正在查询真实档期…</view>
+      <view v-else-if="!times.length" class="slot-state">当天暂无连续可预约时间</view>
+      <view v-else class="time-options">
+        <button v-for="time in times" :key="time" :class="{ active: tempTime === time }" @tap="tempTime = time">{{ time }}</button>
+      </view>
+      <text class="field-title">服务时长</text>
+      <view class="duration">
+        <button :disabled="tempDuration <= minimumDuration" @tap="changeDuration(-30)">−</button>
+        <strong>{{ durationLabel }}</strong>
+        <button @tap="changeDuration(30)">＋</button>
+      </view>
+      <text class="duration-tip">最低{{ minimumDuration / 60 }}小时 · 30分钟粒度</text>
+      <view class="time-summary">
+        <text>服务时间</text>
+        <strong>{{ times.includes(tempTime) ? tempTimeLabel : '请先选择可预约时间' }}</strong>
+      </view>
+      <button class="sheet-confirm" :disabled="!times.includes(tempTime)" @tap="confirmTime">确认时间</button>
+    </DzBottomSheet>
+
+    <DzBottomSheet :visible="activeSheet === 'address'" title="选择地址" @close="closeSheet">
+      <view v-if="addressLoading" class="slot-state">正在加载常用地址…</view>
+      <template v-else>
+        <view v-if="!addressOptions.length" class="address-empty">
+          <view class="empty-pin"><i /></view>
+          <strong>还没有常用地址</strong>
+          <text>添加后即可快速选择并带入联系人</text>
+        </view>
+        <view v-else class="address-results">
+          <view class="address-list">
+            <button
+              v-for="item in addressOptions"
+              :key="item.id"
+              :class="{ active: Number(item.id) === Number(tempLocation?.id) }"
+              @tap="chooseAddress(item)"
+            >
+              <i>{{ Number(item.id) === Number(tempLocation?.id) ? '✓' : '' }}</i>
+              <view>
+                <view class="address-option-title">
+                  <strong>{{ item.name }}</strong>
+                  <text v-if="item.is_default">默认</text>
+                </view>
+                <text>{{ item.city_name }} {{ item.address }}</text>
+                <small v-if="hasCompleteContact(item)">{{ item.contact_name }}{{ itemGenderLabel(item) }} · {{ maskedPhone(item.contact_phone || '') }}</small>
+                <small v-else class="incomplete">联系人信息未补全，点击编辑</small>
+              </view>
+              <b>›</b>
+            </button>
+          </view>
+        </view>
+      </template>
+      <view class="address-sheet-actions">
+        <button class="sheet-add" @tap="addAddress"><text>＋</text>添加地址</button>
+        <button
+          v-if="addressOptions.length"
+          class="sheet-confirm"
+          :disabled="!tempLocation || !hasCompleteContact(tempLocation)"
+          @tap="confirmAddress"
+        >
+          使用该地址
+        </button>
+      </view>
+    </DzBottomSheet>
   </view>
 </template>
 
 <script setup lang="ts">
 import { onShow } from '@dcloudio/uni-app'
 import { computed, ref } from 'vue'
+import DzBottomSheet from '@/components/DzBottomSheet.vue'
 import {
   bookingEndTime,
   bookingServiceAmount,
@@ -518,5 +513,5 @@ onShow(async () => {
 
 <style lang="scss" scoped>
 @use '../../styles/tokens.scss' as *;
-.order-page{min-height:100vh;padding-bottom:calc(124rpx + env(safe-area-inset-bottom));background:linear-gradient(180deg,#defbfc 0,$dz-surface-page 390rpx)}.page-head{position:relative;display:flex;align-items:flex-end;justify-content:center;height:calc(100rpx + env(safe-area-inset-top));padding-bottom:17rpx;box-sizing:border-box}.page-head button{position:absolute;left:20rpx;bottom:6rpx;width:70rpx;height:70rpx;margin:0;padding:0;border:0;background:transparent;font-size:$dz-fs-price-lg;line-height:70rpx}.page-head button::after,.form-card button::after,.sheet-head button::after,.bottom-sheet button::after,.order-footer button::after{display:none}.page-head text{font-size:$dz-fs-body-strong;font-weight:$dz-fw-bold}.order-content{padding:18rpx 24rpx}.panel{border-radius:$dz-radius-md;background:$dz-surface-card;box-shadow:$dz-shadow-card}.provider-card{position:relative;display:flex;align-items:center;min-height:174rpx;padding:22rpx;overflow:hidden;box-sizing:border-box}.avatar{display:flex;align-items:center;justify-content:center;overflow:hidden;width:112rpx;height:128rpx;border-radius:$dz-radius-sm;color:$dz-brand-deep;background:$dz-brand-soft;font-size:$dz-fs-title}.avatar image{width:100%;height:100%}.provider-copy{display:flex;flex-direction:column;gap:10rpx;margin-left:20rpx}.provider-copy>view{display:flex;align-items:center;gap:10rpx}.provider-copy>view strong{font-size:$dz-fs-body-strong}.provider-copy>view text{padding:4rpx 8rpx;border-radius:$dz-radius-sm;color:$dz-brand-deep;background:$dz-brand-soft;font-size:$dz-fs-micro}.provider-copy>text{color:$dz-text-secondary;font-size:$dz-fs-caption}.unit-price{color:$dz-price-primary;font-size:$dz-fs-heading}.unit-price small{color:$dz-text-primary;font-size:$dz-fs-micro;font-weight:$dz-fw-medium}.brand-card{position:absolute;right:24rpx;top:25rpx;padding:12rpx 16rpx;border-radius:$dz-radius-sm;color:$dz-text-inverse;background:$dz-gradient-brand;text-align:center;font-size:$dz-fs-micro;transform:rotate(5deg)}.brand-card b{font-size:$dz-fs-caption}.form-card{margin-top:18rpx;padding:0 20rpx}.form-card button{display:flex;align-items:center;width:100%;min-height:88rpx;margin:0;padding:12rpx 0;border:0;border-bottom:1rpx solid $dz-border-subtle;background:$dz-surface-card;text-align:left}.form-card button:last-of-type{border:0}.form-card i{display:flex;align-items:center;justify-content:center;width:48rpx;height:48rpx;border-radius:50%;color:$dz-brand-deep;background:$dz-brand-soft;font-size:$dz-fs-caption;font-style:normal}.form-card i.orange{color:$dz-price-primary;background:$dz-price-soft}.form-card strong{margin-left:15rpx;font-size:$dz-fs-caption}.form-card button>text{flex:1;overflow:hidden;margin-left:15rpx;color:$dz-text-secondary;text-align:right;font-size:$dz-fs-caption;text-overflow:ellipsis;white-space:nowrap}.form-card button>text.placeholder{color:$dz-text-tertiary}.form-card button>b{margin-left:9rpx;color:$dz-text-tertiary;font-size:$dz-fs-body-strong}.form-card textarea{width:100%;height:110rpx;padding:14rpx;border:1rpx solid $dz-border-subtle;border-radius:$dz-radius-sm;box-sizing:border-box;font-size:$dz-fs-caption}.booking-address-card{display:flex;align-items:center;min-height:142rpx;margin-top:18rpx;padding:22rpx 24rpx;box-sizing:border-box}.address-pin{display:flex;flex:0 0 66rpx;width:66rpx;height:66rpx;align-items:center;justify-content:center;border-radius:50%;background:linear-gradient(145deg,$dz-brand-primary,$dz-brand-primary);box-shadow:0 8rpx 18rpx rgba(58,173,221,.24)}.address-pin i,.empty-pin i{position:relative;width:23rpx;height:30rpx;border:5rpx solid #fff;border-radius:50% 50% 50% 0;transform:rotate(-45deg);box-sizing:border-box}.address-pin i::after,.empty-pin i::after{position:absolute;top:6rpx;left:6rpx;width:4rpx;height:4rpx;border-radius:50%;background:$dz-surface-card;content:''}.booking-address-copy{display:flex;min-width:0;flex:1;flex-direction:column;gap:7rpx;margin-left:20rpx}.booking-address-copy strong{overflow:hidden;font-size:$dz-fs-body;text-overflow:ellipsis;white-space:nowrap}.booking-address-copy>text{overflow:hidden;color:$dz-text-secondary;font-size:$dz-fs-caption;text-overflow:ellipsis;white-space:nowrap}.booking-address-copy small{color:$dz-text-tertiary;font-size:$dz-fs-micro}.placeholder-copy{gap:12rpx}.placeholder-copy strong{font-size:$dz-fs-body-strong}.placeholder-copy>text{color:$dz-text-tertiary;font-size:$dz-fs-caption}.address-title{display:flex;align-items:center;gap:10rpx}.address-title text{padding:3rpx 9rpx;border-radius:$dz-radius-sm;color:$dz-brand-deep;background:$dz-brand-soft;font-size:$dz-fs-micro}.address-chevron{margin-left:12rpx;color: $dz-text-secondary;font-size:$dz-fs-title;font-weight:300}.fee-card{margin-top:18rpx;padding:22rpx 24rpx}.fee-title{display:block;margin-bottom:14rpx;font-size:$dz-fs-body;font-weight:$dz-fw-bold}.fee-card>view{display:flex;justify-content:space-between;padding:9rpx 0;font-size:$dz-fs-caption}.fee-card .discount{color:$dz-price-primary}.fee-card .total{margin-top:8rpx;padding-top:17rpx;border-top:1rpx dashed $dz-border-subtle;font-size:$dz-fs-caption}.total strong{color:$dz-price-primary;font-size:$dz-fs-heading}.quote-error{display:block;margin-top:12rpx;color:$dz-price-primary;font-size:$dz-fs-micro}.route-tip{display:block;margin:-2rpx 0 8rpx;color:$dz-text-tertiary;font-size:$dz-fs-micro}.agreement{display:flex;align-items:center;margin:24rpx 6rpx;color:$dz-text-secondary;font-size:$dz-fs-micro}.agreement>text{display:flex;align-items:center;justify-content:center;width:30rpx;height:30rpx;margin-right:9rpx;border:2rpx solid #bbc4c7;border-radius:50%;color:$dz-text-inverse}.agreement>text.active{border-color:$dz-brand-primary;background:$dz-brand-primary}.agreement em{color:$dz-brand-deep;font-style:normal}.order-footer{position:fixed;z-index:30;right:0;bottom:0;left:0;display:flex;align-items:center;gap:20rpx;max-width:750px;height:calc(112rpx + env(safe-area-inset-bottom));margin:auto;padding:12rpx 24rpx env(safe-area-inset-bottom);background:$dz-surface-card;box-shadow:$dz-shadow-floating;box-sizing:border-box}.order-footer>view{min-width:220rpx;font-size:$dz-fs-caption}.order-footer strong{color:$dz-price-primary;font-size:$dz-fs-heading}.order-footer button{flex:1;height:76rpx;margin:0;border:0;border-radius:$dz-radius-lg;color:$dz-text-inverse;background:$dz-gradient-brand;font-size:$dz-fs-body;font-weight:$dz-fw-bold;line-height:76rpx}.order-footer button[disabled]{opacity:.45}.empty{padding:170rpx 30rpx;color:$dz-text-secondary;text-align:center}.sheet-mask{position:fixed;z-index:70;inset:0;background:rgba(18,31,35,.56)}.bottom-sheet{position:absolute;right:0;bottom:0;left:0;max-width:750px;margin:auto;padding:16rpx 26rpx calc(24rpx + env(safe-area-inset-bottom));border-radius:$dz-radius-lg 32rpx 0 0;background:$dz-surface-card;box-sizing:border-box}.handle{width:72rpx;height:7rpx;margin:0 auto 17rpx;border-radius:4rpx;background:$dz-border-subtle}.sheet-head{display:flex;align-items:center;justify-content:space-between}.sheet-head strong{font-size:$dz-fs-body-strong}.sheet-head button{width:54rpx;height:54rpx;margin:0;padding:0;border:0;background:transparent;color:$dz-text-secondary;font-size:$dz-fs-heading;line-height:54rpx}.date-scroll{margin-top:18rpx;white-space:nowrap}.date-options{display:flex;gap:12rpx}.date-options button{display:flex;flex:0 0 112rpx;flex-direction:column;align-items:center;justify-content:center;height:92rpx;margin:0;padding:0;border:1rpx solid $dz-border-subtle;border-radius:$dz-radius-sm;background:$dz-surface-card;font-size:$dz-fs-caption}.date-options button strong{margin-top:5rpx;font-size:$dz-fs-caption}.date-options button.active,.time-options button.active{border-color:$dz-brand-primary;color:$dz-text-inverse;background:$dz-gradient-brand}.field-title{display:block;margin-top:23rpx;font-size:$dz-fs-caption;font-weight:$dz-fw-bold}.time-options{display:grid;grid-template-columns:repeat(6,1fr);gap:9rpx;margin-top:14rpx}.time-options button{height:58rpx;margin:0;padding:0;border:1rpx solid $dz-border-subtle;border-radius:$dz-radius-sm;background:$dz-surface-card;font-size:$dz-fs-micro;line-height:58rpx}.duration{display:grid;grid-template-columns:80rpx 1fr 80rpx;align-items:center;width:380rpx;height:70rpx;margin:14rpx auto 0;border:1rpx solid $dz-border-subtle;border-radius:$dz-radius-sm}.duration button{height:50rpx;margin:0 10rpx;padding:0;border:0;border-radius:$dz-radius-sm;color:$dz-brand-deep;background:$dz-brand-soft;font-size:$dz-fs-body-strong;line-height:50rpx}.duration strong{text-align:center;font-size:$dz-fs-caption}.duration-tip{display:block;margin-top:8rpx;color:$dz-text-secondary;text-align:center;font-size:$dz-fs-micro}.time-summary{display:flex;flex-direction:column;gap:8rpx;margin-top:18rpx;padding:15rpx;border:1rpx solid $dz-border-subtle;border-radius:$dz-radius-sm;font-size:$dz-fs-caption}.time-summary strong{font-size:$dz-fs-caption}.sheet-confirm{height:76rpx;margin:20rpx 0 0;border:0;border-radius:$dz-radius-lg;color:$dz-text-inverse;background:$dz-gradient-brand;font-size:$dz-fs-body;font-weight:$dz-fw-bold;line-height:76rpx}.sheet-confirm[disabled]{opacity:.45}.slot-state{margin-top:14rpx;padding:20rpx;border-radius:$dz-radius-sm;color:$dz-text-secondary;background:$dz-surface-page;text-align:center;font-size:$dz-fs-caption}.address-sheet{max-height:82vh}.address-results{max-height:480rpx}.address-list{margin-top:12rpx}.address-list>button{display:flex;align-items:center;width:100%;min-height:122rpx;margin:0;padding:16rpx 0;border:0;border-bottom:1rpx solid $dz-border-subtle;background:$dz-surface-card;text-align:left}.address-list>button>i{display:flex;flex:0 0 30rpx;width:30rpx;height:30rpx;align-items:center;justify-content:center;border:2rpx solid $dz-border-subtle;border-radius:50%;color:$dz-text-inverse;font-size:$dz-fs-micro;font-style:normal}.address-list>button.active>i{border-color:$dz-brand-primary;background:$dz-brand-primary}.address-list>button>view{display:flex;min-width:0;flex:1;flex-direction:column;gap:7rpx;margin-left:15rpx}.address-list>button>view>text,.address-list small{overflow:hidden;color:$dz-text-tertiary;font-size:$dz-fs-micro;text-overflow:ellipsis;white-space:nowrap}.address-list small.incomplete{color:$dz-status-warning}.address-list>button>b{color:$dz-text-tertiary;font-size:$dz-fs-body-strong;font-weight:300}.address-option-title{display:flex;align-items:center;gap:9rpx}.address-option-title strong{overflow:hidden;font-size:$dz-fs-caption;text-overflow:ellipsis;white-space:nowrap}.address-option-title text{padding:3rpx 8rpx;border-radius:$dz-radius-sm;color:$dz-brand-deep;background:$dz-brand-soft;font-size:$dz-fs-micro}.address-empty{display:flex;min-height:340rpx;flex-direction:column;align-items:center;justify-content:center}.empty-pin{display:flex;width:96rpx;height:96rpx;align-items:center;justify-content:center;border-radius:50%;background:linear-gradient(145deg,$dz-brand-primary,$dz-brand-primary)}.empty-pin i{width:28rpx;height:36rpx}.address-empty strong{margin-top:22rpx;font-size:$dz-fs-body}.address-empty>text{margin-top:9rpx;color:$dz-text-tertiary;font-size:$dz-fs-caption}.address-sheet-actions{display:flex;gap:14rpx}.address-sheet-actions button{flex:1}.sheet-add{height:76rpx;margin:20rpx 0 0;border:1rpx solid $dz-brand-primary;border-radius:$dz-radius-lg;color:$dz-brand-deep;background:$dz-surface-card;font-size:$dz-fs-caption;font-weight:$dz-fw-bold;line-height:76rpx}.sheet-add text{margin-right:7rpx;font-size:$dz-fs-body-strong}
+.order-page{min-height:100vh;padding-bottom:calc(124rpx + env(safe-area-inset-bottom));background:linear-gradient(180deg,#defbfc 0,$dz-surface-page 390rpx)}.page-head{position:relative;display:flex;align-items:flex-end;justify-content:center;height:calc(100rpx + env(safe-area-inset-top));padding-bottom:17rpx;box-sizing:border-box}.page-head button{position:absolute;left:20rpx;bottom:6rpx;width:70rpx;height:70rpx;margin:0;padding:0;border:0;background:transparent;font-size:$dz-fs-price-lg;line-height:70rpx}.page-head button::after,.form-card button::after,.date-options button::after,.time-options button::after,.duration button::after,.sheet-confirm::after,.sheet-add::after,.address-list>button::after,.order-footer button::after{display:none}.page-head text{font-size:$dz-fs-body-strong;font-weight:$dz-fw-bold}.order-content{padding:18rpx 24rpx}.panel{border-radius:$dz-radius-md;background:$dz-surface-card;box-shadow:$dz-shadow-card}.provider-card{position:relative;display:flex;align-items:center;min-height:174rpx;padding:22rpx;overflow:hidden;box-sizing:border-box}.avatar{display:flex;align-items:center;justify-content:center;overflow:hidden;width:112rpx;height:128rpx;border-radius:$dz-radius-sm;color:$dz-brand-deep;background:$dz-brand-soft;font-size:$dz-fs-title}.avatar image{width:100%;height:100%}.provider-copy{display:flex;flex-direction:column;gap:10rpx;margin-left:20rpx}.provider-copy>view{display:flex;align-items:center;gap:10rpx}.provider-copy>view strong{font-size:$dz-fs-body-strong}.provider-copy>view text{padding:4rpx 8rpx;border-radius:$dz-radius-sm;color:$dz-brand-deep;background:$dz-brand-soft;font-size:$dz-fs-micro}.provider-copy>text{color:$dz-text-secondary;font-size:$dz-fs-caption}.unit-price{color:$dz-price-primary;font-size:$dz-fs-heading}.unit-price small{color:$dz-text-primary;font-size:$dz-fs-micro;font-weight:$dz-fw-medium}.brand-card{position:absolute;right:24rpx;top:25rpx;padding:12rpx 16rpx;border-radius:$dz-radius-sm;color:$dz-text-inverse;background:$dz-gradient-brand;text-align:center;font-size:$dz-fs-micro;transform:rotate(5deg)}.brand-card b{font-size:$dz-fs-caption}.form-card{margin-top:18rpx;padding:0 20rpx}.form-card button{display:flex;align-items:center;width:100%;min-height:88rpx;margin:0;padding:12rpx 0;border:0;border-bottom:1rpx solid $dz-border-subtle;background:$dz-surface-card;text-align:left}.form-card button:last-of-type{border:0}.form-card i{display:flex;align-items:center;justify-content:center;width:48rpx;height:48rpx;border-radius:50%;color:$dz-brand-deep;background:$dz-brand-soft;font-size:$dz-fs-caption;font-style:normal}.form-card i.orange{color:$dz-price-primary;background:$dz-price-soft}.form-card strong{margin-left:15rpx;font-size:$dz-fs-caption}.form-card button>text{flex:1;overflow:hidden;margin-left:15rpx;color:$dz-text-secondary;text-align:right;font-size:$dz-fs-caption;text-overflow:ellipsis;white-space:nowrap}.form-card button>text.placeholder{color:$dz-text-tertiary}.form-card button>b{margin-left:9rpx;color:$dz-text-tertiary;font-size:$dz-fs-body-strong}.form-card textarea{width:100%;height:110rpx;padding:14rpx;border:1rpx solid $dz-border-subtle;border-radius:$dz-radius-sm;box-sizing:border-box;font-size:$dz-fs-caption}.booking-address-card{display:flex;align-items:center;min-height:142rpx;margin-top:18rpx;padding:22rpx 24rpx;box-sizing:border-box}.address-pin{display:flex;flex:0 0 66rpx;width:66rpx;height:66rpx;align-items:center;justify-content:center;border-radius:50%;background:linear-gradient(145deg,$dz-brand-primary,$dz-brand-primary);box-shadow:0 8rpx 18rpx rgba(58,173,221,.24)}.address-pin i,.empty-pin i{position:relative;width:23rpx;height:30rpx;border:5rpx solid #fff;border-radius:50% 50% 50% 0;transform:rotate(-45deg);box-sizing:border-box}.address-pin i::after,.empty-pin i::after{position:absolute;top:6rpx;left:6rpx;width:4rpx;height:4rpx;border-radius:50%;background:$dz-surface-card;content:''}.booking-address-copy{display:flex;min-width:0;flex:1;flex-direction:column;gap:7rpx;margin-left:20rpx}.booking-address-copy strong{overflow:hidden;font-size:$dz-fs-body;text-overflow:ellipsis;white-space:nowrap}.booking-address-copy>text{overflow:hidden;color:$dz-text-secondary;font-size:$dz-fs-caption;text-overflow:ellipsis;white-space:nowrap}.booking-address-copy small{color:$dz-text-tertiary;font-size:$dz-fs-micro}.placeholder-copy{gap:12rpx}.placeholder-copy strong{font-size:$dz-fs-body-strong}.placeholder-copy>text{color:$dz-text-tertiary;font-size:$dz-fs-caption}.address-title{display:flex;align-items:center;gap:10rpx}.address-title text{padding:3rpx 9rpx;border-radius:$dz-radius-sm;color:$dz-brand-deep;background:$dz-brand-soft;font-size:$dz-fs-micro}.address-chevron{margin-left:12rpx;color: $dz-text-secondary;font-size:$dz-fs-title;font-weight:300}.fee-card{margin-top:18rpx;padding:22rpx 24rpx}.fee-title{display:block;margin-bottom:14rpx;font-size:$dz-fs-body;font-weight:$dz-fw-bold}.fee-card>view{display:flex;justify-content:space-between;padding:9rpx 0;font-size:$dz-fs-caption}.fee-card .discount{color:$dz-price-primary}.fee-card .total{margin-top:8rpx;padding-top:17rpx;border-top:1rpx dashed $dz-border-subtle;font-size:$dz-fs-caption}.total strong{color:$dz-price-primary;font-size:$dz-fs-heading;letter-spacing:-1rpx}.quote-error{display:block;margin-top:12rpx;color:$dz-price-primary;font-size:$dz-fs-micro}.route-tip{display:block;margin:-2rpx 0 8rpx;color:$dz-text-tertiary;font-size:$dz-fs-micro}.agreement{display:flex;align-items:center;margin:24rpx 6rpx;color:$dz-text-secondary;font-size:$dz-fs-micro}.agreement>text{display:flex;align-items:center;justify-content:center;width:30rpx;height:30rpx;margin-right:9rpx;border:2rpx solid #bbc4c7;border-radius:50%;color:$dz-text-inverse}.agreement>text.active{border-color:$dz-brand-primary;background:$dz-brand-primary}.agreement em{color:$dz-brand-deep;font-style:normal}.order-footer{position:fixed;z-index:30;right:0;bottom:0;left:0;display:flex;align-items:center;gap:20rpx;max-width:750px;height:calc(112rpx + env(safe-area-inset-bottom));margin:auto;padding:12rpx 24rpx env(safe-area-inset-bottom);background:$dz-surface-card;box-shadow:$dz-shadow-floating;box-sizing:border-box}.order-footer>view{min-width:220rpx;font-size:$dz-fs-caption}.order-footer strong{color:$dz-price-primary;font-size:$dz-fs-heading;letter-spacing:-1rpx}.order-footer button{flex:1;height:76rpx;margin:0;border:0;border-radius:$dz-radius-lg;color:$dz-text-inverse;background:$dz-gradient-brand;font-size:$dz-fs-body;font-weight:$dz-fw-bold;line-height:76rpx}.order-footer button[disabled]{opacity:.45}.empty{padding:170rpx 30rpx;color:$dz-text-secondary;text-align:center}.date-scroll{margin-top:18rpx;white-space:nowrap}.date-options{display:flex;gap:12rpx}.date-options button{display:flex;flex:0 0 112rpx;flex-direction:column;align-items:center;justify-content:center;height:92rpx;margin:0;padding:0;border:1rpx solid $dz-border-subtle;border-radius:$dz-radius-sm;background:$dz-surface-card;font-size:$dz-fs-caption}.date-options button strong{margin-top:5rpx;font-size:$dz-fs-caption}.date-options button.active,.time-options button.active{border-color:$dz-brand-primary;color:$dz-text-inverse;background:$dz-gradient-brand}.field-title{display:block;margin-top:23rpx;font-size:$dz-fs-caption;font-weight:$dz-fw-bold}.time-options{display:grid;grid-template-columns:repeat(6,1fr);gap:9rpx;margin-top:14rpx}.time-options button{height:58rpx;margin:0;padding:0;border:1rpx solid $dz-border-subtle;border-radius:$dz-radius-sm;background:$dz-surface-card;font-size:$dz-fs-micro;line-height:58rpx}.duration{display:grid;grid-template-columns:80rpx 1fr 80rpx;align-items:center;width:380rpx;height:70rpx;margin:14rpx auto 0;border:1rpx solid $dz-border-subtle;border-radius:$dz-radius-sm}.duration button{height:50rpx;margin:0 10rpx;padding:0;border:0;border-radius:$dz-radius-sm;color:$dz-brand-deep;background:$dz-brand-soft;font-size:$dz-fs-body-strong;line-height:50rpx}.duration strong{text-align:center;font-size:$dz-fs-caption}.duration-tip{display:block;margin-top:8rpx;color:$dz-text-secondary;text-align:center;font-size:$dz-fs-micro}.time-summary{display:flex;flex-direction:column;gap:8rpx;margin-top:18rpx;padding:15rpx;border:1rpx solid $dz-border-subtle;border-radius:$dz-radius-sm;font-size:$dz-fs-caption}.time-summary strong{font-size:$dz-fs-caption}.sheet-confirm{height:76rpx;margin:20rpx 0 0;border:0;border-radius:$dz-radius-lg;color:$dz-text-inverse;background:$dz-gradient-brand;font-size:$dz-fs-body;font-weight:$dz-fw-bold;line-height:76rpx}.sheet-confirm[disabled]{opacity:.45}.slot-state{margin-top:14rpx;padding:20rpx;border-radius:$dz-radius-sm;color:$dz-text-secondary;background:$dz-surface-page;text-align:center;font-size:$dz-fs-caption}.address-list{margin-top:12rpx}.address-list>button{display:flex;align-items:center;width:100%;min-height:122rpx;margin:0;padding:16rpx 0;border:0;border-bottom:1rpx solid $dz-border-subtle;background:$dz-surface-card;text-align:left}.address-list>button>i{display:flex;flex:0 0 30rpx;width:30rpx;height:30rpx;align-items:center;justify-content:center;border:2rpx solid $dz-border-subtle;border-radius:50%;color:$dz-text-inverse;font-size:$dz-fs-micro;font-style:normal}.address-list>button.active>i{border-color:$dz-brand-primary;background:$dz-brand-primary}.address-list>button>view{display:flex;min-width:0;flex:1;flex-direction:column;gap:7rpx;margin-left:15rpx}.address-list>button>view>text,.address-list small{overflow:hidden;color:$dz-text-tertiary;font-size:$dz-fs-micro;text-overflow:ellipsis;white-space:nowrap}.address-list small.incomplete{color:$dz-status-warning}.address-list>button>b{color:$dz-text-tertiary;font-size:$dz-fs-body-strong;font-weight:300}.address-option-title{display:flex;align-items:center;gap:9rpx}.address-option-title strong{overflow:hidden;font-size:$dz-fs-caption;text-overflow:ellipsis;white-space:nowrap}.address-option-title text{padding:3rpx 8rpx;border-radius:$dz-radius-sm;color:$dz-brand-deep;background:$dz-brand-soft;font-size:$dz-fs-micro}.address-empty{display:flex;min-height:340rpx;flex-direction:column;align-items:center;justify-content:center}.empty-pin{display:flex;width:96rpx;height:96rpx;align-items:center;justify-content:center;border-radius:50%;background:linear-gradient(145deg,$dz-brand-primary,$dz-brand-primary)}.empty-pin i{width:28rpx;height:36rpx}.address-empty strong{margin-top:22rpx;font-size:$dz-fs-body}.address-empty>text{margin-top:9rpx;color:$dz-text-tertiary;font-size:$dz-fs-caption}.address-sheet-actions{display:flex;gap:14rpx}.address-sheet-actions button{flex:1}.sheet-add{height:76rpx;margin:20rpx 0 0;border:0;border-radius:$dz-radius-lg;color:$dz-brand-deep;background:$dz-brand-soft;font-size:$dz-fs-caption;font-weight:$dz-fw-bold;line-height:76rpx}.sheet-add text{margin-right:7rpx;font-size:$dz-fs-body-strong}
 </style>

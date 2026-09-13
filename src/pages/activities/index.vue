@@ -1,11 +1,13 @@
 <template>
   <view class="dz-page dz-page--with-tabbar activity-channel">
-    <view class="dz-safe-top" />
+    <view class="dz-sticky-head">
+      <view class="dz-safe-top" />
 
-    <header class="topbar dz-container">
-      <view class="city" role="button" @tap="showPending('城市选择')">邯郸市⌄</view>
-      <view class="search" role="button" aria-label="搜索" @tap="showPending('活动搜索')">⌕</view>
-    </header>
+      <header class="topbar dz-container">
+        <view class="city" role="button" @tap="showPending('城市选择')">邯郸市⌄</view>
+        <view class="search" role="button" aria-label="搜索" @tap="showPending('活动搜索')">⌕</view>
+      </header>
+    </view>
 
     <main class="content dz-container">
       <view class="hero">
@@ -19,6 +21,7 @@
           v-for="item in categories"
           :key="item.value"
           class="category"
+          hover-class="category--pressed"
           role="button"
           @tap="openActivityList(item.value)"
         >
@@ -32,6 +35,7 @@
           v-for="item in sorts"
           :key="item.value"
           :class="{ active: ordering === item.value }"
+          hover-class="sort--pressed"
           role="button"
           @tap="changeOrdering(item.value)"
         >{{ item.label }}</view>
@@ -51,7 +55,7 @@
       </section>
     </main>
 
-    <view class="publish" role="button" @tap="openPublish"><text>＋</text>发布活动</view>
+    <view class="publish" role="button" hover-class="publish--pressed" @tap="openPublish"><text>＋</text>发布活动</view>
     <DazzyTabBar active="activity" />
   </view>
 </template>
@@ -139,16 +143,19 @@ onLoad(loadActivities)
 .hero-title { padding-top:62rpx; font-size:43rpx; font-weight:$dz-fw-bold; }
 .hero-subtitle { margin-top:18rpx; font-size:$dz-fs-caption; font-weight:$dz-fw-semibold; }
 .category-panel { display:grid; grid-template-columns:repeat(6,1fr); margin-top:20rpx; padding:22rpx 8rpx 18rpx; border:1rpx solid $dz-border-material; border-radius:$dz-radius-lg; background:$dz-surface-card; box-shadow:$dz-shadow-card,inset 0 1rpx 0 $dz-surface-highlight; }
-.category { display:flex; flex-direction:column; align-items:center; gap:10rpx; color:$dz-text-primary; font-size:$dz-fs-caption; }
+.category { display:flex; flex-direction:column; align-items:center; gap:10rpx; color:$dz-text-primary; font-size:$dz-fs-caption; transition:transform $dz-duration-fast $dz-ease-out, opacity $dz-duration-fast $dz-ease-standard; }
+.category--pressed { transform:scale(.94); opacity:.82; }
 .category-icon { display:flex; align-items:center; justify-content:center; width:62rpx; height:62rpx; border:1rpx solid $dz-border-material; border-radius:22rpx; color:$dz-text-primary; background:#dff9f8; box-shadow:inset 0 1rpx 0 $dz-surface-highlight; font-size:$dz-fs-body; font-weight:$dz-fw-bold; }
 .category-icon.all { color:$dz-text-inverse; background:$dz-gradient-brand; }
 .category-icon.billiards { color:$dz-text-inverse; background:#152127; }
 .sorts { display:flex; align-items:stretch; gap:66rpx; height:82rpx; margin:12rpx 22rpx 0; }
-.sorts>view { position:relative; display:flex; align-items:center; color:#354046; font-size:$dz-fs-caption; }
+.sorts>view { position:relative; display:flex; align-items:center; color:#354046; font-size:$dz-fs-caption; transition:opacity $dz-duration-fast $dz-ease-standard; }
+.sort--pressed { opacity:.6; }
 .sorts>view.active { color:$dz-brand-deep; font-weight:$dz-fw-bold; }
 .sorts>view.active::after { position:absolute; right:5rpx; bottom:8rpx; left:5rpx; height:4rpx; border-radius:2rpx; background:$dz-brand-primary; content:''; }
 .activity-list { display:flex; flex-direction:column; gap:14rpx; }
-.publish { position:fixed; z-index:95; bottom:calc(160rpx + env(safe-area-inset-bottom)); left:50%; display:flex; align-items:center; justify-content:center; gap:10rpx; width:244rpx; height:70rpx; transform:translateX(-50%); border:1rpx solid rgba(255,255,255,.36); border-radius:$dz-radius-full; color:$dz-text-inverse; background:$dz-gradient-brand; box-shadow:$dz-shadow-brand; font-size:$dz-fs-body; font-weight:$dz-fw-bold; }
+.publish { position:fixed; z-index:95; bottom:calc(160rpx + env(safe-area-inset-bottom)); left:50%; display:flex; align-items:center; justify-content:center; gap:10rpx; width:244rpx; height:70rpx; transform:translateX(-50%); border:1rpx solid rgba(255,255,255,.36); border-radius:$dz-radius-full; color:$dz-text-inverse; background:$dz-gradient-brand; box-shadow:$dz-shadow-brand; font-size:$dz-fs-body; font-weight:$dz-fw-bold; transition:transform $dz-duration-fast $dz-ease-out, opacity $dz-duration-fast $dz-ease-standard; }
+.publish--pressed { transform:translateX(-50%) scale(.96); opacity:.9; }
 .publish text { font-size:$dz-fs-title; font-weight:300; }
 
 @media screen and (max-width:360px) {

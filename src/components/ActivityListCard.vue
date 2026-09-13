@@ -51,7 +51,7 @@ function formatListTime(value: string) {
 .meta { margin-top:17rpx; color:$dz-text-secondary; font-size:$dz-fs-caption; }
 .bottom-row { position:absolute; right:4rpx; bottom:2rpx; left:20rpx; display:flex; align-items:center; gap:16rpx; color:$dz-text-secondary; font-size:$dz-fs-caption; }
 .distance { white-space:nowrap; }
-.price { margin-left:auto; color:$dz-price-primary; font-size:$dz-fs-heading; font-weight:$dz-fw-semibold; white-space:nowrap; }
+.price { margin-left:auto; color:$dz-price-primary; font-size:$dz-fs-heading; font-weight:$dz-fw-semibold; letter-spacing:-1rpx; white-space:nowrap; }
 .price small { color:#59656b; font-size:$dz-fs-caption; font-weight:$dz-fw-regular; }
 
 @media (prefers-reduced-motion: reduce) {

@@ -1,9 +1,11 @@
 <template>
   <view class="dz-page dz-page--with-tabbar">
-    <view class="dz-safe-top" />
-    <view class="topbar dz-container">
-      <button class="city">邯郸市 <text class="city-arrow">▾</text></button>
-      <view class="search"><text class="search-icon">⌕</text><text>搜索达人、活动、场馆</text></view>
+    <view class="dz-sticky-head">
+      <view class="dz-safe-top" />
+      <view class="topbar dz-container">
+        <button class="city">邯郸市 <text class="city-arrow">▾</text></button>
+        <view class="search"><text class="search-icon">⌕</text><text>搜索达人、活动、场馆</text></view>
+      </view>
     </view>
 
     <main class="content dz-container">
