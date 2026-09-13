@@ -25,7 +25,7 @@
         <section class="panel activity-info">
           <view class="info-row"><text class="line-icon">◷</text><strong>时间</strong><text>{{ formatRange(activity.starts_at, activity.ends_at) }}</text></view>
           <view class="divider" />
-          <view class="info-row location-row"><text class="line-icon">⌖</text><strong>地点</strong><text>{{ activity.meeting_place_name }}</text><view class="mini-map" /><button @tap="showMapPending">导航 ›</button></view>
+          <view class="info-row location-row"><text class="line-icon">⌖</text><strong>地点</strong><text>{{ activity.meeting_place_name }}</text><view class="mini-map" /><button hover-class="button--pressed" @tap="showMapPending">导航 ›</button></view>
           <view class="divider" />
           <view class="info-row people-row"><text class="line-icon">♙</text><strong>人数</strong><view class="people-copy"><text>{{ activity.participant_count }}/{{ activity.capacity }}人（至少{{ activity.min_participants }}人成行）</text><text class="participant-note">{{ activity.participant_count ? '查看已报名成员' : '等待首位成员加入' }}</text></view></view>
         </section>
@@ -41,7 +41,7 @@
         <section class="panel fee-panel">
           <text class="section-title">费用明细</text>
           <view class="fee"><text>AA本金</text><strong>¥{{ money(activity.aa_principal_amount) }}/人</strong></view>
-          <view class="fee"><text>平台服务费　?</text><strong>¥{{ money(activity.platform_service_fee_amount) }}/人</strong></view>
+          <view class="fee" hover-class="button--pressed" @tap="showFeeNote"><text>平台服务费　?</text><strong>¥{{ money(activity.platform_service_fee_amount) }}/人</strong></view>
           <view class="fee total"><text>合计</text><strong>¥{{ money(activity.payable_amount) }}/人</strong></view>
         </section>
 
@@ -193,6 +193,10 @@ function showMapPending() {
   uni.showToast({ title: '地图服务接入后开放导航', icon: 'none' })
 }
 
+function showFeeNote() {
+  uni.showToast({ title: '平台组局服务费按 AA 本金的 10% 收取，用于担保交易与售后', icon: 'none' })
+}
+
 function showRefundRules() {
   uni.showModal({
     title: '标准退款规则',
@@ -286,12 +290,12 @@ onLoad((query) => {
 .hero-actions .round:first-child text{font-size:$dz-fs-heading}
 .status{position:absolute;left:24rpx;top:calc(108rpx + env(safe-area-inset-top));padding:8rpx 16rpx;border-radius:$dz-radius-sm;color:$dz-text-inverse;background:$dz-brand-primary;font-size:$dz-fs-caption}
 .photo-count{position:absolute;right:24rpx;bottom:20rpx;padding:7rpx 15rpx;border-radius:$dz-radius-md;color:$dz-text-inverse;background:rgba(23,33,38,.66);font-size:$dz-fs-caption}
-.content{position:relative;margin-top:-4rpx;padding:0 16rpx 32rpx}
+.content{position:relative;margin-top:-48rpx;padding:0 16rpx 32rpx}
 .title-card,.panel{border:1rpx solid $dz-border-subtle;background:$dz-surface-card}
-.title-card{padding:20rpx 28rpx;border-radius:$dz-radius-lg}
+.title-card{padding:24rpx 28rpx;border-radius:$dz-radius-lg;box-shadow:$dz-shadow-card,inset 0 1rpx 0 $dz-surface-highlight}
 .title{display:block;font-size:$dz-fs-title;font-weight:$dz-fw-bold}
 .tags{display:flex;gap:14rpx;margin-top:16rpx}
-.tags text{padding:8rpx 18rpx;border-radius:$dz-radius-sm;color:$dz-brand-deep;background:$dz-brand-soft;font-size:$dz-fs-caption}
+.tags text{padding:6rpx 18rpx;border-radius:$dz-radius-full;color:$dz-brand-deep;background:$dz-brand-soft;font-size:$dz-fs-caption}
 .panel{margin-top:16rpx;padding:24rpx 28rpx;border-radius:$dz-radius-md}
 .activity-info{padding-top:12rpx;padding-bottom:12rpx}
 .info-row{display:grid;grid-template-columns:36rpx 94rpx minmax(0,1fr);align-items:center;min-height:78rpx;color:$dz-text-primary;font-size:$dz-fs-caption}
@@ -332,7 +336,7 @@ onLoad((query) => {
 .description .section-title{display:block}
 .description>text:not(.section-title){display:block;margin-top:10rpx}
 .rules-title{margin-top:22rpx}
-.action-bar{position:fixed;z-index:20;right:0;bottom:0;left:0;display:flex;align-items:center;gap:18rpx;height:calc(118rpx + env(safe-area-inset-bottom));padding:10rpx 24rpx env(safe-area-inset-bottom);border-radius:$dz-radius-lg 28rpx 0 0;background:rgba(255,255,255,.98);box-shadow:0 -6rpx 24rpx rgba(23,33,38,.08);box-sizing:border-box}
+.action-bar{position:fixed;z-index:20;right:0;bottom:0;left:0;display:flex;align-items:center;gap:18rpx;height:calc(118rpx + env(safe-area-inset-bottom));padding:10rpx 24rpx calc(10rpx + env(safe-area-inset-bottom));border:1rpx solid $dz-border-material;border-bottom:0;border-radius:$dz-radius-lg 28rpx 0 0;background:$dz-surface-glass-strong;box-shadow:0 -1rpx 0 rgba(255,255,255,.7),0 -14rpx 40rpx rgba(31,65,72,.08);box-sizing:border-box}
 .action-bar button{margin:0;border:0}
 .secondary{display:flex;flex-direction:column;align-items:center;justify-content:center;width:104rpx;height:86rpx;padding:0;color:$dz-text-primary;background:$dz-surface-card;font-size:$dz-fs-micro;line-height:25rpx}
 .action-icon{font-size:$dz-fs-heading}
