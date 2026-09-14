@@ -42,7 +42,7 @@
         </view>
 
         <view class="account-grid">
-          <view v-for="item in accountEntries" :key="item.label" role="button" @tap="openAccount(item)">
+          <view v-for="item in accountEntries" :key="item.label" role="button" hover-class="account-entry--pressed" @tap="openAccount(item)">
             <strong :class="{ balance: item.label === '账户余额' }">{{ item.value }}</strong>
             <text>{{ item.label }}</text>
           </view>
@@ -248,8 +248,8 @@ onShow(loadProfile)
 
 .profile-header {
   position: relative;
-  height: 300rpx;
   overflow: hidden;
+  padding-bottom: 64rpx;
   background:
     radial-gradient(circle at 18% 86%, rgba(82, 220, 218, .12), transparent 31%),
     linear-gradient(146deg, #fff 8%,$dz-brand-soft 56%, #e9fafc 100%);
@@ -302,33 +302,6 @@ onShow(loadProfile)
 
 .name { font-size: 37rpx; font-weight:$dz-fw-bold; line-height: 1.15; }
 
-.verified {
-  display: flex;
-  align-items: center;
-  height: 38rpx;
-  margin-top: 12rpx;
-  padding: 0 14rpx 0 8rpx;
-  border-radius:$dz-radius-md;
-  color: $dz-brand-deep;
-  background: #fff;
-  font-size:$dz-fs-caption;
-  box-shadow: 0 4rpx 14rpx rgba(31, 65, 72, .05);
-}
-
-.verified-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 25rpx;
-  height: 25rpx;
-  margin-right: 6rpx;
-  border-radius: 7rpx;
-  color: #fff;
-  background: $dz-brand-primary;
-  font-size:$dz-fs-micro;
-  font-weight:$dz-fw-bold;
-}
-
 .slogan {
   overflow: hidden;
   max-width: 380rpx;
@@ -372,6 +345,8 @@ onShow(loadProfile)
 .notification-icon i { position:absolute; right:-10rpx; top:-7rpx; display:flex; align-items:center; justify-content:center; min-width:25rpx; height:25rpx; padding:0 5rpx; border:3rpx solid #f3fdfe; border-radius:$dz-radius-sm; color:$dz-text-inverse; background:$dz-status-danger; box-sizing:border-box; font-style:normal; }
 .notification-icon i b { font-size:$dz-fs-micro; line-height:1; }
 .profile-content {
+  position: relative;
+  margin-top: -64rpx;
   padding-bottom: 60rpx;
 }
 
@@ -388,11 +363,12 @@ onShow(loadProfile)
   position: relative;
   display: flex;
   align-items: center;
-  height: 78rpx;
+  height: 88rpx;
   overflow: hidden;
-  padding: 0 22rpx;
-  color: #fff;
-  background: $dz-gradient-brand;
+  padding: 0 24rpx;
+  color: $dz-brand-deep;
+  background: linear-gradient(120deg, #ecfcfb 4%, #ddf7f4 58%, #d2f2ef 100%);
+  border-bottom: 1rpx solid rgba(11, 116, 125, .07);
   box-sizing: border-box;
   transition: transform $dz-duration-fast $dz-ease-out, opacity $dz-duration-fast $dz-ease-standard;
 }
@@ -408,7 +384,7 @@ onShow(loadProfile)
 }
 
 .provider-copy strong { flex: 0 0 auto; font-size:$dz-fs-body; }
-.provider-copy text { overflow: hidden; margin-left: 13rpx; font-size:$dz-fs-micro; text-overflow: ellipsis; white-space: nowrap; }
+.provider-copy text { overflow: hidden; margin-left: 13rpx; color: #58777c; font-size:$dz-fs-micro; text-overflow: ellipsis; white-space: nowrap; }
 
 .provider-apply {
   position: relative;
@@ -422,15 +398,15 @@ onShow(loadProfile)
   margin-left: auto;
   padding: 0 13rpx;
   border-radius:$dz-radius-md;
-  color: #0baab5;
-  background: #fff;
-  box-shadow: 0 5rpx 14rpx rgba(5, 110, 130, .12);
+  color: #fff;
+  background: $dz-brand-primary;
+  box-shadow: 0 6rpx 14rpx rgba(11, 170, 181, .28);
   font-size:$dz-fs-caption;
   box-sizing: border-box;
 }
 
 .provider-apply text { margin-left: 5rpx; font-size:$dz-fs-body-strong; line-height: 1; }
-.provider-star { position: relative; z-index: 1; margin-left: 10rpx; color: rgba(255, 255, 255, .9); font-size:$dz-fs-body; }
+.provider-star { position: relative; z-index: 1; margin-left: 10rpx; color: rgba(11, 116, 125, .4); font-size:$dz-fs-body; }
 
 .account-grid {
   display: grid;
@@ -450,9 +426,10 @@ onShow(loadProfile)
 }
 
 .account-grid > view:last-child { border-right: 0; }
-.account-grid strong { font-size:$dz-fs-heading; font-weight:$dz-fw-semibold; line-height: 1; }
+.account-grid strong { font-size:$dz-fs-heading; font-weight:$dz-fw-semibold; line-height: 1; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
 .account-grid strong.balance { color: #f65720; font-size:$dz-fs-body-strong; }
 .account-grid text { margin-top: 21rpx; color: #273136; font-size:$dz-fs-caption; white-space: nowrap; }
+.account-entry--pressed { opacity: .64; }
 
 .orders { margin-top: 24rpx; padding: 28rpx 24rpx 35rpx; }
 
@@ -475,12 +452,9 @@ onShow(loadProfile)
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  border-right: 1rpx solid $dz-border-subtle;
   color: #303a3f;
   font-size:$dz-fs-caption;
 }
-
-.order-grid > view:last-child { border-right: 0; }
 .order-grid > view > text { margin-top: 14rpx; white-space: nowrap; }
 .order-entry--pressed { opacity: .64; }
 
@@ -520,7 +494,7 @@ onShow(loadProfile)
   height: 104rpx;
   margin-top: 24rpx;
   padding: 0 24rpx;
-  border: 1rpx solid rgba(255,255,255,.7);
+  border: 1rpx solid rgba(255, 122, 52, .16);
   border-radius:$dz-radius-lg;
   background: linear-gradient(90deg, #fff7ef 0%, #fffaf6 56%, #fff4e9 100%);
   box-shadow: $dz-shadow-card, inset 0 1rpx 0 rgba(255,255,255,.8);
@@ -569,14 +543,9 @@ onShow(loadProfile)
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  border-right: 1rpx solid $dz-border-subtle;
-  border-bottom: 1rpx solid $dz-border-subtle;
   color: #30393e;
   font-size:$dz-fs-caption;
 }
-
-.function-grid > view:nth-child(4n) { border-right: 0; }
-.function-grid > view:nth-last-child(-n + 4) { border-bottom: 0; }
 .function-entry--pressed { opacity: .64; }
 
 .function-icon {
