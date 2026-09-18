@@ -37,6 +37,10 @@
       "style": { "navigationStyle": "custom" }
     },
     {
+      "path": "pages/booking/payment-result",
+      "style": { "navigationStyle": "custom" }
+    },
+    {
       "path": "pages/booking/success",
       "style": { "navigationStyle": "custom" }
     },

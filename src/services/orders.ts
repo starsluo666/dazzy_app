@@ -1,4 +1,4 @@
-import type { DataResponse, ListResponse, MyProviderOrderReview, ProviderOrder, ProviderOrderAfterSalesCase, ProviderOrderAfterSalesCreateType, ProviderOrderQuote } from '@/types/api'
+import type { DataResponse, ListResponse, MyProviderOrderReview, ProviderOrder, ProviderOrderAfterSalesCase, ProviderOrderAfterSalesCreateType, ProviderOrderPaymentAuthorization, ProviderOrderPaymentSession, ProviderOrderQuote } from '@/types/api'
 import type { BookingDraft } from './bookingDraft'
 import { request, uploadFile } from './http'
 import { toBusinessDateTime } from '@/utils/businessTime'
@@ -66,6 +66,29 @@ export function cancelProviderOrder(orderNo: string) {
 
 export function simulateProviderOrderPayment(orderNo: string) {
   return request<DataResponse<ProviderOrder>>(`/provider-orders/${orderNo}/simulate-payment/`, { method: 'POST' })
+}
+
+export function getProviderOrderPaymentAuthorization(orderNo: string) {
+  return request<DataResponse<ProviderOrderPaymentAuthorization>>(
+    `/provider-orders/${encodeURIComponent(orderNo)}/payment-authorization/`,
+  )
+}
+
+export function createProviderOrderPaymentSession(
+  orderNo: string,
+  paymentScene: 'official_account' | 'mobile_app',
+) {
+  return request<DataResponse<ProviderOrderPaymentSession>>(
+    `/provider-orders/${encodeURIComponent(orderNo)}/payment-session/`,
+    { method: 'POST', data: { payment_scene: paymentScene } },
+  )
+}
+
+export function confirmProviderOrderPaymentStatus(orderNo: string) {
+  return request<DataResponse<ProviderOrder>>(
+    `/provider-orders/${encodeURIComponent(orderNo)}/payment-status/`,
+    { method: 'POST' },
+  )
 }
 
 export function confirmProviderOrderCompletion(orderNo: string) {

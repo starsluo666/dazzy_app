@@ -593,6 +593,16 @@ export interface ProviderOrderPaymentSummary {
   closed_at: string | null
 }
 
+export interface ProviderOrderPaymentSession {
+  invoke_type: 'WECHAT_JSAPI' | 'WECHAT_APP'
+  pay_info: Record<string, string | number>
+}
+
+export interface ProviderOrderPaymentAuthorization {
+  authorized: boolean
+  authorize_url: string
+}
+
 export interface ProviderOrderRefundSummary {
   refund_no: string
   status: 'pending' | 'processing' | 'succeeded' | 'failed'
