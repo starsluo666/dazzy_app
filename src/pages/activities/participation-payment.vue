@@ -43,6 +43,7 @@ import { onLoad } from '@dcloudio/uni-app'
 
 import { createActivityParticipationOrder, simulateActivityParticipationPayment } from '@/services/activities'
 import { getActivityDetail } from '@/services/discovery'
+import { requireActivityPaymentCapability } from '@/services/payments'
 import type { ActivityDetail, ActivityParticipationCheckout } from '@/types/api'
 import { formatActivityRange, formatAmount, getErrorMessage } from '@/utils/formatters'
 
@@ -65,6 +66,7 @@ function startTicker() { if (ticker) clearInterval(ticker); ticker = setInterval
 async function loadCheckout() {
   loading.value = true; error.value = ''
   try {
+    await requireActivityPaymentCapability('activity_participation')
     const [detail, order] = await Promise.all([
       getActivityDetail(activityId.value),
       createActivityParticipationOrder(activityId.value, method.value),

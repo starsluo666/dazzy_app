@@ -172,6 +172,7 @@ import {
   uploadActivityCover,
 } from '@/services/activities'
 import { searchLocations } from '@/services/locations'
+import { requireActivityPaymentCapability } from '@/services/payments'
 import type { ActivityCategoryItem, LocationItem } from '@/types/api'
 import { getErrorMessage } from '@/utils/formatters'
 import {
@@ -601,6 +602,7 @@ async function submit() {
   if (!canSubmit.value || !location.value?.city_code || submitting.value) return
   submitting.value = true
   try {
+    await requireActivityPaymentCapability('activity_publish')
     const draft = (await createActivityDraft({
       cover_id: coverAssetId.value,
       category_slug: form.categorySlug,

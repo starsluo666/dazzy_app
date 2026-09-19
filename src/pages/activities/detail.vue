@@ -96,6 +96,7 @@ import { DIALOG_DANGER } from '@/utils/brand'
 import { cancelActivityParticipation } from '@/services/activities'
 import { getActivityDetail } from '@/services/discovery'
 import { recordActivityView } from '@/services/engagements'
+import { requireActivityPaymentCapability } from '@/services/payments'
 import { isAuthenticated, requireAuthentication } from '@/services/session'
 import type { ActivityDetail } from '@/types/api'
 import { formatActivityRange, formatActivityTime, formatAmount, getErrorMessage } from '@/utils/formatters'
@@ -222,11 +223,19 @@ async function cancelParticipation() {
   } catch (reason) { uni.showToast({ title: getErrorMessage(reason, '取消报名失败'), icon: 'none' }) } finally { participationSubmitting.value = false }
 }
 
-function handleParticipation() {
+async function handleParticipation() {
   if (!activity.value || participationDisabled.value) return
   if (!isAuthenticated()) { uni.navigateTo({ url: '/pages/auth/login' }); return }
   if (!activity.value.is_joined) {
-    uni.navigateTo({ url: `/pages/activities/participation-payment?id=${activity.value.id}` })
+    participationSubmitting.value = true
+    try {
+      await requireActivityPaymentCapability('activity_participation')
+      uni.navigateTo({ url: `/pages/activities/participation-payment?id=${activity.value.id}` })
+    } catch (reason) {
+      uni.showToast({ title: getErrorMessage(reason, '活动报名支付尚未开放'), icon: 'none' })
+    } finally {
+      participationSubmitting.value = false
+    }
     return
   }
   if (activity.value.participation_after_sales && ['pending', 'processing'].includes(activity.value.participation_after_sales.status)) {

@@ -17,11 +17,12 @@
 import { ref } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 import { createActivityPublishOrder, simulateActivityPublishPayment } from '@/services/activities'
+import { requireActivityPaymentCapability } from '@/services/payments'
 import type { ActivityPublishOrder } from '@/types/api'
 import { formatAmount, getErrorMessage } from '@/utils/formatters'
 const activityId=ref(0),order=ref<ActivityPublishOrder|null>(null),loading=ref(true),error=ref(''),paying=ref(false),method=ref<'wechat'|'alipay'>('wechat'),money=formatAmount
 function goBack(){uni.navigateBack()}
-async function loadOrder(){loading.value=true;error.value='';try{order.value=(await createActivityPublishOrder(activityId.value)).data}catch(reason){error.value=getErrorMessage(reason,'支付单创建失败')}finally{loading.value=false}}
+async function loadOrder(){loading.value=true;error.value='';try{await requireActivityPaymentCapability('activity_publish');order.value=(await createActivityPublishOrder(activityId.value)).data}catch(reason){error.value=getErrorMessage(reason,'支付单创建失败')}finally{loading.value=false}}
 async function pay(){if(!order.value||paying.value)return;paying.value=true;try{await simulateActivityPublishPayment(activityId.value);uni.showModal({title:'提交审核成功',content:'支付已完成，活动进入平台内容审核。审核结果将通过消息通知。',showCancel:false,success:()=>uni.redirectTo({url:'/pages/activities/mine'})})}catch(reason){uni.showToast({title:getErrorMessage(reason,'支付失败'),icon:'none'});await loadOrder()}finally{paying.value=false}}
 onLoad(query=>{activityId.value=Number(query?.id)||0;if(activityId.value)loadOrder();else{loading.value=false;error.value='缺少活动编号'}})
 </script>

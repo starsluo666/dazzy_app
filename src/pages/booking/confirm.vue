@@ -196,6 +196,7 @@ import type { BookingDraft } from '@/services/bookingDraft'
 import { getProviderAvailability } from '@/services/discovery'
 import { getSavedAddresses } from '@/services/locations'
 import { createProviderOrder, previewProviderOrder } from '@/services/orders'
+import { requireProviderOrderPaymentCapability } from '@/services/payments'
 import type { LocationItem, ProviderAvailability, ProviderOrderQuote } from '@/types/api'
 import { formatAmount, getErrorMessage } from '@/utils/formatters'
 import { businessClock, businessTimeParts, toBusinessDateTime } from '@/utils/businessTime'
@@ -493,6 +494,7 @@ async function submit() {
   if (!draft.value || !canSubmit.value || submitting.value) return
   submitting.value = true
   try {
+    await requireProviderOrderPaymentCapability()
     const order = (await createProviderOrder(draft.value)).data
     uni.navigateTo({ url: `/pages/booking/payment?orderNo=${order.order_no}` })
   } catch (reason) {

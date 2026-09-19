@@ -481,6 +481,27 @@ export interface DataResponse<T> {
   data: T
 }
 
+export interface PaymentPathCapability {
+  available: boolean
+  reason: string
+}
+
+export interface PaymentCapabilities {
+  provider_order: {
+    mock: PaymentPathCapability
+    official_account: PaymentPathCapability
+    mobile_app: PaymentPathCapability
+  }
+  activity_publish: {
+    mock: PaymentPathCapability
+    real: PaymentPathCapability
+  }
+  activity_participation: {
+    mock: PaymentPathCapability
+    real: PaymentPathCapability
+  }
+}
+
 export type SmsPurpose = 'register' | 'login' | 'reset_password'
 
 export interface CurrentUser {
