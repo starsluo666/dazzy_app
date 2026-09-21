@@ -67,9 +67,11 @@ export function getMyActivities(options: {
   return request<ListResponse<MyActivityListItem>>('/activities/mine/', { query: options })
 }
 
-export function getActivityCategories(cityCode = '130400') {
-  return request<{ data: { items: ActivityCategoryItem[] } }>('/activity-categories/', { query: { city_code: cityCode } })
+export function getActivityTags(cityCode = '130400') {
+  return request<{ data: { items: ActivityCategoryItem[] } }>('/activity-tags/', { query: { city_code: cityCode } })
 }
+
+export const getActivityCategories = getActivityTags
 
 export function getActivityPublishRules() {
   return request<DataResponse<ActivityPublishRules>>('/activity-publish-rules/', { skipAuth: true })
@@ -86,8 +88,8 @@ export function reportActivity(activityId: number, reason: string, description =
 }
 
 export interface ActivityDraftPayload {
-  cover_id: string
-  category_slug: string
+  cover_id?: string
+  tag_slugs: string[]
   title: string
   starts_at: string
   ends_at: string

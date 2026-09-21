@@ -12,14 +12,13 @@
           <button class="round" aria-label="分享" hover-class="round--pressed" @tap="showPending('分享')"><text>↥</text></button>
           <button class="round" aria-label="更多操作" hover-class="round--pressed" @tap="showMoreActions"><text class="dots">•••</text></button>
         </view>
-        <text class="status">{{ statusLabel(activity.status) }}</text>
         <text class="photo-count">1/1</text>
       </view>
 
       <main class="content dz-container">
         <section class="title-card">
-          <text class="title">{{ activity.title }}</text>
-          <view class="tags"><text>{{ activity.category }}</text><text>交友</text><text>户外</text></view>
+          <view class="title-row"><text class="title">{{ activity.title }}</text><text class="status">{{ statusLabel(activity.status) }}</text></view>
+          <view class="tags"><text v-for="tag in activity.tags" :key="tag.slug">{{ tag.name }}</text></view>
         </section>
 
         <section class="panel activity-info">
@@ -195,7 +194,8 @@ function showMapPending() {
 }
 
 function showFeeNote() {
-  uni.showToast({ title: '平台组局服务费按 AA 本金的 10% 收取，用于担保交易与售后', icon: 'none' })
+  const rate = Number(activity.value?.service_fee_rate || 0) * 100
+  uni.showToast({ title: `平台组局服务费按 AA 本金的 ${Number(rate.toFixed(2))}% 收取，用于担保交易与售后`, icon: 'none' })
 }
 
 function showRefundRules() {
@@ -297,12 +297,13 @@ onLoad((query) => {
 .back{position:absolute;left:24rpx;top:calc(24rpx + env(safe-area-inset-top))}
 .hero-actions{position:absolute;right:24rpx;top:calc(24rpx + env(safe-area-inset-top));display:flex;gap:18rpx}
 .hero-actions .round:first-child text{font-size:$dz-fs-heading}
-.status{position:absolute;left:24rpx;top:calc(108rpx + env(safe-area-inset-top));padding:8rpx 16rpx;border-radius:$dz-radius-sm;color:$dz-text-inverse;background:$dz-brand-primary;font-size:$dz-fs-caption}
+.status{flex:0 0 auto;margin-left:20rpx;padding:8rpx 16rpx;border-radius:$dz-radius-sm;color:$dz-text-inverse;background:$dz-brand-primary;font-size:$dz-fs-caption;white-space:nowrap}
 .photo-count{position:absolute;right:24rpx;bottom:20rpx;padding:7rpx 15rpx;border-radius:$dz-radius-md;color:$dz-text-inverse;background:rgba(23,33,38,.66);font-size:$dz-fs-caption}
 .content{position:relative;margin-top:-48rpx;padding:0 16rpx 32rpx}
 .title-card,.panel{border:1rpx solid $dz-border-subtle;background:$dz-surface-card}
 .title-card{padding:24rpx 28rpx;border-radius:$dz-radius-lg;box-shadow:$dz-shadow-card,inset 0 1rpx 0 $dz-surface-highlight}
-.title{display:block;font-size:$dz-fs-title;font-weight:$dz-fw-bold}
+.title-row{display:flex;align-items:flex-start;justify-content:space-between}
+.title{min-width:0;flex:1;font-size:$dz-fs-title;font-weight:$dz-fw-bold;line-height:1.35}
 .tags{display:flex;gap:14rpx;margin-top:16rpx}
 .tags text{padding:6rpx 18rpx;border-radius:$dz-radius-full;color:$dz-brand-deep;background:$dz-brand-soft;font-size:$dz-fs-caption}
 .panel{margin-top:16rpx;padding:24rpx 28rpx;border-radius:$dz-radius-md}

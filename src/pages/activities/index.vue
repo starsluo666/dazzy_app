@@ -5,7 +5,7 @@
 
       <header class="topbar dz-container">
         <view class="city" role="button" @tap="chooseCity">{{ discovery.cityName }}⌄</view>
-        <view class="search" role="button" aria-label="搜索" @tap="showPending('活动搜索')">⌕</view>
+        <view class="search" role="button" aria-label="搜索" @tap="openActivityList()">⌕</view>
       </header>
     </view>
 
@@ -68,6 +68,7 @@ import ActivityListCard from '@/components/ActivityListCard.vue'
 import DazzyTabBar from '@/components/DazzyTabBar.vue'
 import NetworkState from '@/components/NetworkState.vue'
 import { getNearbyActivities } from '@/services/discovery'
+import { getActivityTags } from '@/services/activities'
 import {
   discoveryQuery,
   getDiscoveryContext,
@@ -78,9 +79,9 @@ import { openPage } from '@/services/navigation'
 import type { ActivityListItem } from '@/types/api'
 import { getErrorMessage } from '@/utils/formatters'
 
-type Ordering = 'recommended' | 'latest' | 'distance' | 'time'
+type Ordering = 'recommended' | 'latest' | 'distance' | 'popular'
 
-const categories = [
+const fallbackCategories = [
   { label: '全部', value: '', icon: '▦' },
   { label: '台球', value: 'billiards', icon: '8' },
   { label: '桌游', value: 'board-games', icon: '⚄' },
@@ -88,11 +89,12 @@ const categories = [
   { label: '运动', value: 'sports', icon: '奔' },
   { label: 'K歌', value: 'karaoke', icon: '♪' },
 ]
+const categories = ref(fallbackCategories)
 const sorts: Array<{ label: string; value: Ordering }> = [
   { label: '推荐', value: 'recommended' },
   { label: '最新', value: 'latest' },
   { label: '距离最近', value: 'distance' },
-  { label: '人气高', value: 'time' },
+  { label: '人气高', value: 'popular' },
 ]
 
 const activities = ref<ActivityListItem[]>([])
@@ -122,8 +124,8 @@ function changeOrdering(value: Ordering) {
   loadActivities()
 }
 
-function openActivityList(category?: string) {
-  openPage(`/pages/activities/list${category ? `?category=${category}` : ''}`)
+function openActivityList(tag?: string) {
+  openPage(`/pages/activities/list${tag ? `?tags=${tag}` : ''}`)
 }
 
 function openDetail(id: number) {
@@ -134,19 +136,28 @@ function openPublish() {
   openPage('/pages/publish/index')
 }
 
-function showPending(feature: string) {
-  uni.showToast({ title: `${feature}功能即将接入`, icon: 'none' })
-}
-
 async function chooseCity() {
   const selected = await showDiscoveryCityPicker()
   if (!selected) return
   discovery.value = selected
+  await loadTags()
   await loadActivities()
+}
+
+async function loadTags() {
+  try {
+    const items = (await getActivityTags(discovery.value.cityCode)).data.items
+    categories.value = [fallbackCategories[0]!, ...items.slice(0, 5).map(item => ({
+      label: item.name, value: item.slug, icon: item.name.slice(0, 1),
+    }))]
+  } catch {
+    categories.value = fallbackCategories
+  }
 }
 
 onLoad(async () => {
   discovery.value = await resolveDiscoveryContext()
+  await loadTags()
   await loadActivities()
 })
 </script>

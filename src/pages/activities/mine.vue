@@ -58,7 +58,7 @@
 </template>
 
 <script setup lang="ts">
-import { onShow } from '@dcloudio/uni-app'
+import { onLoad, onShow } from '@dcloudio/uni-app'
 import { ref } from 'vue'
 
 import NetworkState from '@/components/NetworkState.vue'
@@ -111,6 +111,9 @@ function cancelActivity(item: MyActivityListItem) {
 async function loadActivities() { loading.value = true; error.value = ''; try { activities.value = (await getMyActivities({ role: role.value, state: state.value })).data.items } catch (reason) { error.value = getErrorMessage(reason, '活动记录加载失败') } finally { loading.value = false } }
 
 onShow(() => { if (isAuthenticated()) loadActivities() })
+onLoad((query) => {
+  if (query?.role === 'organized') role.value = 'organized'
+})
 </script>
 
 <style lang="scss" scoped>

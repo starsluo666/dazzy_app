@@ -10,7 +10,7 @@
       <view class="meta-row"><i class="meta-icon clock" /><text>{{ homeActivityTime(item.starts_at) }}</text></view>
       <view class="meta-row"><i class="meta-icon people" /><text>{{ item.participant_count }}/{{ item.capacity }}人</text></view>
       <view class="activity-footer">
-        <view class="activity-tags"><text class="category-tag">{{ item.category }}</text><text class="friendly-tag">新手友好</text></view>
+        <view class="activity-tags"><text v-for="tag in item.tags.slice(0, 2)" :key="tag.slug" class="category-tag">{{ tag.name }}</text></view>
         <view class="activity-price"><text class="aa-tag">AA</text><text class="price-symbol">¥</text><text>{{ formatAmount(item.aa_principal_amount) }}</text></view>
       </view>
     </view>

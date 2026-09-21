@@ -10,13 +10,14 @@
         <view v-else><text>＋</text><strong>添加活动封面</strong><small>建议上传 4:3 横图</small></view>
         <text v-if="coverPath" class="replace">更换封面</text>
       </section>
-      <text class="cover-tip">{{ coverUploading ? '正在安全上传封面…' : coverAssetId ? '封面已上传至腾讯 COS' : '封面仅支持 JPG、PNG 或 WebP，最大10MB。' }}</text>
+      <text class="cover-tip">{{ coverUploading ? '正在安全上传封面…' : coverAssetId ? '已使用自定义封面' : defaultCoverUrl ? '当前使用平台默认封面，点击可替换' : '封面仅支持 JPG、PNG 或 WebP，最大10MB。' }}</text>
 
       <section class="panel">
         <text class="section-title">基本信息</text>
         <view class="categories">
-          <button v-for="item in categories" :key="item.slug" :class="{ active: form.categorySlug === item.slug }" hover-class="category--pressed" @tap="form.categorySlug = item.slug">{{ item.name }}</button>
+          <button v-for="item in tags" :key="item.slug" :class="{ active: form.tagSlugs.includes(item.slug) }" hover-class="category--pressed" @tap="toggleTag(item.slug)">{{ item.name }}</button>
         </view>
+        <text class="tag-tip">可多选，最多 5 个（已选 {{ form.tagSlugs.length }} 个）</text>
         <label class="field"><text>活动标题</text><input v-model="form.title" maxlength="80" placeholder="一句话介绍你的活动（至少4个字）" /><small v-if="titleShort" class="field-warn">最少4个字</small><small v-else>{{ form.title.length }}/80</small></label>
         <label class="field textarea-field"><text>活动介绍</text><textarea v-model="form.description" maxlength="2000" placeholder="介绍活动内容、适合人群和流程" /></label>
         <label class="field textarea-field"><text>参与规则</text><textarea v-model="form.rules" maxlength="2000" placeholder="例如：准时到场、文明参与、费用范围" /></label>
@@ -93,7 +94,7 @@
         <label class="number-row"><text>人数上限</text><view><button hover-class="stepper--pressed" @tap.prevent="changeCapacity(-1)">−</button><strong>{{ form.capacity }}人</strong><button hover-class="stepper--pressed" @tap.prevent="changeCapacity(1)">＋</button></view></label>
         <label class="number-row"><text>最少成局人数</text><view><button hover-class="stepper--pressed" @tap.prevent="changeMinimum(-1)">−</button><strong>{{ form.minimum }}人</strong><button hover-class="stepper--pressed" @tap.prevent="changeMinimum(1)">＋</button></view></label>
         <label class="field price-field"><text>单人AA本金</text><view><i>¥</i><input v-model="form.price" type="digit" placeholder="0.00" /></view></label>
-        <view class="fee-preview"><text>平台组局服务费（10%）</text><strong>¥{{ serviceFee }}</strong></view>
+        <view class="fee-preview"><text>平台组局服务费（{{ serviceFeePercent }}%）</text><strong>¥{{ serviceFee }}</strong></view>
         <view class="fee-preview total"><text>发起人预计支付</text><strong>¥{{ totalFee }}</strong></view>
       </section>
 
@@ -166,14 +167,14 @@ import { onLoad, onUnload } from '@dcloudio/uni-app'
 import DzBottomSheet from '@/components/DzBottomSheet.vue'
 import {
   createActivityDraft,
-  getActivityCategories,
+  getActivityTags,
   getActivityCopySource,
   getActivityPublishRules,
   uploadActivityCover,
 } from '@/services/activities'
 import { searchLocations } from '@/services/locations'
 import { requireActivityPaymentCapability } from '@/services/payments'
-import type { ActivityCategoryItem, LocationItem } from '@/types/api'
+import type { ActivityTagItem, LocationItem } from '@/types/api'
 import { getErrorMessage } from '@/utils/formatters'
 import {
   businessDateKeyAfter,
@@ -192,11 +193,12 @@ const DAY_MS = 24 * HOUR_MS
 const MIN_TITLE_LENGTH = 4
 const DEFAULT_MINIMUM_ADVANCE_HOURS = 48
 const DEFAULT_MAXIMUM_ADVANCE_DAYS = 30
+const DEFAULT_SERVICE_FEE_RATE_BASIS_POINTS = 1000
 
 const pad = (value: number) => String(value).padStart(2, '0')
 const initialDate = businessDateKeyAfter(3)
 const form = reactive({
-  categorySlug: '',
+  tagSlugs: [] as string[],
   title: '',
   description: '',
   rules: '',
@@ -209,11 +211,12 @@ const form = reactive({
   minimum: 4,
   price: '68',
 })
-const categories = ref<ActivityCategoryItem[]>([])
+const tags = ref<ActivityTagItem[]>([])
 const location = ref<LocationItem | null>(null)
 const pendingLocation = ref<LocationItem | null>(null)
 const coverPath = ref('')
 const coverAssetId = ref('')
+const defaultCoverUrl = ref('')
 const coverUploading = ref(false)
 const agreed = ref(false)
 const submitting = ref(false)
@@ -224,6 +227,11 @@ const searching = ref(false)
 const copyFrom = ref(0)
 const minimumAdvanceHours = ref(DEFAULT_MINIMUM_ADVANCE_HOURS)
 const maximumAdvanceDays = ref(DEFAULT_MAXIMUM_ADVANCE_DAYS)
+const serviceFeeRateBasisPoints = ref(DEFAULT_SERVICE_FEE_RATE_BASIS_POINTS)
+const minCapacity = ref(2)
+const maxCapacity = ref(100)
+const minAaPrincipalAmount = ref(1)
+const maxAaPrincipalAmount = ref(10_000_000)
 const nowReference = ref(Date.now())
 const schedulePickerTarget = ref<SchedulePickerTarget | null>(null)
 const scheduleDraftValue = ref('')
@@ -370,9 +378,12 @@ const scheduleSelectionCanConfirm = computed(() => {
   return options.some(option => option.value === scheduleDraftValue.value && !option.disabled)
 })
 const principalCents = computed(() => Math.round((Number(form.price) || 0) * 100))
-const serviceFeeCents = computed(() => Math.floor((principalCents.value + 5) / 10))
+const serviceFeeCents = computed(() => Math.floor(
+  (principalCents.value * serviceFeeRateBasisPoints.value + 5000) / 10000,
+))
 const serviceFee = computed(() => (serviceFeeCents.value / 100).toFixed(2))
 const totalFee = computed(() => ((principalCents.value + serviceFeeCents.value) / 100).toFixed(2))
+const serviceFeePercent = computed(() => Number((serviceFeeRateBasisPoints.value / 100).toFixed(2)))
 const startRelativeLabel = computed(() => {
   const offset = businessDayOffset(form.date)
   if (offset === 0) return '今天'
@@ -387,13 +398,14 @@ const titleShort = computed(() => form.title.trim().length > 0 && form.title.tri
 /** 第一条未满足的提交条件，用于按钮禁用时点按给出具体原因。 */
 const submitBlocker = computed(() => {
   if (coverUploading.value) return '封面还在上传中，请稍候'
-  if (!coverAssetId.value) return '请先上传活动封面'
-  if (!form.categorySlug) return '请选择活动分类'
+  if (!coverAssetId.value && !defaultCoverUrl.value) return '请先上传活动封面'
+  if (!form.tagSlugs.length) return '请至少选择一个活动标签'
   if (form.title.trim().length < MIN_TITLE_LENGTH) return `活动标题至少 ${MIN_TITLE_LENGTH} 个字`
   if (!form.description.trim()) return '请填写活动介绍'
   if (!form.rules.trim()) return '请填写参与规则'
   if (!location.value?.city_code) return '请选择集合地点'
   if (principalCents.value <= 0) return '请填写单人 AA 本金'
+  if (principalCents.value < minAaPrincipalAmount.value || principalCents.value > maxAaPrincipalAmount.value) return `单人 AA 本金须在 ¥${(minAaPrincipalAmount.value / 100).toFixed(2)}—¥${(maxAaPrincipalAmount.value / 100).toFixed(2)} 之间`
   if (scheduleError.value) return scheduleError.value
   if (!agreed.value) return '请先阅读并同意活动发布规则'
   return ''
@@ -491,12 +503,25 @@ function confirmSchedulePicker() {
 }
 
 function changeCapacity(step: number) {
-  form.capacity = Math.max(2, Math.min(100, form.capacity + step))
+  form.capacity = Math.max(minCapacity.value, Math.min(maxCapacity.value, form.capacity + step))
   form.minimum = Math.min(form.minimum, form.capacity)
 }
 
 function changeMinimum(step: number) {
-  form.minimum = Math.max(2, Math.min(form.capacity, form.minimum + step))
+  form.minimum = Math.max(minCapacity.value, Math.min(form.capacity, form.minimum + step))
+}
+
+function toggleTag(slug: string) {
+  const index = form.tagSlugs.indexOf(slug)
+  if (index >= 0) {
+    form.tagSlugs.splice(index, 1)
+    return
+  }
+  if (form.tagSlugs.length >= 5) {
+    uni.showToast({ title: '最多选择 5 个活动标签', icon: 'none' })
+    return
+  }
+  form.tagSlugs.push(slug)
 }
 
 function chooseCover() {
@@ -515,7 +540,7 @@ function chooseCover() {
         coverAssetId.value = uploaded.id
         coverPath.value = uploaded.url || path
       } catch (reason) {
-        coverPath.value = ''
+        coverPath.value = defaultCoverUrl.value
         uni.showToast({ title: getErrorMessage(reason, '封面上传失败'), icon: 'none' })
       } finally {
         coverUploading.value = false
@@ -568,18 +593,19 @@ function sameLocation(left: LocationItem, right: LocationItem | null) {
 async function confirmLocation() {
   if (!pendingLocation.value?.city_code) return
   try {
-    await loadCategories(pendingLocation.value.city_code)
+    await loadTags(pendingLocation.value.city_code)
     location.value = pendingLocation.value
     closeAddressSheet()
   } catch (reason) {
-    uni.showToast({ title: getErrorMessage(reason, '活动分类加载失败'), icon: 'none' })
+    uni.showToast({ title: getErrorMessage(reason, '活动标签加载失败'), icon: 'none' })
   }
 }
 
-async function loadCategories(cityCode = '130400') {
-  const items = (await getActivityCategories(cityCode)).data.items
-  categories.value = items
-  if (!items.some(item => item.slug === form.categorySlug)) form.categorySlug = items[0]?.slug || ''
+async function loadTags(cityCode = '130400') {
+  const items = (await getActivityTags(cityCode)).data.items
+  tags.value = items
+  const available = new Set(items.map(item => item.slug))
+  form.tagSlugs = form.tagSlugs.filter(slug => available.has(slug))
 }
 
 async function loadPublishRules() {
@@ -587,6 +613,18 @@ async function loadPublishRules() {
     const rules = (await getActivityPublishRules()).data
     minimumAdvanceHours.value = rules.minimum_advance_hours
     maximumAdvanceDays.value = rules.maximum_advance_days
+    const rate = Number(rules.service_fee_rate)
+    serviceFeeRateBasisPoints.value = Number.isFinite(rate)
+      ? Math.max(0, Math.min(10000, Math.round(rate * 10000)))
+      : DEFAULT_SERVICE_FEE_RATE_BASIS_POINTS
+    minCapacity.value = rules.min_capacity
+    maxCapacity.value = rules.max_capacity
+    minAaPrincipalAmount.value = rules.min_aa_principal_amount
+    maxAaPrincipalAmount.value = rules.max_aa_principal_amount
+    defaultCoverUrl.value = rules.default_cover_url || ''
+    if (!coverPath.value && defaultCoverUrl.value) coverPath.value = defaultCoverUrl.value
+    form.capacity = Math.max(minCapacity.value, Math.min(maxCapacity.value, form.capacity))
+    form.minimum = Math.max(minCapacity.value, Math.min(form.capacity, form.minimum))
   } catch (reason) {
     uni.showToast({ title: getErrorMessage(reason, '时间规则加载失败，已使用默认规则'), icon: 'none' })
   }
@@ -604,8 +642,8 @@ async function submit() {
   try {
     await requireActivityPaymentCapability('activity_publish')
     const draft = (await createActivityDraft({
-      cover_id: coverAssetId.value,
-      category_slug: form.categorySlug,
+      ...(coverAssetId.value ? { cover_id: coverAssetId.value } : {}),
+      tag_slugs: form.tagSlugs,
       title: form.title.trim(),
       starts_at: toBusinessDateTime(form.date, form.startTime),
       ends_at: toBusinessDateTime(form.date, form.endTime),
@@ -633,7 +671,7 @@ async function submit() {
 
 async function applyCopySource(id: number) {
   const source = (await getActivityCopySource(id)).data
-  form.categorySlug = source.category_slug
+  form.tagSlugs = [...source.tag_slugs]
   form.title = source.title
   form.description = source.description
   form.rules = source.participation_rules
@@ -663,9 +701,9 @@ async function applyCopySource(id: number) {
     form.deadlineDate = deadlineValue.date
     form.deadlineTime = deadlineValue.time
   }
-  coverAssetId.value = source.cover_id
+  coverAssetId.value = source.cover_id || ''
   coverPath.value = source.cover_url || ''
-  await loadCategories(source.city_code)
+  await loadTags(source.city_code)
   location.value = {
     name: source.meeting_place_name,
     address: source.meeting_address,
@@ -684,10 +722,10 @@ onLoad(async (query) => {
   copyFrom.value = Number(query?.copyFrom) || 0
   try {
     await loadPublishRules()
-    await loadCategories()
+    await loadTags()
     if (copyFrom.value) await applyCopySource(copyFrom.value)
   } catch (reason) {
-    uni.showToast({ title: getErrorMessage(reason, copyFrom.value ? '复制活动失败' : '分类加载失败'), icon: 'none' })
+    uni.showToast({ title: getErrorMessage(reason, copyFrom.value ? '复制活动失败' : '标签加载失败'), icon: 'none' })
   }
 })
 
@@ -698,7 +736,7 @@ onUnload(() => {
 
 <style lang="scss" scoped>
 @use '../../styles/tokens.scss' as *;
-.publish-page{min-height:100vh;padding-bottom:calc(126rpx + env(safe-area-inset-bottom));background:$dz-surface-page}.page-head{position:relative;display:flex;align-items:center;justify-content:center;height:98rpx;box-sizing:border-box}.page-head>button{position:absolute;left:14rpx;width:72rpx;height:72rpx;margin:0;padding:0;border:0;border-radius:$dz-radius-full;background:transparent;font-size:$dz-fs-price-lg;line-height:72rpx;transition:transform $dz-duration-fast $dz-ease-out,opacity $dz-duration-fast $dz-ease-standard}.back--pressed{transform:scale(.92);opacity:.7}.page-head>text:not(.draft-mark){font-size:$dz-fs-body-strong;font-weight:$dz-fw-bold}.draft-mark{position:absolute;right:25rpx;bottom:25rpx;color:$dz-text-tertiary;font-size:$dz-fs-caption}.page-head button::after,.categories button::after,.number-row button::after,.publish-footer button::after,.location-list button::after,.location-confirm::after,.date-option-list button::after,.time-option-grid button::after,.schedule-selector-confirm::after{display:none}.form-content{padding-top:20rpx;padding-bottom:30rpx}.cover-card{position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;height:310rpx;border-radius:$dz-radius-md;color:$dz-text-inverse;background:linear-gradient(135deg,#69dfda,#0db4c1);transition:transform $dz-duration-fast $dz-ease-out,opacity $dz-duration-fast $dz-ease-standard}.cover--pressed{transform:scale(.985);opacity:.92}.cover-card image{width:100%;height:100%}.cover-card>view{display:flex;flex-direction:column;align-items:center}.cover-card>view>text{font-size:64rpx;font-weight:200}.cover-card strong{font-size:$dz-fs-body}.cover-card small{margin-top:10rpx;opacity:.78;font-size:$dz-fs-caption}.replace{position:absolute;right:18rpx;bottom:18rpx;padding:8rpx 16rpx;border-radius:$dz-radius-md;background:rgba(20,30,34,.65);font-size:$dz-fs-caption}.cover-tip{display:block;margin:10rpx 4rpx 0;color:$dz-text-tertiary;font-size:$dz-fs-micro}.panel{margin-top:20rpx;padding:24rpx;border-radius:$dz-radius-md;background:$dz-surface-card;box-shadow:$dz-shadow-card}.section-title{display:block;margin-bottom:20rpx;font-size:$dz-fs-body;font-weight:$dz-fw-bold}.categories{display:flex;flex-wrap:wrap;gap:12rpx;margin-bottom:8rpx}.categories button{height:56rpx;margin:0;padding:0 26rpx;border:1rpx solid $dz-border-material;border-radius:$dz-radius-full;color:$dz-text-secondary;background:$dz-surface-raised;box-shadow:inset 0 1rpx 0 $dz-surface-highlight;font-size:$dz-fs-caption;line-height:54rpx;transition:transform $dz-duration-fast $dz-ease-out,opacity $dz-duration-fast $dz-ease-standard}.category--pressed{transform:scale(.95);opacity:.8}.categories button.active{border-color:transparent;color:$dz-brand-deep;background:$dz-brand-soft;box-shadow:none;font-weight:$dz-fw-bold}.field,.field-row,.number-row{position:relative;display:flex;align-items:center;min-height:88rpx;border-bottom:1rpx solid $dz-border-subtle;font-size:$dz-fs-caption}.field>text,.field-row>text:first-child,.number-row>text{flex:0 0 160rpx;font-weight:$dz-fw-semibold}.field input{flex:1;font-size:$dz-fs-caption}.field>small{color:$dz-text-tertiary;font-size:$dz-fs-micro}.field>small.field-warn{color:$dz-status-danger;font-weight:$dz-fw-medium}.textarea-field{display:block;padding:20rpx 0}.textarea-field>text{display:block}.textarea-field textarea{width:100%;height:130rpx;margin-top:16rpx;padding:16rpx;border-radius:$dz-radius-sm;background:$dz-surface-page;box-sizing:border-box;font-size:$dz-fs-caption}.field-row>picker,.field-row>text:nth-child(2){flex:1;color:$dz-text-secondary;text-align:right}.field-row .placeholder{color:$dz-text-tertiary}.field-row>b{margin-left:12rpx;color:$dz-text-tertiary;font-size:$dz-fs-body-strong}.rule-tip{display:block;margin-top:18rpx;color:$dz-brand-deep;font-size:$dz-fs-micro}.number-row{justify-content:space-between}.number-row>view{display:flex;align-items:center;gap:8rpx;padding:6rpx;border-radius:$dz-radius-full;background:$dz-surface-page;box-shadow:inset 0 1rpx 3rpx rgba(23,33,38,.045)}.number-row button{width:56rpx;height:56rpx;margin:0;padding:0;border:0;border-radius:50%;color:$dz-brand-deep;background:$dz-surface-card;box-shadow:0 1rpx 3rpx rgba(23,33,38,.08);font-size:$dz-fs-body;line-height:56rpx;transition:transform $dz-duration-fast $dz-ease-out,opacity $dz-duration-fast $dz-ease-standard}.stepper--pressed{transform:scale(.9);opacity:.75}.number-row strong{min-width:70rpx;text-align:center}.price-field>view{display:flex;align-items:center;flex:1}.price-field i{color:$dz-price-primary;font-size:$dz-fs-body;font-style:normal}.price-field input{text-align:right;color:$dz-price-primary;font-size:$dz-fs-body-strong}.fee-preview{display:flex;justify-content:space-between;padding-top:18rpx;color:$dz-text-secondary;font-size:$dz-fs-caption}.fee-preview strong{color:$dz-text-primary}.fee-preview.total{margin-top:17rpx;border-top:1rpx dashed $dz-border-subtle;color:$dz-text-primary;font-size:$dz-fs-caption}.fee-preview.total strong{color:$dz-price-primary;font-size:$dz-fs-body-strong}.refund>view{display:flex;align-items:center;justify-content:space-between}.refund .section-title{margin:0}.locked{color:$dz-text-tertiary;font-size:$dz-fs-micro}.refund>strong{display:block;margin-top:22rpx;color:$dz-brand-deep;font-size:$dz-fs-caption}.refund>text{display:block;margin-top:12rpx;color:$dz-text-secondary;font-size:$dz-fs-caption;line-height:1.65}.agreement{display:flex;align-items:center;margin:24rpx 4rpx;color:$dz-text-secondary;font-size:$dz-fs-micro}.agreement>text{display:flex;align-items:center;justify-content:center;width:30rpx;height:30rpx;margin-right:10rpx;border:2rpx solid #bbc4c7;border-radius:50%;color:$dz-text-inverse}.agreement>text.active{border-color:$dz-brand-primary;background:$dz-brand-primary}.agreement em{color:$dz-brand-deep;font-style:normal}.publish-footer{position:fixed;z-index:30;right:0;bottom:0;left:0;display:flex;align-items:center;gap:20rpx;max-width:750px;height:calc(112rpx + env(safe-area-inset-bottom));margin:auto;padding:12rpx 24rpx calc(12rpx + env(safe-area-inset-bottom));border:1rpx solid $dz-border-material;border-bottom:0;border-radius:$dz-radius-lg 28rpx 0 0;background:$dz-surface-glass-strong;box-shadow:0 -1rpx 0 rgba(255,255,255,.7),0 -14rpx 40rpx rgba(31,65,72,.08);box-sizing:border-box}.publish-footer>view{display:flex;flex-direction:column;min-width:210rpx;color:$dz-text-secondary;font-size:$dz-fs-micro}.publish-footer strong{color:$dz-price-primary;font-size:$dz-fs-heading}.publish-footer button{flex:1;height:76rpx;margin:0;border:0;border-radius:$dz-radius-lg;color:$dz-text-inverse;background:$dz-gradient-brand;font-size:$dz-fs-caption;font-weight:$dz-fw-bold;line-height:76rpx}.publish-footer button[disabled],.publish-footer button.disabled{opacity:.42}.sheet-subtitle{display:block;margin:6rpx 0 10rpx;color:$dz-text-secondary;font-size:$dz-fs-micro;line-height:1.45}.search{display:flex;align-items:center;gap:12rpx;height:88rpx;padding:0 20rpx;border-radius:$dz-radius-lg;background:$dz-surface-page}.search input{flex:1;font-size:$dz-fs-caption}.sheet-state{display:flex;align-items:center;justify-content:center;min-height:300rpx;color:$dz-text-tertiary;font-size:$dz-fs-caption}.location-list{max-height:430rpx;margin-top:16rpx}.location-list button{display:flex;flex-direction:column;width:100%;min-height:94rpx;margin:0;padding:18rpx 6rpx;border:0;border-bottom:1rpx solid $dz-border-subtle;background:$dz-surface-card;text-align:left}.location-list strong{font-size:$dz-fs-caption}.location-list text{margin-top:8rpx;color:$dz-text-secondary;font-size:$dz-fs-micro}
+.publish-page{min-height:100vh;padding-bottom:calc(126rpx + env(safe-area-inset-bottom));background:$dz-surface-page}.page-head{position:relative;display:flex;align-items:center;justify-content:center;height:98rpx;box-sizing:border-box}.page-head>button{position:absolute;left:14rpx;width:72rpx;height:72rpx;margin:0;padding:0;border:0;border-radius:$dz-radius-full;background:transparent;font-size:$dz-fs-price-lg;line-height:72rpx;transition:transform $dz-duration-fast $dz-ease-out,opacity $dz-duration-fast $dz-ease-standard}.back--pressed{transform:scale(.92);opacity:.7}.page-head>text:not(.draft-mark){font-size:$dz-fs-body-strong;font-weight:$dz-fw-bold}.draft-mark{position:absolute;right:25rpx;bottom:25rpx;color:$dz-text-tertiary;font-size:$dz-fs-caption}.page-head button::after,.categories button::after,.number-row button::after,.publish-footer button::after,.location-list button::after,.location-confirm::after,.date-option-list button::after,.time-option-grid button::after,.schedule-selector-confirm::after{display:none}.form-content{padding-top:20rpx;padding-bottom:30rpx}.cover-card{position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;height:310rpx;border-radius:$dz-radius-md;color:$dz-text-inverse;background:linear-gradient(135deg,#69dfda,#0db4c1);transition:transform $dz-duration-fast $dz-ease-out,opacity $dz-duration-fast $dz-ease-standard}.cover--pressed{transform:scale(.985);opacity:.92}.cover-card image{width:100%;height:100%}.cover-card>view{display:flex;flex-direction:column;align-items:center}.cover-card>view>text{font-size:64rpx;font-weight:200}.cover-card strong{font-size:$dz-fs-body}.cover-card small{margin-top:10rpx;opacity:.78;font-size:$dz-fs-caption}.replace{position:absolute;right:18rpx;bottom:18rpx;padding:8rpx 16rpx;border-radius:$dz-radius-md;background:rgba(20,30,34,.65);font-size:$dz-fs-caption}.cover-tip{display:block;margin:10rpx 4rpx 0;color:$dz-text-tertiary;font-size:$dz-fs-micro}.panel{margin-top:20rpx;padding:24rpx;border-radius:$dz-radius-md;background:$dz-surface-card;box-shadow:$dz-shadow-card}.section-title{display:block;margin-bottom:20rpx;font-size:$dz-fs-body;font-weight:$dz-fw-bold}.categories{display:flex;flex-wrap:wrap;gap:12rpx;margin-bottom:8rpx}.categories button{height:56rpx;margin:0;padding:0 26rpx;border:1rpx solid $dz-border-material;border-radius:$dz-radius-full;color:$dz-text-secondary;background:$dz-surface-raised;box-shadow:inset 0 1rpx 0 $dz-surface-highlight;font-size:$dz-fs-caption;line-height:54rpx;transition:transform $dz-duration-fast $dz-ease-out,opacity $dz-duration-fast $dz-ease-standard}.category--pressed{transform:scale(.95);opacity:.8}.categories button.active{border-color:transparent;color:$dz-brand-deep;background:$dz-brand-soft;box-shadow:none;font-weight:$dz-fw-bold}.tag-tip{display:block;margin:8rpx 0;color:$dz-text-tertiary;font-size:$dz-fs-micro}.field,.field-row,.number-row{position:relative;display:flex;align-items:center;min-height:88rpx;border-bottom:1rpx solid $dz-border-subtle;font-size:$dz-fs-caption}.field>text,.field-row>text:first-child,.number-row>text{flex:0 0 160rpx;font-weight:$dz-fw-semibold}.field input{flex:1;font-size:$dz-fs-caption}.field>small{color:$dz-text-tertiary;font-size:$dz-fs-micro}.field>small.field-warn{color:$dz-status-danger;font-weight:$dz-fw-medium}.textarea-field{display:block;padding:20rpx 0}.textarea-field>text{display:block}.textarea-field textarea{width:100%;height:130rpx;margin-top:16rpx;padding:16rpx;border-radius:$dz-radius-sm;background:$dz-surface-page;box-sizing:border-box;font-size:$dz-fs-caption}.field-row>picker,.field-row>text:nth-child(2){flex:1;color:$dz-text-secondary;text-align:right}.field-row .placeholder{color:$dz-text-tertiary}.field-row>b{margin-left:12rpx;color:$dz-text-tertiary;font-size:$dz-fs-body-strong}.rule-tip{display:block;margin-top:18rpx;color:$dz-brand-deep;font-size:$dz-fs-micro}.number-row{justify-content:space-between}.number-row>view{display:flex;align-items:center;gap:8rpx;padding:6rpx;border-radius:$dz-radius-full;background:$dz-surface-page;box-shadow:inset 0 1rpx 3rpx rgba(23,33,38,.045)}.number-row button{width:56rpx;height:56rpx;margin:0;padding:0;border:0;border-radius:50%;color:$dz-brand-deep;background:$dz-surface-card;box-shadow:0 1rpx 3rpx rgba(23,33,38,.08);font-size:$dz-fs-body;line-height:56rpx;transition:transform $dz-duration-fast $dz-ease-out,opacity $dz-duration-fast $dz-ease-standard}.stepper--pressed{transform:scale(.9);opacity:.75}.number-row strong{min-width:70rpx;text-align:center}.price-field>view{display:flex;align-items:center;flex:1}.price-field i{color:$dz-price-primary;font-size:$dz-fs-body;font-style:normal}.price-field input{text-align:right;color:$dz-price-primary;font-size:$dz-fs-body-strong}.fee-preview{display:flex;justify-content:space-between;padding-top:18rpx;color:$dz-text-secondary;font-size:$dz-fs-caption}.fee-preview strong{color:$dz-text-primary}.fee-preview.total{margin-top:17rpx;border-top:1rpx dashed $dz-border-subtle;color:$dz-text-primary;font-size:$dz-fs-caption}.fee-preview.total strong{color:$dz-price-primary;font-size:$dz-fs-body-strong}.refund>view{display:flex;align-items:center;justify-content:space-between}.refund .section-title{margin:0}.locked{color:$dz-text-tertiary;font-size:$dz-fs-micro}.refund>strong{display:block;margin-top:22rpx;color:$dz-brand-deep;font-size:$dz-fs-caption}.refund>text{display:block;margin-top:12rpx;color:$dz-text-secondary;font-size:$dz-fs-caption;line-height:1.65}.agreement{display:flex;align-items:center;margin:24rpx 4rpx;color:$dz-text-secondary;font-size:$dz-fs-micro}.agreement>text{display:flex;align-items:center;justify-content:center;width:30rpx;height:30rpx;margin-right:10rpx;border:2rpx solid #bbc4c7;border-radius:50%;color:$dz-text-inverse}.agreement>text.active{border-color:$dz-brand-primary;background:$dz-brand-primary}.agreement em{color:$dz-brand-deep;font-style:normal}.publish-footer{position:fixed;z-index:30;right:0;bottom:0;left:0;display:flex;align-items:center;gap:20rpx;max-width:750px;height:calc(112rpx + env(safe-area-inset-bottom));margin:auto;padding:12rpx 24rpx calc(12rpx + env(safe-area-inset-bottom));border:1rpx solid $dz-border-material;border-bottom:0;border-radius:$dz-radius-lg 28rpx 0 0;background:$dz-surface-glass-strong;box-shadow:0 -1rpx 0 rgba(255,255,255,.7),0 -14rpx 40rpx rgba(31,65,72,.08);box-sizing:border-box}.publish-footer>view{display:flex;flex-direction:column;min-width:210rpx;color:$dz-text-secondary;font-size:$dz-fs-micro}.publish-footer strong{color:$dz-price-primary;font-size:$dz-fs-heading}.publish-footer button{flex:1;height:76rpx;margin:0;border:0;border-radius:$dz-radius-lg;color:$dz-text-inverse;background:$dz-gradient-brand;font-size:$dz-fs-caption;font-weight:$dz-fw-bold;line-height:76rpx}.publish-footer button[disabled],.publish-footer button.disabled{opacity:.42}.sheet-subtitle{display:block;margin:6rpx 0 10rpx;color:$dz-text-secondary;font-size:$dz-fs-micro;line-height:1.45}.search{display:flex;align-items:center;gap:12rpx;height:88rpx;padding:0 20rpx;border-radius:$dz-radius-lg;background:$dz-surface-page}.search input{flex:1;font-size:$dz-fs-caption}.sheet-state{display:flex;align-items:center;justify-content:center;min-height:300rpx;color:$dz-text-tertiary;font-size:$dz-fs-caption}.location-list{max-height:430rpx;margin-top:16rpx}.location-list button{display:flex;flex-direction:column;width:100%;min-height:94rpx;margin:0;padding:18rpx 6rpx;border:0;border-bottom:1rpx solid $dz-border-subtle;background:$dz-surface-card;text-align:left}.location-list strong{font-size:$dz-fs-caption}.location-list text{margin-top:8rpx;color:$dz-text-secondary;font-size:$dz-fs-micro}
 
 .activity-address-card{display:flex;align-items:center;min-height:142rpx;padding:22rpx 24rpx;box-sizing:border-box}.activity-address-card--pressed{background:$dz-surface-page}.address-pin{display:flex;flex:0 0 66rpx;width:66rpx;height:66rpx;align-items:center;justify-content:center;border-radius:50%;background:linear-gradient(145deg,$dz-brand-primary,$dz-brand-primary);box-shadow:0 8rpx 18rpx rgba(58,173,221,.24)}.address-pin i{position:relative;width:23rpx;height:30rpx;border:5rpx solid #fff;border-radius:50% 50% 50% 0;transform:rotate(-45deg);box-sizing:border-box}.address-pin i::after{position:absolute;top:6rpx;left:6rpx;width:4rpx;height:4rpx;border-radius:50%;background:$dz-surface-card;content:''}.activity-address-copy{display:flex;min-width:0;flex:1;flex-direction:column;gap:7rpx;margin-left:20rpx}.activity-address-copy strong{overflow:hidden;font-size:$dz-fs-body;text-overflow:ellipsis;white-space:nowrap}.activity-address-copy>text{overflow:hidden;color:$dz-text-secondary;font-size:$dz-fs-caption;text-overflow:ellipsis;white-space:nowrap}.activity-address-copy small{color:$dz-text-tertiary;font-size:$dz-fs-micro}.placeholder-copy{gap:11rpx}.placeholder-copy strong{font-size:$dz-fs-body}.placeholder-copy>text{color:$dz-text-tertiary}.address-chevron{margin-left:12rpx;color: $dz-text-secondary;font-size:$dz-fs-title;font-weight:300}
 

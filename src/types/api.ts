@@ -220,6 +220,7 @@ export interface ActivityListItem {
   title: string
   category: string
   category_slug: string
+  tags: ActivityTagItem[]
   organizer_public_id: string
   organizer_nickname: string
   organizer_avatar_url: string | null
@@ -265,6 +266,7 @@ export interface ActivityDetail extends ActivityListItem {
   participant_count: number
   platform_service_fee_amount: number
   payable_amount: number
+  service_fee_rate: string | number
   organizer_rating: string | null
   is_joined: boolean
   is_organizer: boolean
@@ -369,7 +371,7 @@ export interface ActivityParticipationCancellationResult {
   changed: boolean
 }
 
-export interface ActivityCategoryItem {
+export interface ActivityTagItem {
   name: string
   slug: string
   icon_url: string | null
@@ -380,15 +382,25 @@ export interface ActivityCategoryItem {
   content_guidance: string
 }
 
+export type ActivityCategoryItem = ActivityTagItem
+
 export interface ActivityPublishRules {
   minimum_advance_hours: number
   maximum_advance_days: number
+  service_fee_rate: string | number
+  min_capacity: number
+  max_capacity: number
+  min_aa_principal_amount: number
+  max_aa_principal_amount: number
+  default_cover_id: string | null
+  default_cover_url: string | null
 }
 
 export interface ActivityCopySource {
   id: number
   category_slug: string
-  cover_id: string
+  tag_slugs: string[]
+  cover_id: string | null
   cover_url: string | null
   title: string
   starts_at: string

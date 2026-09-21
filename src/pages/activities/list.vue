@@ -4,19 +4,20 @@
 
     <header class="header dz-container">
       <text class="brand"><strong>DAZZY</strong><text>搭子</text></text>
-      <view class="search"><text>⌕</text><text>搜索活动、地点</text></view>
-      <view class="filter" role="button" @tap="showPending('高级筛选')"><text>▽</text><text>筛选</text></view>
+      <label class="search"><text>⌕</text><input v-model="keyword" placeholder="搜索活动、地点或标签" confirm-type="search" @confirm="loadActivities" /></label>
+      <view class="filter" role="button" @tap="clearFilters"><text>▽</text><text>{{ selectedTags.length ? `已选${selectedTags.length}` : '标签' }}</text></view>
     </header>
 
     <scroll-view scroll-x class="category-rail" :show-scrollbar="false">
       <view class="categories dz-container">
+        <view class="category" :class="{ active: !selectedTags.length }" role="button" @tap="clearTags">全部</view>
         <view
-          v-for="item in categories"
+          v-for="item in tags"
           :key="item.value"
           class="category"
-          :class="{ active: category === item.value }"
+          :class="{ active: selectedTags.includes(item.value) }"
           role="button"
-          @tap="changeCategory(item.value)"
+          @tap="toggleTag(item.value)"
         >{{ item.label }}</view>
       </view>
     </scroll-view>
@@ -62,34 +63,29 @@ import DazzyTabBar from '@/components/DazzyTabBar.vue'
 import ActivityListCard from '@/components/ActivityListCard.vue'
 import NetworkState from '@/components/NetworkState.vue'
 import { getNearbyActivities } from '@/services/discovery'
+import { getActivityTags } from '@/services/activities'
 import {
   discoveryQuery,
   getDiscoveryContext,
   resolveDiscoveryContext,
 } from '@/services/discoveryContext'
 import { openPage } from '@/services/navigation'
-import type { ActivityListItem } from '@/types/api'
+import type { ActivityListItem, ActivityTagItem } from '@/types/api'
 import { getErrorMessage } from '@/utils/formatters'
 
-type Ordering = 'recommended' | 'distance' | 'time' | 'latest'
-
-const categories = [
-  { label: '全部', value: '' },
-  { label: '台球', value: 'billiards' },
-  { label: '桌游', value: 'board-games' },
-  { label: '旅行', value: 'travel' },
-  { label: '运动', value: 'sports' },
-  { label: 'K歌', value: 'karaoke' },
-]
+type Ordering = 'recommended' | 'distance' | 'time' | 'latest' | 'popular'
 const sorts: Array<{ label: string; value: Ordering }> = [
   { label: '推荐', value: 'recommended' },
   { label: '最新', value: 'latest' },
   { label: '距离', value: 'distance' },
   { label: '时间', value: 'time' },
+  { label: '人气', value: 'popular' },
 ]
 
 const activities = ref<ActivityListItem[]>([])
-const category = ref('')
+const tags = ref<Array<{ label: string; value: string }>>([])
+const selectedTags = ref<string[]>([])
+const keyword = ref('')
 const ordering = ref<Ordering>('recommended')
 const loading = ref(true)
 const error = ref('')
@@ -100,7 +96,8 @@ async function loadActivities() {
   error.value = ''
   try {
     activities.value = (await getNearbyActivities({
-      category: category.value || undefined,
+      tags: selectedTags.value.join(',') || undefined,
+      keyword: keyword.value.trim() || undefined,
       ordering: ordering.value,
       page_size: 20,
       ...discoveryQuery(discovery.value),
@@ -112,8 +109,19 @@ async function loadActivities() {
   }
 }
 
-function changeCategory(value: string) {
-  category.value = value
+function toggleTag(value: string) {
+  const index = selectedTags.value.indexOf(value)
+  if (index >= 0) selectedTags.value.splice(index, 1)
+  else if (selectedTags.value.length < 5) selectedTags.value.push(value)
+  else { uni.showToast({ title: '最多选择 5 个标签', icon: 'none' }); return }
+  loadActivities()
+}
+
+function clearTags() { selectedTags.value = []; loadActivities() }
+function clearFilters() {
+  if (!selectedTags.value.length && !keyword.value) return
+  selectedTags.value = []
+  keyword.value = ''
   loadActivities()
 }
 
@@ -126,13 +134,24 @@ function openDetail(id: number) {
   openPage(`/pages/activities/detail?id=${id}`)
 }
 
-function showPending(feature: string) {
-  uni.showToast({ title: `${feature}功能即将接入`, icon: 'none' })
-}
-
 onLoad(async (query) => {
-  category.value = typeof query?.category === 'string' ? query.category : ''
-  discovery.value = await resolveDiscoveryContext()
+  const initialTags = typeof query?.tags === 'string' ? query.tags : typeof query?.category === 'string' ? query.category : ''
+  selectedTags.value = initialTags.split(',').filter(Boolean).slice(0, 5)
+  keyword.value = typeof query?.keyword === 'string' ? query.keyword : ''
+  try {
+    discovery.value = await resolveDiscoveryContext()
+  } catch (reason) {
+    error.value = getErrorMessage(reason, '定位城市加载失败')
+    loading.value = false
+    return
+  }
+  try {
+    const items = (await getActivityTags(discovery.value.cityCode)).data.items
+    tags.value = items.map((item: ActivityTagItem) => ({ label: item.name, value: item.slug }))
+  } catch {
+    tags.value = []
+    uni.showToast({ title: '活动标签加载失败，可稍后重试', icon: 'none' })
+  }
   await loadActivities()
 })
 </script>
@@ -146,13 +165,14 @@ onLoad(async (query) => {
 .brand>text { margin-left:5rpx; }
 .search { display:flex; align-items:center; flex:1; gap:12rpx; height:62rpx; padding:0 21rpx; border:1rpx solid #e1e6e8; border-radius:$dz-radius-lg; color:#929ca1; font-size:$dz-fs-caption; box-sizing:border-box; }
 .search>text:first-child { color:#3e494f; font-size:$dz-fs-heading; }
+.search input { min-width:0; flex:1; font-size:$dz-fs-caption; }
 .filter { display:flex; align-items:center; flex:0 0 auto; gap:5rpx; color:#20272b; font-size:$dz-fs-caption; }
 .filter>text:first-child { transform:rotate(45deg); color:#11191d; font-size:$dz-fs-heading; }
 .category-rail { white-space:nowrap; }
 .categories { display:flex; gap:16rpx; padding-top:12rpx; padding-bottom:18rpx; }
 .category { display:flex; align-items:center; justify-content:center; flex:0 0 auto; min-width:104rpx; height:58rpx; padding:0 22rpx; border-radius:$dz-radius-lg; color:#20282c; background:$dz-surface-page; font-size:$dz-fs-caption; box-sizing:border-box; }
 .category.active { color:$dz-text-inverse; background:$dz-gradient-brand; font-weight:$dz-fw-bold; }
-.sorts { display:flex; align-items:stretch; gap:76rpx; height:76rpx; }
+.sorts { display:flex; align-items:stretch; justify-content:space-between; gap:22rpx; height:76rpx; }
 .sorts>view { position:relative; display:flex; align-items:center; color:#5e696f; font-size:$dz-fs-caption; }
 .sorts>view.active { color:$dz-brand-deep; font-weight:$dz-fw-bold; }
 .sorts>view.active::after { position:absolute; right:6rpx; bottom:8rpx; left:6rpx; height:4rpx; border-radius:2rpx; background:$dz-brand-primary; content:''; }

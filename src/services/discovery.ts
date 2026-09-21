@@ -33,7 +33,9 @@ interface ProviderQuery extends DiscoveryLocationQuery {
 
 interface ActivityQuery extends DiscoveryLocationQuery {
   category?: string
-  ordering?: 'recommended' | 'distance' | 'time' | 'latest'
+  tags?: string
+  keyword?: string
+  ordering?: 'recommended' | 'distance' | 'time' | 'latest' | 'popular'
   page_size?: number
 }
 
