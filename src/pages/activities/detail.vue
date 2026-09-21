@@ -62,9 +62,9 @@
             <span :class="{ active: activity.settlement.status === 'settled' }" />
             <i :class="{ active: activity.settlement.status === 'settled' }" />
           </view>
-          <view class="settlement-steps"><text>履约确认</text><text>风险冻结</text><text>结算入账</text></view>
+          <view class="settlement-steps"><text>履约确认</text><text>风险冻结</text><text>账务结算</text></view>
           <text class="settlement-hint">{{ settlementHint }}</text>
-          <view v-if="activity.settlement.settlement_amount !== null" class="settlement-amount"><text>预计入账</text><strong>¥{{ money(activity.settlement.settlement_amount) }}</strong></view>
+          <view v-if="activity.settlement.settlement_amount !== null" class="settlement-amount"><text>预计结算</text><strong>¥{{ money(activity.settlement.settlement_amount) }}</strong></view>
         </section>
 
         <section class="panel description">
@@ -136,9 +136,9 @@ const settlementHint = computed(() => {
   const settlement = activity.value?.settlement
   if (!settlement) return ''
   if (settlement.status === 'confirming') return `履约确认期至 ${formatDeadline(settlement.confirmation_deadline)}，有异常请及时申请售后。`
-  if (settlement.status === 'risk_frozen') return `确认期已结束，资金预计于 ${formatDeadline(settlement.freeze_until)} 入账。`
+  if (settlement.status === 'risk_frozen') return `确认期已结束，平台账务预计于 ${formatDeadline(settlement.freeze_until)} 完成结算。`
   if (settlement.status === 'dispute_frozen') return settlement.dispute_reason || '存在待处理争议，结算已暂停。'
-  return `已于 ${formatDeadline(settlement.settled_at || settlement.freeze_until)} 完成入账。`
+  return `已于 ${formatDeadline(settlement.settled_at || settlement.freeze_until)} 完成平台账务结算，实际出款以资金账户记录为准。`
 })
 
 function money(amount: number) {

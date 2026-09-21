@@ -4,7 +4,7 @@
       <view class="dz-safe-top" />
 
       <header class="topbar dz-container">
-        <view class="city" role="button" @tap="showPending('城市选择')">邯郸市⌄</view>
+        <view class="city" role="button" @tap="chooseCity">{{ discovery.cityName }}⌄</view>
         <view class="search" role="button" aria-label="搜索" @tap="showPending('活动搜索')">⌕</view>
       </header>
     </view>
@@ -68,6 +68,12 @@ import ActivityListCard from '@/components/ActivityListCard.vue'
 import DazzyTabBar from '@/components/DazzyTabBar.vue'
 import NetworkState from '@/components/NetworkState.vue'
 import { getNearbyActivities } from '@/services/discovery'
+import {
+  discoveryQuery,
+  getDiscoveryContext,
+  resolveDiscoveryContext,
+  showDiscoveryCityPicker,
+} from '@/services/discoveryContext'
 import { openPage } from '@/services/navigation'
 import type { ActivityListItem } from '@/types/api'
 import { getErrorMessage } from '@/utils/formatters'
@@ -93,12 +99,17 @@ const activities = ref<ActivityListItem[]>([])
 const ordering = ref<Ordering>('recommended')
 const loading = ref(true)
 const error = ref('')
+const discovery = ref(getDiscoveryContext())
 
 async function loadActivities() {
   loading.value = true
   error.value = ''
   try {
-    activities.value = (await getNearbyActivities({ ordering: ordering.value, page_size: 6 })).data.items
+    activities.value = (await getNearbyActivities({
+      ordering: ordering.value,
+      page_size: 6,
+      ...discoveryQuery(discovery.value),
+    })).data.items
   } catch (reason) {
     error.value = getErrorMessage(reason)
   } finally {
@@ -127,7 +138,17 @@ function showPending(feature: string) {
   uni.showToast({ title: `${feature}功能即将接入`, icon: 'none' })
 }
 
-onLoad(loadActivities)
+async function chooseCity() {
+  const selected = await showDiscoveryCityPicker()
+  if (!selected) return
+  discovery.value = selected
+  await loadActivities()
+}
+
+onLoad(async () => {
+  discovery.value = await resolveDiscoveryContext()
+  await loadActivities()
+})
 </script>
 
 <style lang="scss" scoped>

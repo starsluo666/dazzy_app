@@ -4,6 +4,7 @@ import { request } from './http'
 
 export type ProviderOrderPaymentMode = 'mock' | 'official_account' | 'mobile_app'
 export type ActivityPaymentCapability = 'activity_publish' | 'activity_participation'
+export type ActivityPaymentMode = 'mock' | 'official_account'
 
 export function getPaymentCapabilities() {
   return request<DataResponse<PaymentCapabilities>>('/payments/capabilities/', {
@@ -46,9 +47,14 @@ export async function requireProviderOrderPaymentCapability(): Promise<ProviderO
 
 export async function requireActivityPaymentCapability(
   capability: ActivityPaymentCapability,
-) {
+): Promise<ActivityPaymentMode> {
   const item = (await getPaymentCapabilities()).data[capability]
-  if (item.mock.available) return 'mock' as const
-  if (item.real.available) return 'real' as const
+  if (
+    import.meta.env.DEV
+    && import.meta.env.VITE_ENABLE_MOCK_PAYMENT === 'true'
+    && item.mock.available
+  ) return 'mock'
+  if (!isWechatBrowser()) throw new Error('当前活动支付请使用微信服务号 H5。')
+  if (item.real.available) return 'official_account'
   throw new Error(item.real.reason || item.mock.reason || '当前活动支付尚未开放。')
 }

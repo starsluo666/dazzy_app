@@ -90,7 +90,7 @@ const formatRange = formatActivityRange
 const formatJoinedAt = formatActivityTime
 function statusCopy(item: MyActivityListItem) { if (item.participation_status === 'pending_payment') return '待支付'; if (item.participation_status === 'cancelled') return '已取消'; if (item.participation_status === 'expired') return '支付超时'; return ({ draft: '待支付', pending_review: '待审核', rejected: '已驳回', recruiting: '报名中', formed: '已成局', in_progress: '进行中', completed: '已结束', cancelled: '已取消', failed_to_form: '未成局' } as Record<string, string>)[item.status] || '待发布' }
 function statusTone(item: MyActivityListItem) { return ['rejected', 'completed', 'cancelled', 'failed_to_form'].includes(item.status) || ['cancelled', 'expired'].includes(item.participation_status || '') ? 'muted' : item.status === 'formed' ? 'formed' : '' }
-function organizerHint(item: MyActivityListItem) { if (item.status === 'recruiting') return `还需 ${Math.max(0, item.min_participants - item.participant_count)} 人成局`; if (item.settlement) { if (item.settlement.status === 'settled') return `已结算 ¥${money(item.settlement.settlement_amount || 0)}`; return item.settlement.status_label }; return statusCopy(item) }
+function organizerHint(item: MyActivityListItem) { if (item.status === 'recruiting') return `还需 ${Math.max(0, item.min_participants - item.participant_count)} 人成局`; if (item.settlement) { if (item.settlement.status === 'settled') return `平台账务已结算 ¥${money(item.settlement.settlement_amount || 0)}`; return item.settlement.status_label }; return statusCopy(item) }
 function participationHint(item: MyActivityListItem) { if (item.participation_after_sales_status) return `售后：${({ pending: '待处理', processing: '处理中', approved: '已同意', rejected: '已驳回' } as Record<string, string>)[item.participation_after_sales_status]}`; if (item.participation_refund_status) return `退款：${item.participation_refund_status === 'succeeded' ? '已完成' : '处理中'}`; if (item.participation_status === 'pending_payment') return '名额锁定中，请尽快完成支付'; if (item.participation_status === 'expired') return '支付超时，名额已释放'; if (item.participation_status === 'cancelled') return '已取消报名'; return item.joined_at ? `报名于 ${formatJoinedAt(item.joined_at)}` : statusCopy(item) }
 function cancelActivity(item: MyActivityListItem) {
   uni.showModal({
@@ -102,7 +102,7 @@ function cancelActivity(item: MyActivityListItem) {
       if (reason.length < 2) { uni.showToast({ title: '请填写明确的取消原因', icon: 'none' }); return }
       try {
         const response = (await cancelOrganizedActivity(item.id, reason)).data
-        uni.showModal({ title: '活动已取消', content: `参与者款项已模拟退回；你的发布支付退款为 ¥${money(response.refund_amount)}。`, showCancel: false })
+        uni.showModal({ title: '活动已取消', content: `相关退款已提交处理；你的发布支付预计退款为 ¥${money(response.refund_amount)}，最终以退款记录为准。`, showCancel: false })
         await loadActivities()
       } catch (errorValue) { uni.showToast({ title: getErrorMessage(errorValue, '取消活动失败'), icon: 'none' }) }
     },

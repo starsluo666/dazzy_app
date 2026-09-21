@@ -3,7 +3,7 @@
     <view class="dz-sticky-head">
       <view class="dz-safe-top" />
       <view class="topbar dz-container">
-        <button class="city">邯郸市 <text class="city-arrow">▾</text></button>
+        <button class="city" @tap="chooseCity">{{ discovery.cityName }} <text class="city-arrow">▾</text></button>
         <view class="search"><text class="search-icon">⌕</text><text>搜索达人、活动、场馆</text></view>
       </view>
     </view>
@@ -80,6 +80,12 @@ import DazzyTabBar from '@/components/DazzyTabBar.vue'
 import HomeActivityCarousel from '@/components/HomeActivityCarousel.vue'
 import HomeProviderCard from '@/components/HomeProviderCard.vue'
 import { getHomeDiscovery } from '@/services/discovery'
+import {
+  discoveryQuery,
+  getDiscoveryContext,
+  resolveDiscoveryContext,
+  showDiscoveryCityPicker,
+} from '@/services/discoveryContext'
 import { openPage } from '@/services/navigation'
 import type { HomeActivityListItem, HomeCardAssets, HomeProviderListItem } from '@/types/api'
 import { getErrorMessage } from '@/utils/formatters'
@@ -100,6 +106,7 @@ const loading = ref(true)
 const activityError = ref('')
 const providerError = ref('')
 const homeCardAssets = ref<HomeCardAssets | null>(null)
+const discovery = ref(getDiscoveryContext())
 
 function openProviders(category?: string) {
   openPage(`/pages/providers/list${category ? `?category=${category}` : ''}`)
@@ -123,7 +130,8 @@ async function loadDiscovery() {
   providerError.value = ''
 
   try {
-    const response = await getHomeDiscovery()
+    discovery.value = await resolveDiscoveryContext()
+    const response = await getHomeDiscovery(discoveryQuery(discovery.value))
     providers.value = response.data.recommended_providers
     activities.value = response.data.recommended_activities
     homeCardAssets.value = response.data.card_assets
@@ -138,6 +146,13 @@ async function loadDiscovery() {
   } finally {
     loading.value = false
   }
+}
+
+async function chooseCity() {
+  const selected = await showDiscoveryCityPicker()
+  if (!selected) return
+  discovery.value = selected
+  await loadDiscovery()
 }
 
 onLoad(loadDiscovery)

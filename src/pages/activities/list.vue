@@ -62,6 +62,11 @@ import DazzyTabBar from '@/components/DazzyTabBar.vue'
 import ActivityListCard from '@/components/ActivityListCard.vue'
 import NetworkState from '@/components/NetworkState.vue'
 import { getNearbyActivities } from '@/services/discovery'
+import {
+  discoveryQuery,
+  getDiscoveryContext,
+  resolveDiscoveryContext,
+} from '@/services/discoveryContext'
 import { openPage } from '@/services/navigation'
 import type { ActivityListItem } from '@/types/api'
 import { getErrorMessage } from '@/utils/formatters'
@@ -88,6 +93,7 @@ const category = ref('')
 const ordering = ref<Ordering>('recommended')
 const loading = ref(true)
 const error = ref('')
+const discovery = ref(getDiscoveryContext())
 
 async function loadActivities() {
   loading.value = true
@@ -97,6 +103,7 @@ async function loadActivities() {
       category: category.value || undefined,
       ordering: ordering.value,
       page_size: 20,
+      ...discoveryQuery(discovery.value),
     })).data.items
   } catch (reason) {
     error.value = getErrorMessage(reason)
@@ -123,9 +130,10 @@ function showPending(feature: string) {
   uni.showToast({ title: `${feature}功能即将接入`, icon: 'none' })
 }
 
-onLoad((query) => {
+onLoad(async (query) => {
   category.value = typeof query?.category === 'string' ? query.category : ''
-  loadActivities()
+  discovery.value = await resolveDiscoveryContext()
+  await loadActivities()
 })
 </script>
 

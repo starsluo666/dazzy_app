@@ -7,24 +7,36 @@
       <section class="amount-card panel"><text>发起人应付金额</text><strong>¥{{ money(order.payable_amount) }}</strong><small>支付完成后活动将提交平台审核</small></section>
       <section class="fee-card panel"><view><text>本人AA分摊本金</text><strong>¥{{ money(order.aa_principal_amount) }}</strong></view><view><text>平台组局服务费</text><strong>¥{{ money(order.platform_service_fee_amount) }}</strong></view><view class="total"><text>合计</text><strong>¥{{ money(order.payable_amount) }}</strong></view></section>
       <text class="section-title">支付方式</text>
-      <section class="methods panel"><button :class="{active:method==='wechat'}" @tap="method='wechat'"><i class="wechat">微</i><strong>微信支付</strong><text>{{ method==='wechat'?'✓':'' }}</text></button><button :class="{active:method==='alipay'}" @tap="method='alipay'"><i class="alipay">支</i><strong>支付宝</strong><text>{{ method==='alipay'?'✓':'' }}</text></button></section>
-      <section class="notice"><strong>⬟ 平台担保交易</strong><text>本地开发环境使用模拟支付，不会产生真实扣款。正式支付渠道接入后复用当前支付单。</text></section>
+      <section class="methods panel"><button class="active"><i class="wechat">微</i><strong>微信支付</strong><text>✓</text></button></section>
+      <section class="notice"><strong>⬟ 平台担保交易</strong><text>{{ paymentMode==='mock'?'本地模拟支付已开启，不会产生真实扣款。':'页面回跳不代表支付成功，最终结果以服务端汇付查单为准。' }}</text></section>
     </main>
-    <footer v-if="order" class="payment-footer"><button :disabled="paying" @tap="pay">{{ paying?'处理中…':`模拟支付 ¥${money(order.payable_amount)}` }}</button></footer>
+    <footer v-if="order" class="payment-footer"><button :disabled="paying" @tap="pay">{{ paying?'正在确认支付…':`${paymentMode==='mock'?'模拟支付':'微信支付'} ¥${money(order.payable_amount)}` }}</button></footer>
   </view>
 </template>
 <script setup lang="ts">
 import { ref } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
-import { createActivityPublishOrder, simulateActivityPublishPayment } from '@/services/activities'
+import { confirmActivityPublishPaymentStatus, createActivityPublishOrder, createActivityPublishPaymentSession, getActivityPublishPaymentAuthorization, simulateActivityPublishPayment } from '@/services/activities'
 import { requireActivityPaymentCapability } from '@/services/payments'
+import type { ActivityPaymentMode } from '@/services/payments'
+import { invokeWechatPay, isWechatBrowser } from '@/services/wechatPay'
 import type { ActivityPublishOrder } from '@/types/api'
 import { formatAmount, getErrorMessage } from '@/utils/formatters'
-const activityId=ref(0),order=ref<ActivityPublishOrder|null>(null),loading=ref(true),error=ref(''),paying=ref(false),method=ref<'wechat'|'alipay'>('wechat'),money=formatAmount
+const activityId=ref(0),order=ref<ActivityPublishOrder|null>(null),loading=ref(true),error=ref(''),paying=ref(false),paymentMode=ref<ActivityPaymentMode|null>(null),autoPayAfterAuthorization=ref(false),completionHandled=ref(false),money=formatAmount
 function goBack(){uni.navigateBack()}
-async function loadOrder(){loading.value=true;error.value='';try{await requireActivityPaymentCapability('activity_publish');order.value=(await createActivityPublishOrder(activityId.value)).data}catch(reason){error.value=getErrorMessage(reason,'支付单创建失败')}finally{loading.value=false}}
-async function pay(){if(!order.value||paying.value)return;paying.value=true;try{await simulateActivityPublishPayment(activityId.value);uni.showModal({title:'提交审核成功',content:'支付已完成，活动进入平台内容审核。审核结果将通过消息通知。',showCancel:false,success:()=>uni.redirectTo({url:'/pages/activities/mine'})})}catch(reason){uni.showToast({title:getErrorMessage(reason,'支付失败'),icon:'none'});await loadOrder()}finally{paying.value=false}}
-onLoad(query=>{activityId.value=Number(query?.id)||0;if(activityId.value)loadOrder();else{loading.value=false;error.value='缺少活动编号'}})
+async function loadOrder(){loading.value=true;error.value='';try{paymentMode.value=await requireActivityPaymentCapability('activity_publish');order.value=(await createActivityPublishOrder(activityId.value)).data;if(order.value.status==='paid'){showSuccess();return}if(['partially_refunded','refunded'].includes(order.value.status)){showRefundStatus();return}if(autoPayAfterAuthorization.value)setTimeout(()=>void pay(),0)}catch(reason){error.value=getErrorMessage(reason,'支付单创建失败')}finally{loading.value=false}}
+async function confirmPayment(){for(let attempt=0;attempt<5;attempt+=1){const result=(await confirmActivityPublishPaymentStatus(activityId.value)).data;order.value=result.publish_order;if(result.state==='paid')return;if(result.state==='refund_pending')throw new Error('支付已超时，系统正在原路退款');if(result.state==='refunded')throw new Error('该笔支付已原路退款');if(result.state==='refund_failed')throw new Error('自动退款失败，请联系客服核对');if(result.state==='failed')throw new Error('支付未成功，请重新支付');await new Promise(resolve=>setTimeout(resolve,1200))}throw new Error('支付结果确认中，请稍后重新进入本页查看')}
+function showSuccess(){if(completionHandled.value)return;completionHandled.value=true;uni.showModal({title:'提交审核成功',content:'服务端已确认支付，活动已进入平台内容审核。审核结果将通过消息通知。',showCancel:false,success:()=>uni.redirectTo({url:'/pages/activities/mine'})})}
+function showRefundStatus(){if(completionHandled.value)return;completionHandled.value=true;uni.showModal({title:'支付已退款',content:'该发布支付已进入退款流程或已退款，请在“我的活动”查看最终记录。',showCancel:false,success:()=>uni.redirectTo({url:'/pages/activities/mine'})})}
+async function pay(){if(!order.value||paying.value)return;paying.value=true;try{if(paymentMode.value==='mock'){await simulateActivityPublishPayment(activityId.value);showSuccess();return}
+// #ifdef H5
+if(!isWechatBrowser())throw new Error('请在微信服务号内打开页面完成支付');const authorization=(await getActivityPublishPaymentAuthorization(activityId.value)).data;if(!authorization.authorized){if(!authorization.authorize_url)throw new Error('微信授权地址不可用');window.location.assign(authorization.authorize_url);return}const session=(await createActivityPublishPaymentSession(activityId.value)).data;if(session.invoke_type!=='WECHAT_JSAPI'||!session.pay_info)throw new Error('支付通道未返回有效的微信调起参数');await invokeWechatPay(session.pay_info);await confirmPayment();showSuccess()
+// #endif
+// #ifndef H5
+throw new Error('当前版本暂未开放 App 支付，请在微信服务号 H5 完成支付')
+// #endif
+}catch(reason){uni.showToast({title:getErrorMessage(reason,'支付失败'),icon:'none'});await loadOrder()}finally{paying.value=false}}
+onLoad(query=>{activityId.value=Number(query?.id)||0;autoPayAfterAuthorization.value=query?.wechatAuthorized==='1';if(activityId.value)loadOrder();else{loading.value=false;error.value='缺少活动编号'}})
 </script>
 <style lang="scss" scoped>
 @use '../../styles/tokens.scss' as *;

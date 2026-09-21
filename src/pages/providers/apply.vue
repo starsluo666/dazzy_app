@@ -48,6 +48,18 @@
         </view>
 
         <section class="form-card">
+          <label class="input-row">
+            <text>真实姓名</text>
+            <input v-model="form.application_real_name" maxlength="50" placeholder="用于入驻及实名认证核对" />
+          </label>
+
+          <view class="row">
+            <view class="row-label"><text>出生日期</text><small>用于计算年龄</small></view>
+            <picker mode="date" :end="maxBirthDate" :value="form.application_birth_date || ''" @change="chooseBirthDate">
+              <view>{{ form.application_birth_date || '请选择' }} <b>›</b></view>
+            </picker>
+          </view>
+
           <view class="row">
             <view class="row-label">
               <text>性别</text>
@@ -56,6 +68,16 @@
             <picker :range="genderOptions" range-key="label" :value="genderIndex" @change="chooseGender">
               <view>{{ genderLabel }} <b>›</b></view>
             </picker>
+          </view>
+
+          <view class="photo-field">
+            <view class="field-head"><text>近期生活照</text><small>审核资料</small></view>
+            <button class="photo-upload" :disabled="uploading" @tap="choosePhoto">
+              <image v-if="photoPreview" class="photo-thumbnail" :src="photoPreview" mode="aspectFill" />
+              <view v-else class="photo-empty"><i /></view>
+              <view class="photo-copy"><strong>{{ photoPreview ? '已选择生活照' : '上传近期生活照' }}</strong><text>清晰、自然，单张不超过 8MB</text></view>
+              <text class="photo-action">{{ photoPreview ? '更换' : '选择' }}</text>
+            </button>
           </view>
 
           <label>
@@ -115,7 +137,7 @@
 
 <script setup lang="ts">
 import { onLoad } from '@dcloudio/uni-app'
-import { computed, reactive, ref } from 'vue'
+import { computed, reactive, ref, shallowRef } from 'vue'
 
 import NetworkState from '@/components/NetworkState.vue'
 import { BRAND_PRIMARY } from '@/utils/brand'
@@ -124,6 +146,7 @@ import {
   getProviderApplication,
   saveProviderApplication,
   submitProviderApplication,
+  uploadProviderApplicationPhoto,
 } from '@/services/providers'
 import { guardCurrentPage } from '@/services/session'
 import type { CurrentUser, ProviderApplication } from '@/types/api'
@@ -144,12 +167,24 @@ const genderOptions: Array<{ label: string; value: Gender }> = [
 
 const loading = ref(true)
 const saving = ref(false)
+const uploading = ref(false)
 const error = ref('')
 const agreed = ref(false)
 const application = ref<ProviderApplication | null>(null)
 const gender = ref<Gender>('unspecified')
 const originalGender = ref<Gender>('unspecified')
+const photoPreview = ref('')
+const photoPath = ref('')
+const photoFile = shallowRef<unknown>()
+const maxBirthDate = (() => {
+  const value = new Date()
+  value.setFullYear(value.getFullYear() - 18)
+  return value.toISOString().slice(0, 10)
+})()
 const form = reactive({
+  application_real_name: '',
+  application_birth_date: '' as string | null,
+  lifestyle_photo_id: null as string | null,
   bio: '',
   service_city_code: '130400',
   service_city_name: '邯郸市',
@@ -163,7 +198,10 @@ const locked = computed(() =>
   || application.value?.status === 'suspended',
 )
 const canSubmit = computed(() =>
-  form.bio.trim().length >= 10
+  form.application_real_name.trim().length >= 2
+  && Boolean(form.application_birth_date)
+  && Boolean(form.lifestyle_photo_id || photoPath.value)
+  && form.bio.trim().length >= 10
   && Boolean(form.service_city_code)
   && agreed.value,
 )
@@ -207,6 +245,23 @@ function chooseGender(event: { detail: { value: string } }) {
   const option = genderOptions[Number(event.detail.value)]
   if (option) gender.value = option.value
 }
+function chooseBirthDate(event: { detail: { value: string } }) {
+  form.application_birth_date = event.detail.value
+}
+function choosePhoto() {
+  uni.chooseImage({
+    count: 1,
+    sizeType: ['compressed'],
+    sourceType: ['album', 'camera'],
+    success: ({ tempFilePaths, tempFiles }) => {
+      const selected = Array.isArray(tempFiles) ? tempFiles[0] : tempFiles
+      if (selected?.size && selected.size > 8 * 1024 * 1024) return warn('生活照不能超过8MB')
+      photoPath.value = tempFilePaths[0]
+      photoFile.value = selected
+      photoPreview.value = tempFilePaths[0]
+    },
+  })
+}
 function changeRadius(event: { detail: { value: number } }) {
   form.max_service_radius_km = Number(event.detail.value)
 }
@@ -223,12 +278,16 @@ async function load() {
     originalGender.value = userResponse.data.gender
     if (application.value) {
       Object.assign(form, {
+        application_real_name: application.value.application_real_name,
+        application_birth_date: application.value.application_birth_date,
+        lifestyle_photo_id: application.value.lifestyle_photo_id,
         bio: application.value.bio,
         service_city_code: application.value.service_city_code || '130400',
         service_city_name: application.value.service_city_name || '邯郸市',
         max_service_radius_km: application.value.max_service_radius_km,
         invitation_code: application.value.invitation_code,
       })
+      photoPreview.value = application.value.lifestyle_photo_url || ''
     }
   } catch (loadError) {
     error.value = getErrorMessage(loadError)
@@ -241,21 +300,31 @@ async function submit() {
   if (!canSubmit.value || saving.value) return
   saving.value = true
   try {
+    if (photoPath.value) {
+      uploading.value = true
+      const uploaded = await uploadProviderApplicationPhoto(photoPath.value, photoFile.value)
+      form.lifestyle_photo_id = uploaded.data.id
+      uploading.value = false
+    }
     if (gender.value !== originalGender.value) {
       await updateCurrentUser({ gender: gender.value })
       originalGender.value = gender.value
     }
     await saveProviderApplication({
       ...form,
+      application_real_name: form.application_real_name.trim(),
       bio: form.bio.trim(),
       invitation_code: form.invitation_code.trim(),
     })
     application.value = (await submitProviderApplication()).data
+    photoPath.value = ''
+    photoFile.value = undefined
     uni.showToast({ title: '提交成功', icon: 'success' })
   } catch (submitError) {
     warn(getErrorMessage(submitError, '提交失败'))
   } finally {
     saving.value = false
+    uploading.value = false
   }
 }
 

@@ -14,12 +14,13 @@ import type {
 
 import { request } from './http'
 
-const DEMO_LOCATION = {
-  longitude: '114.5240070',
-  latitude: '36.6074460',
+interface DiscoveryLocationQuery {
+  city_code?: string
+  longitude?: string
+  latitude?: string
 }
 
-interface ProviderQuery {
+interface ProviderQuery extends DiscoveryLocationQuery {
   keyword?: string
   category?: string
   gender?: 'male' | 'female'
@@ -30,7 +31,7 @@ interface ProviderQuery {
   page_size?: number
 }
 
-interface ActivityQuery {
+interface ActivityQuery extends DiscoveryLocationQuery {
   category?: string
   ordering?: 'recommended' | 'distance' | 'time' | 'latest'
   page_size?: number
@@ -38,7 +39,7 @@ interface ActivityQuery {
 
 export function getRecommendedProviders(query: ProviderQuery = {}) {
   return request<ListResponse<ProviderListItem>>('/providers/', {
-    query: { ...DEMO_LOCATION, city_code: '130400', page_size: 8, ...query },
+    query: { page_size: 8, ...query },
   })
 }
 
@@ -50,7 +51,7 @@ export function getServiceCategories() {
 
 export function getNearbyActivities(query: ActivityQuery = {}) {
   return request<ListResponse<ActivityListItem>>('/activities/', {
-    query: { ...DEMO_LOCATION, ordering: 'distance', page_size: 3, ...query },
+    query: { ordering: 'distance', page_size: 3, ...query },
   })
 }
 
@@ -58,9 +59,9 @@ export function getHomeCardAssets() {
   return request<DataResponse<HomeCardAssets>>('/content/home-cards/')
 }
 
-export function getHomeDiscovery() {
+export function getHomeDiscovery(query: DiscoveryLocationQuery = {}) {
   return request<DataResponse<HomeDiscoveryData>>('/home/', {
-    query: { ...DEMO_LOCATION, city_code: '130400' },
+    query: { ...query },
   })
 }
 

@@ -175,6 +175,11 @@ export interface NotificationListResponse extends ListResponse<UserNotification>
 export interface ProviderApplication {
   status: 'draft' | 'pending' | 'approved' | 'rejected' | 'suspended'
   gender: CurrentUser['gender']
+  application_real_name: string
+  application_birth_date: string | null
+  age: number | null
+  lifestyle_photo_id: string | null
+  lifestyle_photo_url: string | null
   bio: string
   service_city_code: string
   service_city_name: string
@@ -191,6 +196,10 @@ export interface ServiceCategory {
   id: number
   name: string
   slug: string
+  hourly_min_price_amount: number
+  hourly_max_price_amount: number
+  per_session_min_price_amount: number
+  per_session_max_price_amount: number
 }
 
 export interface ProviderAvailabilitySlot {

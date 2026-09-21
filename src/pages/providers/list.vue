@@ -41,7 +41,7 @@
           @tap="changeOrdering(item.value)"
         >{{ item.label }}</view>
       </view>
-      <view class="city" role="button" hover-class="sort--pressed" @tap="showCityPending">⌖ 邯郸市⌄</view>
+      <view class="city" role="button" hover-class="sort--pressed" @tap="chooseCity">⌖ {{ discovery.cityName }}⌄</view>
     </view>
 
     <view v-if="activeFilterCount" class="filter-summary dz-container">
@@ -151,6 +151,12 @@ import DzEmptyState from '@/components/DzEmptyState.vue'
 import DzSkeleton from '@/components/DzSkeleton.vue'
 import NetworkState from '@/components/NetworkState.vue'
 import { getRecommendedProviders, getServiceCategories } from '@/services/discovery'
+import {
+  discoveryQuery,
+  getDiscoveryContext,
+  resolveDiscoveryContext,
+  showDiscoveryCityPicker,
+} from '@/services/discoveryContext'
 import { openPage } from '@/services/navigation'
 import type { ProviderListItem, ProviderServiceSummary } from '@/types/api'
 import { formatAmount, formatDistance, getErrorMessage } from '@/utils/formatters'
@@ -215,6 +221,7 @@ const draftFilters = ref<ProviderFilters>(emptyFilters())
 const filterOpen = ref(false)
 const loading = ref(true)
 const error = ref('')
+const discovery = ref(getDiscoveryContext())
 const activeFilterCount = computed(() => [
   filters.value.onlineOnly,
   Boolean(filters.value.gender),
@@ -272,6 +279,7 @@ async function loadProviders() {
       max_price_amount: filters.value.maxPriceAmount || undefined,
       ordering: ordering.value,
       page_size: 20,
+      ...discoveryQuery(discovery.value),
     })).data.items
   } catch (reason) {
     error.value = getErrorMessage(reason)
@@ -320,10 +328,6 @@ function bookProvider(item: ProviderListItem) {
   openDetail(item.public_id)
 }
 
-function showPending(feature: string) {
-  uni.showToast({ title: `${feature}功能即将接入`, icon: 'none' })
-}
-
 function clearKeyword() {
   keyword.value = ''
   loadProviders()
@@ -354,14 +358,18 @@ function clearFilters() {
   loadProviders()
 }
 
-function showCityPending() {
-  showPending('城市选择')
+async function chooseCity() {
+  const selected = await showDiscoveryCityPicker()
+  if (!selected) return
+  discovery.value = selected
+  await loadProviders()
 }
 
-onLoad((query) => {
+onLoad(async (query) => {
   category.value = typeof query?.category === 'string' ? query.category : ''
+  discovery.value = await resolveDiscoveryContext()
   loadCategories()
-  loadProviders()
+  await loadProviders()
 })
 </script>
 

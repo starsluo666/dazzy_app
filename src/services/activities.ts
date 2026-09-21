@@ -1,12 +1,33 @@
-import type { ActivityAfterSalesCase, ActivityCategoryItem, ActivityCopySource, ActivityDraftResult, ActivityParticipationCancellationResult, ActivityParticipationCheckout, ActivityParticipationPaymentResult, ActivityPublishOrder, ActivityPublishRules, ActivityReportReceipt, DataResponse, ListResponse, MyActivityListItem } from '@/types/api'
+import type { ActivityAfterSalesCase, ActivityCategoryItem, ActivityCopySource, ActivityDraftResult, ActivityParticipationCancellationResult, ActivityParticipationCheckout, ActivityParticipationPaymentOrder, ActivityParticipationPaymentResult, ActivityPublishOrder, ActivityPublishRules, ActivityReportReceipt, DataResponse, ListResponse, MyActivityListItem, ProviderOrderPaymentAuthorization, ProviderOrderPaymentSession } from '@/types/api'
 
 import { request, uploadFile } from './http'
 
-export function createActivityParticipationOrder(activityId: number, channel: 'mock_wechat' | 'mock_alipay') {
+export function createActivityParticipationOrder(activityId: number, channel: 'mock_wechat' | 'mock_alipay' | 'wechat') {
   return request<DataResponse<ActivityParticipationCheckout>>(
     `/activities/${activityId}/participation/`,
     { method: 'POST', data: { channel } },
   )
+}
+
+export function getActivityParticipationPaymentAuthorization(activityId: number) {
+  return request<DataResponse<ProviderOrderPaymentAuthorization>>(
+    `/activities/${activityId}/participation/payment-authorization/`,
+  )
+}
+
+export function createActivityParticipationPaymentSession(activityId: number) {
+  return request<DataResponse<ProviderOrderPaymentSession>>(
+    `/activities/${activityId}/participation/payment-session/`,
+    { method: 'POST' },
+  )
+}
+
+export function confirmActivityParticipationPaymentStatus(activityId: number) {
+  return request<DataResponse<{
+    state: 'not_started' | 'processing' | 'failed' | 'paid' | 'refund_pending' | 'refunded' | 'refund_failed'
+    payment_order: ActivityParticipationPaymentOrder
+    participation_status: string
+  }>>(`/activities/${activityId}/participation/payment-status/`, { method: 'POST' })
 }
 
 export function simulateActivityParticipationPayment(activityId: number) {
@@ -99,4 +120,25 @@ export function createActivityPublishOrder(activityId: number) {
 
 export function simulateActivityPublishPayment(activityId: number) {
   return request<DataResponse<ActivityPublishOrder>>(`/activities/${activityId}/publish-order/simulate-payment/`, { method: 'POST' })
+}
+
+export function getActivityPublishPaymentAuthorization(activityId: number) {
+  return request<DataResponse<ProviderOrderPaymentAuthorization>>(
+    `/activities/${activityId}/publish-order/payment-authorization/`,
+  )
+}
+
+export function createActivityPublishPaymentSession(activityId: number) {
+  return request<DataResponse<ProviderOrderPaymentSession>>(
+    `/activities/${activityId}/publish-order/payment-session/`,
+    { method: 'POST' },
+  )
+}
+
+export function confirmActivityPublishPaymentStatus(activityId: number) {
+  return request<DataResponse<{
+    state: 'not_started' | 'processing' | 'failed' | 'paid' | 'refund_pending' | 'refunded' | 'refund_failed'
+    publish_order: ActivityPublishOrder
+    activity_status: string
+  }>>(`/activities/${activityId}/publish-order/payment-status/`, { method: 'POST' })
 }

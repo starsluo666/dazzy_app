@@ -26,14 +26,13 @@
       </section>
 
       <section class="methods panel">
-        <text class="panel-title">选择支付方式</text>
-        <button :class="{ active: method === 'mock_wechat' }" @tap="selectMethod('mock_wechat')"><i class="wechat">微</i><strong>微信支付</strong><text>{{ method === 'mock_wechat' ? '✓' : '' }}</text></button>
-        <button :class="{ active: method === 'mock_alipay' }" @tap="selectMethod('mock_alipay')"><i class="alipay">支</i><strong>支付宝</strong><text>{{ method === 'mock_alipay' ? '✓' : '' }}</text></button>
+        <text class="panel-title">支付方式</text>
+        <button class="active"><i class="wechat">微</i><strong>微信支付</strong><text>✓</text></button>
       </section>
 
-      <section class="rule-confirm"><strong>◆ 规则版本已确认</strong><text>支付即表示已阅读并同意活动规则及退款规则；本地开发环境仅模拟支付，不会产生真实扣款。</text></section>
+      <section class="rule-confirm"><strong>◆ 规则版本已确认</strong><text>{{ paymentMode==='mock'?'本地模拟支付不会产生真实扣款。':'支付即表示已阅读并同意活动规则及退款规则；结果以服务端汇付查单为准。' }}</text></section>
     </main>
-    <footer v-if="checkout" class="checkout-footer"><button :disabled="paying || secondsLeft <= 0" @tap="pay">{{ paying ? '处理中…' : secondsLeft <= 0 ? '名额锁定已超时' : `模拟支付 ¥${money(checkout.payment_order.payable_amount)}` }}</button></footer>
+    <footer v-if="checkout" class="checkout-footer"><button :disabled="paying || secondsLeft <= 0" @tap="pay">{{ paying ? '正在确认支付…' : secondsLeft <= 0 ? '名额锁定已超时' : `${paymentMode==='mock'?'模拟支付':'微信支付'} ¥${money(checkout.payment_order.payable_amount)}` }}</button></footer>
   </view>
 </template>
 
@@ -41,16 +40,20 @@
 import { computed, onBeforeUnmount, ref } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 
-import { createActivityParticipationOrder, simulateActivityParticipationPayment } from '@/services/activities'
+import { confirmActivityParticipationPaymentStatus, createActivityParticipationOrder, createActivityParticipationPaymentSession, getActivityParticipationPaymentAuthorization, simulateActivityParticipationPayment } from '@/services/activities'
 import { getActivityDetail } from '@/services/discovery'
 import { requireActivityPaymentCapability } from '@/services/payments'
+import type { ActivityPaymentMode } from '@/services/payments'
+import { invokeWechatPay, isWechatBrowser } from '@/services/wechatPay'
 import type { ActivityDetail, ActivityParticipationCheckout } from '@/types/api'
 import { formatActivityRange, formatAmount, getErrorMessage } from '@/utils/formatters'
 
 const activityId = ref(0)
 const activity = ref<ActivityDetail | null>(null)
 const checkout = ref<ActivityParticipationCheckout | null>(null)
-const method = ref<'mock_wechat' | 'mock_alipay'>('mock_wechat')
+const paymentMode = ref<ActivityPaymentMode | null>(null)
+const autoPayAfterAuthorization = ref(false)
+const completionHandled = ref(false)
 const loading = ref(true)
 const paying = ref(false)
 const error = ref('')
@@ -63,31 +66,42 @@ const countdown = computed(() => `${String(Math.floor(secondsLeft.value / 60)).p
 
 function goBack() { uni.navigateBack() }
 function startTicker() { if (ticker) clearInterval(ticker); ticker = setInterval(() => { now.value = Date.now() }, 1000) }
+function showSuccess() {
+  if (completionHandled.value) return
+  completionHandled.value = true
+  uni.showModal({ title: '报名成功', content: '服务端已确认支付，活动名额已正式占用。可在“我的活动”查看报名与退款记录。', showCancel: false, success: () => uni.redirectTo({ url: `/pages/activities/detail?id=${activityId.value}` }) })
+}
 async function loadCheckout() {
   loading.value = true; error.value = ''
   try {
-    await requireActivityPaymentCapability('activity_participation')
+    paymentMode.value = await requireActivityPaymentCapability('activity_participation')
     const [detail, order] = await Promise.all([
       getActivityDetail(activityId.value),
-      createActivityParticipationOrder(activityId.value, method.value),
+      createActivityParticipationOrder(activityId.value, paymentMode.value === 'mock' ? 'mock_wechat' : 'wechat'),
     ])
-    activity.value = detail.data; checkout.value = order.data; method.value = order.data.payment_order.channel === 'mock_alipay' ? 'mock_alipay' : 'mock_wechat'; now.value = Date.now(); startTicker()
+    activity.value = detail.data; checkout.value = order.data; now.value = Date.now(); startTicker()
+    if (checkout.value.participation_status === 'active' || ['paid', 'partially_refunded'].includes(checkout.value.payment_order.status)) { showSuccess(); return }
+    if(autoPayAfterAuthorization.value)setTimeout(()=>void pay(),0)
   } catch (reason) { error.value = getErrorMessage(reason, '报名支付单创建失败') } finally { loading.value = false }
 }
-async function selectMethod(value: 'mock_wechat' | 'mock_alipay') {
-  if (method.value === value || paying.value) return
-  method.value = value
-  try { checkout.value = (await createActivityParticipationOrder(activityId.value, value)).data } catch (reason) { uni.showToast({ title: getErrorMessage(reason, '支付方式更新失败'), icon: 'none' }) }
-}
+async function confirmPayment(){for(let attempt=0;attempt<5;attempt+=1){const result=(await confirmActivityParticipationPaymentStatus(activityId.value)).data;checkout.value!.payment_order=result.payment_order;if(result.state==='paid')return;if(result.state==='refund_pending')throw new Error('支付已超时或名额已释放，系统正在原路退款');if(result.state==='refunded')throw new Error('该笔支付已原路退款');if(result.state==='refund_failed')throw new Error('自动退款失败，请联系客服核对');if(result.state==='failed')throw new Error('支付未成功，请重新支付');await new Promise(resolve=>setTimeout(resolve,1200))}throw new Error('支付结果确认中，请稍后重新进入本页查看')}
 async function pay() {
   if (!checkout.value || paying.value || secondsLeft.value <= 0) return
   paying.value = true
   try {
-    await simulateActivityParticipationPayment(activityId.value)
-    uni.showModal({ title: '报名成功', content: '支付状态已记录，活动名额已正式占用。可在“我的活动”查看报名与退款记录。', showCancel: false, success: () => uni.redirectTo({ url: `/pages/activities/detail?id=${activityId.value}` }) })
+    if(paymentMode.value==='mock')await simulateActivityParticipationPayment(activityId.value)
+    else {
+      // #ifdef H5
+      if(!isWechatBrowser())throw new Error('请在微信服务号内打开页面完成支付');const authorization=(await getActivityParticipationPaymentAuthorization(activityId.value)).data;if(!authorization.authorized){if(!authorization.authorize_url)throw new Error('微信授权地址不可用');window.location.assign(authorization.authorize_url);return}const session=(await createActivityParticipationPaymentSession(activityId.value)).data;if(session.invoke_type!=='WECHAT_JSAPI'||!session.pay_info)throw new Error('支付通道未返回有效的微信调起参数');await invokeWechatPay(session.pay_info);await confirmPayment()
+      // #endif
+      // #ifndef H5
+      throw new Error('当前版本暂未开放 App 支付，请在微信服务号 H5 完成支付')
+      // #endif
+    }
+    showSuccess()
   } catch (reason) { uni.showToast({ title: getErrorMessage(reason, '支付失败'), icon: 'none' }) } finally { paying.value = false }
 }
-onLoad((query) => { activityId.value = Number(query?.id) || 0; if (activityId.value) loadCheckout(); else { loading.value = false; error.value = '缺少活动编号' } })
+onLoad((query) => { activityId.value = Number(query?.id) || 0; autoPayAfterAuthorization.value=query?.wechatAuthorized==='1';if (activityId.value) loadCheckout(); else { loading.value = false; error.value = '缺少活动编号' } })
 onBeforeUnmount(() => { if (ticker) clearInterval(ticker) })
 </script>
 
