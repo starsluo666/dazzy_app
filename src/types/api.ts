@@ -37,6 +37,7 @@ export interface ProviderListItem {
 }
 
 export interface ProviderDetail extends ProviderListItem {
+  media: { id: string; type: 'image' | 'video'; url: string }[]
   gender: 'unspecified' | 'male' | 'female'
   lifestyle_photo_url: string | null
   credit_score: number

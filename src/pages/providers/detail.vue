@@ -4,7 +4,13 @@
     <NetworkState v-else-if="error" class="dz-container detail-state" :message="error" error @retry="loadDetail" />
     <template v-else-if="provider">
       <view class="hero dz-container">
-        <image v-if="heroPhotoUrl" :src="heroPhotoUrl" mode="aspectFill" @error="handleHeroPhotoError" />
+        <swiper v-if="gallery.length" class="hero-gallery" :current="mediaIndex" :autoplay="false" @change="changeMedia">
+          <swiper-item v-for="(item, index) in gallery" :key="item.id">
+            <view v-if="failedMedia[item.id]" class="hero-fallback media-error">{{ item.type === 'video' ? '视频暂时无法播放' : '照片暂时无法加载' }}</view>
+            <image v-else-if="item.type === 'image'" class="gallery-image" :src="item.url" mode="aspectFill" @tap="previewGallery(item.url)" @error="failedMedia[item.id] = true" />
+            <video v-else-if="mediaIndex === index" :id="`provider-video-${index}`" class="gallery-video" :src="item.url" :autoplay="false" object-fit="contain" @error="failedMedia[item.id] = true" />
+          </swiper-item>
+        </swiper>
         <view v-else class="hero-fallback">{{ provider.nickname.slice(0, 1) }}</view>
         <view class="hero-shade" />
         <button class="round back" aria-label="返回" hover-class="round--pressed" @tap="goBack"><text>‹</text></button>
@@ -12,7 +18,7 @@
           <button class="round share" aria-label="分享" hover-class="round--pressed" @tap="showPending('分享')"><text>↥</text></button>
           <button class="round" aria-label="更多操作" hover-class="round--pressed" @tap="showMoreActions"><text class="dots">•••</text></button>
         </view>
-        <text class="photo-count">1/1</text>
+        <text v-if="gallery.length" class="photo-count" :class="{ 'video-count': gallery[mediaIndex]?.type === 'video' }">{{ mediaIndex + 1 }}/{{ gallery.length }}</text>
       </view>
 
       <main class="profile-sheet dz-container">
@@ -91,7 +97,7 @@
 </template>
 
 <script setup lang="ts">
-import { onLoad } from '@dcloudio/uni-app'
+import { onHide, onLoad, onUnload } from '@dcloudio/uni-app'
 import { computed, ref, watch } from 'vue'
 
 import DzBottomSheet from '@/components/DzBottomSheet.vue'
@@ -108,7 +114,8 @@ const provider = ref<ProviderDetail | null>(null)
 const publicId = ref('')
 const loading = ref(true)
 const error = ref('')
-const lifestylePhotoFailed = ref(false)
+const mediaIndex = ref(0)
+const failedMedia = ref<Record<string, boolean>>({})
 const avatarFailed = ref(false)
 const selectedServiceId = ref(0)
 const pendingServiceId = ref(0)
@@ -121,11 +128,10 @@ const reviewSummary = ref<ProviderReviewSummary | null>(null)
 const reviewsLoading = ref(false)
 const reviewError = ref('')
 
-const heroPhotoUrl = computed(() => {
-  if (provider.value?.lifestyle_photo_url && !lifestylePhotoFailed.value) {
-    return provider.value.lifestyle_photo_url
-  }
-  return provider.value?.avatar_url && !avatarFailed.value ? provider.value.avatar_url : ''
+const gallery = computed(() => {
+  if (provider.value?.media?.length) return provider.value.media
+  const url = provider.value?.lifestyle_photo_url || provider.value?.avatar_url
+  return url ? [{ id: 'cover', type: 'image' as const, url }] : []
 })
 const genderSymbol = computed(() =>
   provider.value?.gender === 'male' ? '♂' : provider.value?.gender === 'female' ? '♀' : '',
@@ -148,13 +154,11 @@ const profileTags = computed(() => {
 const earliestSlot = computed(()=>{if(!earliest.value)return null;const parts=businessTimeParts(earliest.value.starts_at);const date=businessDateKey(earliest.value.starts_at);const label=date===businessDateKey()?'今天':date===businessDateKeyAfter(1)?'明天':`${parts.month}月${parts.day}日`;return{label,time:businessClock(earliest.value.starts_at),date}})
 
 const money = formatAmount
-function handleHeroPhotoError() {
-  if (provider.value?.lifestyle_photo_url && !lifestylePhotoFailed.value) {
-    lifestylePhotoFailed.value = true
-    return
-  }
-  avatarFailed.value = true
-}
+function pauseVideo() { if (gallery.value[mediaIndex.value]?.type === 'video') uni.createVideoContext(`provider-video-${mediaIndex.value}`).pause() }
+function changeMedia(event: { detail: { current: number } }) { pauseVideo(); mediaIndex.value = event.detail.current }
+function previewGallery(url: string) { uni.previewImage({ current: url, urls: gallery.value.filter(item => item.type === 'image').map(item => item.url) }) }
+onHide(pauseVideo)
+onUnload(pauseVideo)
 function serviceDescription(name:string){return name.includes('摄影')?'拍照打卡，创意构图，记录美好时刻':'一起出行，陪伴游玩，景点打卡'}
 function durationHint(service:ProviderServiceSummary){return service.billing_type==='hourly'?'最低2小时':`预计${Math.max(1,Math.round((service.estimated_duration_minutes||180)/60))}小时`}
 function goBack() { uni.navigateBack() }
@@ -212,7 +216,8 @@ async function loadReviews() {
 async function loadDetail() {
   if (!publicId.value) return
   loading.value = true; error.value = ''
-  lifestylePhotoFailed.value = false
+  mediaIndex.value = 0
+  failedMedia.value = {}
   avatarFailed.value = false
   try { provider.value = (await getProviderDetail(publicId.value)).data;selectedServiceId.value=provider.value.services[0]?.id||0;loadReviews();if(isAuthenticated())recordProviderView(publicId.value).catch(()=>{}) }
   catch (reason) { error.value = getErrorMessage(reason) }
@@ -291,4 +296,5 @@ watch(selectedServiceId,()=>loadAvailability())
 .action-bar .primary{border-radius:24px}
 }
 
+.hero-gallery,.gallery-image,.gallery-video{width:100%;height:100%}.gallery-video{background:#111}.media-error{font-size:28rpx}.photo-count.video-count{bottom:100rpx;pointer-events:none}
 </style>
