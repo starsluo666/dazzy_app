@@ -48,9 +48,10 @@
         </view>
 
         <section class="form-card">
-          <label class="input-row">
+          <label class="input-row" :class="{ invalid: submitAttempted && nameShort }">
             <text>真实姓名</text>
             <input v-model="form.application_real_name" maxlength="50" placeholder="用于入驻及实名认证核对" />
+            <small v-if="submitAttempted && nameShort" class="field-error">真实姓名至少填写2个字</small>
           </label>
 
           <view class="row">
@@ -84,10 +85,12 @@
             <text>达人简介</text>
             <textarea
               v-model="form.bio"
+              :class="{ invalid: submitAttempted && bioShort }"
               maxlength="500"
               placeholder="介绍你的特长、性格和可提供的陪伴体验（至少10字）"
             />
             <small>{{ form.bio.length }}/500</small>
+            <small v-if="submitAttempted && bioShort" class="field-error">达人简介至少填写10个字，还差 {{ Math.max(0, 10 - form.bio.trim().length) }} 字</small>
           </label>
 
           <view class="row">
@@ -127,7 +130,7 @@
           <i :class="{ active: agreed }">{{ agreed ? '✓' : '' }}</i>
           <text>我已阅读并同意《达人服务声明》和《平台服务协议》</text>
         </view>
-        <button class="submit" :disabled="!canSubmit || saving" @tap="submit">
+        <button class="submit" :class="{ blocked: submitAttempted && !canSubmit }" :disabled="saving" @tap="submit">
           {{ saving ? '提交中…' : '提交审核' }}
         </button>
       </template>
@@ -176,6 +179,7 @@ const originalGender = ref<Gender>('unspecified')
 const photoPreview = ref('')
 const photoPath = ref('')
 const photoFile = shallowRef<unknown>()
+const submitAttempted = ref(false)
 const maxBirthDate = (() => {
   const value = new Date()
   value.setFullYear(value.getFullYear() - 18)
@@ -205,6 +209,8 @@ const canSubmit = computed(() =>
   && Boolean(form.service_city_code)
   && agreed.value,
 )
+const nameShort = computed(() => form.application_real_name.trim().length < 2)
+const bioShort = computed(() => form.bio.trim().length < 10)
 const genderLabel = computed(() =>
   genderOptions.find(item => item.value === gender.value)?.label || '保密',
 )
@@ -297,7 +303,16 @@ async function load() {
 }
 
 async function submit() {
-  if (!canSubmit.value || saving.value) return
+  submitAttempted.value = true
+  if (saving.value) return
+  if (!canSubmit.value) {
+    warn(nameShort.value
+      ? '真实姓名至少填写2个字'
+      : bioShort.value
+        ? `达人简介至少填写10个字，还差${Math.max(0, 10 - form.bio.trim().length)}字`
+        : '请补齐出生日期、生活照、服务城市并同意协议')
+    return
+  }
   saving.value = true
   try {
     if (photoPath.value) {
@@ -389,6 +404,7 @@ onLoad(() => { if (guardCurrentPage()) load() })
 .agreement i.active { border-color: $dz-brand-primary; color: #fff; background: $dz-brand-primary; }
 .submit, .status-card button { height: 84rpx; border: 0; border-radius:$dz-radius-full; color: #fff; background: $dz-gradient-brand; font-size:$dz-fs-body; font-weight:$dz-fw-bold; line-height: 84rpx; }
 .submit[disabled] { opacity: .45; }
+.submit.blocked{background:#d94a4a}.input-row.invalid,.form-card textarea.invalid{border-color:$dz-status-danger!important;background:$dz-status-danger-soft!important}.input-row{flex-wrap:wrap}.input-row .field-error{width:100%;margin-top:8rpx;color:$dz-status-danger!important;text-align:right}.field-error{display:block!important;margin-top:7rpx;color:$dz-status-danger!important;font-size:$dz-fs-micro!important;text-align:left!important}
 .reject { display: flex; flex-direction: column; gap: 8rpx; margin-bottom: 18rpx; padding: 20rpx 24rpx; border-left: 6rpx solid $dz-price-primary; }
 .reject strong { color: $dz-status-danger-deep; font-size:$dz-fs-caption; }
 .reject text { color: $dz-text-secondary; font-size:$dz-fs-caption; }

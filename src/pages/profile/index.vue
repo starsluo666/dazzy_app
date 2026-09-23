@@ -112,7 +112,7 @@ import { isAuthenticated, requireAuthentication } from '@/services/session'
 import type { CurrentUser, CurrentUserOverview, ProviderApplication } from '@/types/api'
 
 type AccountEntry = { label: string; value: string; route?: string; bucket?: string }
-type FunctionEntry = { label: string; icon: string; route?: string }
+type FunctionEntry = { label: string; icon: string; route?: string; action?: 'customer_service' }
 
 const profile = ref<CurrentUser | null>(null)
 const overview = ref<CurrentUserOverview | null>(null)
@@ -156,7 +156,7 @@ const functionEntries: FunctionEntry[] = [
   { label: '浏览记录', icon: '/static/functions/browsing-history.svg', route: '/pages/history/index' },
   { label: '我的评价', icon: '/static/functions/my-reviews.svg', route: '/pages/reviews/index' },
   { label: '常用地址', icon: '/static/functions/addresses.svg', route: '/pages/addresses/index' },
-  { label: '客服中心', icon: '/static/functions/customer-service.svg', route: '/pages/support/index' },
+  { label: '客服中心', icon: '/static/functions/customer-service.svg', action: 'customer_service' },
   { label: '帮助中心', icon: '/static/functions/help-center.svg' },
   { label: '问题反馈', icon: '/static/functions/feedback.svg', route: '/pages/support/index?mode=new&caseType=consultation' },
   { label: '举报有奖', icon: '/static/functions/report-reward.svg', route: '/pages/support/index?mode=new&caseType=report' },
@@ -178,6 +178,27 @@ function openAccount(item: AccountEntry) {
 }
 
 function openFunction(item: FunctionEntry) {
+  if (item.action === 'customer_service') {
+    if (!isAuthenticated()) {
+      requireAuthentication('/pages/profile/index')
+      return
+    }
+    const phone = overview.value?.customer_service_phone?.trim()
+    if (!phone) {
+      uni.showModal({ title: '客服中心', content: '客服电话暂未配置，请通过问题反馈联系我们。', showCancel: false })
+      return
+    }
+    uni.showModal({
+      title: '客服中心',
+      content: `客服电话：${phone}`,
+      cancelText: '取消',
+      confirmText: '拨打',
+      success: ({ confirm }) => {
+        if (confirm) uni.makePhoneCall({ phoneNumber: phone.replace(/[()\s-]/g, '') })
+      },
+    })
+    return
+  }
   if (!item.route) return showPending(item.label)
   if (requireAuthentication(item.route)) uni.navigateTo({ url: item.route })
 }

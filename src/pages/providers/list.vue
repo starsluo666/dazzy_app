@@ -39,9 +39,8 @@
           hover-class="sort--pressed"
           role="button"
           @tap="changeOrdering(item.value)"
-        >{{ item.label }}</view>
+        ><i class="sort-icon">{{ item.icon }}</i>{{ item.label }}</view>
       </view>
-      <view class="city" role="button" hover-class="sort--pressed" @tap="chooseCity">⌖ {{ discovery.cityName }}⌄</view>
     </view>
 
     <view v-if="activeFilterCount" class="filter-summary dz-container">
@@ -155,7 +154,6 @@ import {
   discoveryQuery,
   getDiscoveryContext,
   resolveDiscoveryContext,
-  showDiscoveryCityPicker,
 } from '@/services/discoveryContext'
 import { openPage } from '@/services/navigation'
 import type { ProviderListItem, ProviderServiceSummary } from '@/types/api'
@@ -183,11 +181,11 @@ const fallbackCategories = [
   { label: '商务', value: 'business' },
 ]
 const categories = ref([...fallbackCategories])
-const sorts: Array<{ label: string; value: Ordering }> = [
-  { label: '综合', value: 'recommended' },
-  { label: '距离', value: 'distance' },
-  { label: '评分', value: 'rating' },
-  { label: '价格', value: 'price' },
+const sorts: Array<{ label: string; value: Ordering; icon: string }> = [
+  { label: '综合', value: 'recommended', icon: '✦' },
+  { label: '距离', value: 'distance', icon: '⌖' },
+  { label: '评分', value: 'rating', icon: '★' },
+  { label: '价格', value: 'price', icon: '¥' },
 ]
 const genderOptions: Array<{ label: string; value: GenderFilter }> = [
   { label: '不限', value: '' },
@@ -358,13 +356,6 @@ function clearFilters() {
   loadProviders()
 }
 
-async function chooseCity() {
-  const selected = await showDiscoveryCityPicker()
-  if (!selected) return
-  discovery.value = selected
-  await loadProviders()
-}
-
 onLoad(async (query) => {
   category.value = typeof query?.category === 'string' ? query.category : ''
   discovery.value = await resolveDiscoveryContext()
@@ -397,13 +388,13 @@ button::after { display:none; }
 .category { display:flex; align-items:center; justify-content:center; flex:0 0 auto; min-width:116rpx; height:58rpx; padding:0 24rpx; border:1rpx solid $dz-border-material; border-radius:$dz-radius-full; color:$dz-text-primary; background:$dz-surface-raised; box-shadow:inset 0 1rpx 0 $dz-surface-highlight; font-size:$dz-fs-caption; box-sizing:border-box; transition:transform $dz-duration-fast $dz-ease-out, opacity $dz-duration-fast $dz-ease-standard; }
 .category--pressed { transform:scale(.95); opacity:.8; }
 .category.active { border-color:transparent; color:$dz-text-inverse; background:$dz-gradient-brand; box-shadow:$dz-shadow-brand; font-weight:$dz-fw-bold; }
-.sort-row { display:flex; align-items:center; justify-content:space-between; min-height:78rpx; }
-.sorts { display:flex; align-items:stretch; gap:38rpx; height:78rpx; }
-.sorts>view { position:relative; display:flex; align-items:center; color:$dz-text-primary; font-size:$dz-fs-caption; transition:opacity $dz-duration-fast $dz-ease-standard; }
+.sort-row { min-height:78rpx; }
+.sorts { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); align-items:stretch; width:100%; height:78rpx; }
+.sorts>view { position:relative; display:flex; align-items:center; justify-content:center; gap:8rpx; color:$dz-text-primary; font-size:$dz-fs-caption; transition:opacity $dz-duration-fast $dz-ease-standard; }
+.sort-icon{display:inline-flex;width:24rpx;align-items:center;justify-content:center;color:$dz-text-tertiary;font-size:22rpx;font-style:normal}.sorts>view.active .sort-icon{color:$dz-brand-deep}
 .sort--pressed { opacity:.6; }
 .sorts>view.active { color:$dz-brand-deep; font-weight:$dz-fw-bold; }
 .sorts>view.active::before { position:absolute; right:4rpx; bottom:8rpx; left:4rpx; height:4rpx; border-radius:2rpx; background:$dz-brand-primary; content:''; }
-.city { flex:0 0 auto; color:$dz-text-secondary; font-size:$dz-fs-caption; }
 .filter-summary { display:flex; align-items:center; justify-content:space-between; height:58rpx; margin-bottom:8rpx; border-radius:$dz-radius-sm; color:$dz-brand-deep; background:$dz-brand-soft; font-size:$dz-fs-caption; }
 .filter-summary button { width:104rpx; height:58rpx; color:$dz-brand-deep; font-size:$dz-fs-caption; }
 .grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:$dz-space-2; padding-top:4rpx; }

@@ -21,10 +21,11 @@
       </section>
 
       <section class="form-panel">
-        <label class="form-row">
+        <label class="form-row" :class="{ invalid: saveAttempted && !nickname.trim() }">
           <text>昵称</text>
           <input v-model="nickname" maxlength="30" placeholder="请输入昵称" />
           <small>{{ nickname.trim().length }}/30</small>
+          <text v-if="saveAttempted && !nickname.trim()" class="field-error">昵称至少填写1个字</text>
         </label>
 
         <view class="form-row" role="button" @tap="genderSheetVisible = true">
@@ -48,7 +49,7 @@
         </view>
       </section>
 
-      <button class="save-button" :disabled="!canSave || saving" @tap="save">
+      <button class="save-button" :class="{ blocked: saveAttempted && !canSave }" :disabled="saving" @tap="save">
         {{ saving ? '保存中…' : '保存修改' }}
       </button>
     </main>
@@ -87,6 +88,7 @@ const avatarFilePath = ref('')
 const avatarFile = shallowRef<unknown>()
 const genderSheetVisible = ref(false)
 const saving = ref(false)
+const saveAttempted = ref(false)
 const today = businessDateKey()
 const genderOptions: Array<{ label: string; value: Gender }> = [
   { label: '保密', value: 'unspecified' },
@@ -120,7 +122,9 @@ function chooseAvatar() {
   })
 }
 async function save() {
-  if (!canSave.value || saving.value) return
+  saveAttempted.value = true
+  if (saving.value) return
+  if (!canSave.value) { warn('昵称至少填写1个字'); return }
   saving.value = true
   try {
     await updateCurrentUser({
@@ -190,4 +194,5 @@ onLoad(async () => {
 .gender-options button::after { display: none; }
 .gender-options button.active { color: $dz-brand-deep; font-weight:$dz-fw-bold; }
 .gender-options i { color: $dz-brand-primary; font-style: normal; }
+.form-row.invalid{border-color:$dz-status-danger;background:$dz-status-danger-soft}.field-error{width:100%;padding-bottom:12rpx;color:$dz-status-danger!important;font-size:$dz-fs-micro!important;text-align:right}.form-row{flex-wrap:wrap}.save-button.blocked{background:#d94a4a;opacity:1}
 </style>

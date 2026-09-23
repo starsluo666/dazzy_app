@@ -18,9 +18,9 @@
           <button v-for="item in tags" :key="item.slug" :class="{ active: form.tagSlugs.includes(item.slug) }" hover-class="category--pressed" @tap="toggleTag(item.slug)">{{ item.name }}</button>
         </view>
         <text class="tag-tip">可多选，最多 5 个（已选 {{ form.tagSlugs.length }} 个）</text>
-        <label class="field"><text>活动标题</text><input v-model="form.title" maxlength="80" placeholder="一句话介绍你的活动（至少4个字）" /><small v-if="titleShort" class="field-warn">最少4个字</small><small v-else>{{ form.title.length }}/80</small></label>
-        <label class="field textarea-field"><text>活动介绍</text><textarea v-model="form.description" maxlength="2000" placeholder="介绍活动内容、适合人群和流程" /></label>
-        <label class="field textarea-field"><text>参与规则</text><textarea v-model="form.rules" maxlength="2000" placeholder="例如：准时到场、文明参与、费用范围" /></label>
+        <label class="field" :class="{ invalid: submitAttempted && form.title.trim().length < MIN_TITLE_LENGTH }"><text>活动标题</text><input v-model="form.title" maxlength="80" placeholder="一句话介绍你的活动（至少4个字）" /><small v-if="titleShort || (submitAttempted && form.title.trim().length < MIN_TITLE_LENGTH)" class="field-warn">至少4个字，还差 {{ Math.max(0, MIN_TITLE_LENGTH - form.title.trim().length) }} 字</small><small v-else>{{ form.title.length }}/80</small></label>
+        <label class="field textarea-field" :class="{ invalid: submitAttempted && !form.description.trim() }"><text>活动介绍</text><textarea v-model="form.description" maxlength="2000" placeholder="介绍活动内容、适合人群和流程" /><small v-if="submitAttempted && !form.description.trim()" class="field-warn">请填写活动介绍</small></label>
+        <label class="field textarea-field" :class="{ invalid: submitAttempted && !form.rules.trim() }"><text>参与规则</text><textarea v-model="form.rules" maxlength="2000" placeholder="例如：准时到场、文明参与、费用范围" /><small v-if="submitAttempted && !form.rules.trim()" class="field-warn">请填写参与规则</small></label>
       </section>
 
       <view class="activity-address-card panel" :class="{ selected: location }" role="button" tabindex="0" aria-label="选择集合地点" hover-class="activity-address-card--pressed" @tap="openAddressSheet" @keydown.enter="openAddressSheet">
@@ -101,7 +101,7 @@
       <section class="panel refund"><view><text class="section-title">退款规则</text><text class="locked">发布后不可修改</text></view><strong>标准退款模板</strong><text>≥12小时全退；6–12小时退AA本金；2–6小时退70% AA本金；不足2小时不退款。</text></section>
       <label class="agreement" @tap="agreed = !agreed"><text :class="{ active: agreed }">{{ agreed ? '✓' : '' }}</text>我已阅读并同意<em>活动发布规则</em>和<em>退款规则</em></label>
     </main>
-    <footer class="publish-footer"><view><text>预计支付</text><strong>¥{{ totalFee }}</strong></view><button :class="{ disabled: !canSubmit || submitting }" @tap="submit">{{ submitting ? '保存中…' : '保存并进入支付' }}</button></footer>
+    <footer class="publish-footer"><view><text>预计支付</text><strong>¥{{ totalFee }}</strong></view><button :class="{ disabled: !canSubmit || submitting, blocked: submitAttempted && !canSubmit }" @tap="submit">{{ submitting ? '保存中…' : '保存并进入支付' }}</button></footer>
 
     <DzBottomSheet :visible="addressSheet" title="选择集合地点" @close="closeAddressSheet">
         <text class="sheet-guide">请选择适合参与者集合的场馆、商圈或公共地点</text>
@@ -220,6 +220,7 @@ const defaultCoverUrl = ref('')
 const coverUploading = ref(false)
 const agreed = ref(false)
 const submitting = ref(false)
+const submitAttempted = ref(false)
 const addressSheet = ref(false)
 const keyword = ref('')
 const locations = ref<LocationItem[]>([])
@@ -632,6 +633,7 @@ async function loadPublishRules() {
 }
 
 async function submit() {
+  submitAttempted.value = true
   refreshTimeBoundary()
   if (submitBlocker.value) {
     uni.showToast({ title: submitBlocker.value, icon: 'none' })
@@ -748,4 +750,5 @@ onUnload(() => {
 
 @media screen and (max-width:360px){.schedule-heading{align-items:flex-start;flex-direction:column}.schedule-pickers{grid-template-columns:1fr}.schedule-picker{height:68rpx}.schedule-step-title{align-items:flex-start;flex-direction:column;gap:4rpx}.schedule-step-title text{text-align:left}}
 @media screen and (orientation:landscape){.location-list{max-height:210rpx}.date-option-list,.time-option-list{height:190rpx}}
+.field.invalid{border-color:$dz-status-danger}.textarea-field.invalid textarea{border:1rpx solid $dz-status-danger;background:$dz-status-danger-soft}.textarea-field .field-warn{display:block;margin-top:8rpx}.publish-footer button.blocked{background:#d94a4a;opacity:1}
 </style>

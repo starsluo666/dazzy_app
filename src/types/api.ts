@@ -549,6 +549,7 @@ export interface AccountSecurity {
 }
 
 export interface CurrentUserOverview {
+  customer_service_phone: string
   balance_amount: number | null
   coupon_count: number | null
   favorite_count: number | null
@@ -708,6 +709,8 @@ export interface ProviderOrderReview {
   customer_name: string
   image_urls: string[]
   is_anonymous: boolean
+  audit_status: 'pending' | 'approved' | 'rejected'
+  audit_rejection_reason: string
   created_at: string
 }
 
