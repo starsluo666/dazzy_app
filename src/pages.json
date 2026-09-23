@@ -135,6 +135,14 @@
     {
       "path": "pages/support/index",
       "style": { "navigationStyle": "custom" }
+    },
+    {
+      "path": "pages/report/index",
+      "style": { "navigationStyle": "custom" }
+    },
+    {
+      "path": "pages/coupons/index",
+      "style": { "navigationStyle": "custom" }
     }
   ],
   "globalStyle": {

@@ -16,6 +16,24 @@ export interface CreateSupportCasePayload {
   reason: SupportCaseReason
   description: string
   attachment_ids: string[]
+  reward_eligible?: boolean
+}
+
+export interface RewardReportRules {
+  review_timeout_days: number
+  coupon_amount: number
+  coupon_min_order_amount: number
+  coupon_valid_days: number
+  eligible_orders: Array<{
+    order_no: string
+    service_name: string
+    provider_name: string
+    review_expires_at: string
+  }>
+}
+
+export function getRewardReportRules() {
+  return request<DataResponse<RewardReportRules>>('/support/report-rules/')
 }
 
 export function getSupportCases(page = 1, pageSize = 20) {

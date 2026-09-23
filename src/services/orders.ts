@@ -1,27 +1,28 @@
-import type { DataResponse, ListResponse, MyProviderOrderReview, ProviderOrder, ProviderOrderAfterSalesCase, ProviderOrderAfterSalesCreateType, ProviderOrderPaymentAuthorization, ProviderOrderPaymentSession, ProviderOrderQuote } from '@/types/api'
+import type { DataResponse, ListResponse, MyProviderOrderReview, ProviderOrder, ProviderOrderAfterSalesCase, ProviderOrderAfterSalesCreateType, ProviderOrderPaymentAuthorization, ProviderOrderPaymentSession, ProviderOrderQuote, UserCoupon } from '@/types/api'
 import type { BookingDraft } from './bookingDraft'
 import { request, uploadFile } from './http'
 import { toBusinessDateTime } from '@/utils/businessTime'
 
-function orderPayload(draft: BookingDraft) {
+function orderPayload(draft: BookingDraft, couponId?: string | null) {
   return {
     service_id: draft.serviceId,
     starts_at: toBusinessDateTime(draft.date, draft.startTime),
     duration_minutes: draft.durationMinutes,
     address_id: draft.addressId,
     note: draft.note,
+    ...(couponId ? { coupon_id: couponId } : {}),
   }
 }
 
-export function previewProviderOrder(draft: BookingDraft) {
+export function previewProviderOrder(draft: BookingDraft, couponId?: string | null) {
   return request<DataResponse<ProviderOrderQuote>>('/provider-orders/preview/', {
-    method: 'POST', data: orderPayload(draft),
+    method: 'POST', data: orderPayload(draft, couponId),
   })
 }
 
-export function createProviderOrder(draft: BookingDraft) {
+export function createProviderOrder(draft: BookingDraft, couponId?: string | null) {
   return request<DataResponse<ProviderOrder>>('/provider-orders/', {
-    method: 'POST', data: orderPayload(draft),
+    method: 'POST', data: orderPayload(draft, couponId),
   })
 }
 
@@ -66,6 +67,10 @@ export function cancelProviderOrder(orderNo: string) {
 
 export function simulateProviderOrderPayment(orderNo: string) {
   return request<DataResponse<ProviderOrder>>(`/provider-orders/${orderNo}/simulate-payment/`, { method: 'POST' })
+}
+
+export function getMyCoupons() {
+  return request<{ data: { items: UserCoupon[] } }>('/users/me/coupons/')
 }
 
 export function getProviderOrderPaymentAuthorization(orderNo: string) {

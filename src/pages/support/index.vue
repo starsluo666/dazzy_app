@@ -20,11 +20,15 @@
       <section class="quick-actions panel">
         <button @tap="openCreate('consultation')">
           <view class="quick-icon cyan"><image src="/static/functions/feedback.svg" mode="aspectFit" /></view>
-          <view><strong>提交问题</strong><text>遇到使用问题，提交反馈获得帮助</text></view><b>›</b>
+          <view><strong>问题反馈</strong><text>平台流程、产品体验或达人服务问题</text></view><b>›</b>
         </button>
         <button @tap="openCreate('complaint')">
           <view class="quick-icon orange"><image src="/static/functions/report-reward.svg" mode="aspectFit" /></view>
-          <view><strong>投诉 / 举报</strong><text>服务不满意或存在违规，提交平台核查</text></view><b>›</b>
+          <view><strong>服务投诉</strong><text>达人服务不满意，提交平台核查</text></view><b>›</b>
+        </button>
+        <button @tap="goReport">
+          <view class="quick-icon orange"><image src="/static/functions/report-reward.svg" mode="aspectFit" /></view>
+          <view><strong>举报有奖</strong><text>关联待评价订单并上传证据，核实后发券</text></view><b>›</b>
         </button>
       </section>
 
@@ -79,6 +83,9 @@
       <section v-if="selected.result_note" class="result-card">
         <strong>平台处理结论</strong><p>{{ selected.result_note }}</p>
       </section>
+      <section v-if="selected.reward_eligible" class="result-card">
+        <strong>举报奖励</strong><p>{{ selected.reward_issued ? '奖励优惠券已发放，可在下单时选择使用。' : '客服核实举报成立后发放优惠券。' }}</p>
+      </section>
     </main>
 
     <footer v-if="!selected" class="support-footer"><button @tap="openCreate('consultation')">＋　新建反馈</button></footer>
@@ -93,13 +100,17 @@
         <view class="sheet-title"><strong>{{ sheetTitle }}</strong><button aria-label="关闭" @tap="closeSheet">×</button></view>
 
         <template v-if="sheetMode === 'create'">
-          <view class="type-switch">
-            <button v-for="item in caseTypes" :key="item.value" :class="{ active: form.caseType === item.value }" @tap="form.caseType = item.value">{{ item.label }}</button>
+          <view class="type-switch" :style="`grid-template-columns: repeat(${visibleCaseTypes.length}, 1fr)`">
+            <button v-for="item in visibleCaseTypes" :key="item.value" :class="{ active: form.caseType === item.value }" @tap="form.caseType = item.value">{{ item.label }}</button>
           </view>
-          <view class="target-summary"><small>关联对象</small><strong>{{ form.targetTitle || '平台服务' }}</strong><text>{{ form.targetType === 'general' ? '反馈指定达人、订单、活动或评价时，请从对应详情页进入' : targetTypeLabel(form.targetType) }}</text></view>
+          <view class="target-summary"><small>关联对象</small><strong>{{ form.targetTitle || '平台服务' }}</strong><text>{{ form.targetType === 'general' ? '订单可在下方选填；反馈其他对象请从对应详情页进入' : targetTypeLabel(form.targetType) }}</text></view>
+          <view v-if="routePrefill.targetType === 'general'" class="feedback-order-picker">
+            <label class="field-label">关联订单（选填）</label>
+            <picker :range="feedbackOrderLabels" @change="selectFeedbackOrder"><view>{{ form.targetType === 'provider_order' ? form.targetTitle : '不关联订单' }}　›</view></picker>
+          </view>
           <label class="field-label">问题分类</label>
           <view class="reason-grid">
-            <button v-for="item in reasonOptions" :key="item.value" :class="{ active: form.reason === item.value }" @tap="form.reason = item.value">{{ item.label }}</button>
+            <button v-for="item in visibleReasonOptions" :key="item.value" :class="{ active: form.reason === item.value }" @tap="form.reason = item.value">{{ item.label }}</button>
           </view>
           <label class="field-label">问题说明</label>
           <textarea v-model="form.description" :class="{ invalid: formAttempted && form.description.trim().length < 5 }" maxlength="1000" placeholder="请描述发生时间、具体经过和希望平台协助的事项" />
@@ -139,11 +150,14 @@ import {
 } from '@/services/support'
 import type { SupportCase, SupportCaseReason, SupportCaseStatus, SupportCaseType, SupportTargetType } from '@/types/api'
 import { formatBusinessDateTime, getErrorMessage } from '@/utils/formatters'
+import { getProviderOrders } from '@/services/orders'
 
 type UploadItem = { id: string; url: string }
 type SheetMode = '' | 'create' | 'reply' | 'review'
 
 const cases = ref<SupportCase[]>([])
+const feedbackOrders = ref<Array<{ order_no: string; service_name: string }>>([])
+const feedbackOrderLabels = computed(() => ['不关联订单', ...feedbackOrders.value.map((item) => `${item.service_name} · ${item.order_no}`)])
 const selected = ref<SupportCase | null>(null)
 const loading = ref(true)
 const error = ref('')
@@ -182,7 +196,11 @@ const caseTypes = [
   { value: 'complaint' as const, label: '投诉' },
   { value: 'report' as const, label: '举报' },
 ]
+const visibleCaseTypes = computed(() => routePrefill.targetType === 'general'
+  ? caseTypes.filter((item) => item.value !== 'report') : caseTypes)
 const reasonOptions: Array<{ value: SupportCaseReason; label: string }> = [
+  { value: 'platform_process', label: '平台流程' },
+  { value: 'platform_product', label: '产品建议' },
   { value: 'service_quality', label: '服务体验' },
   { value: 'false_information', label: '信息不实' },
   { value: 'inappropriate_content', label: '内容不当' },
@@ -191,6 +209,9 @@ const reasonOptions: Array<{ value: SupportCaseReason; label: string }> = [
   { value: 'account_issue', label: '账号问题' },
   { value: 'other', label: '其他问题' },
 ]
+const visibleReasonOptions = computed(() => routePrefill.targetType === 'general'
+  ? reasonOptions.filter((item) => ['platform_process', 'platform_product', 'service_quality', 'account_issue', 'other'].includes(item.value))
+  : reasonOptions)
 
 const filteredCases = computed(() => cases.value.filter((item) => {
   if (activeTab.value === 'processing') return isOpen(item.status)
@@ -227,6 +248,7 @@ function goBack() {
   if (selected.value) { selected.value = null; return }
   uni.navigateBack()
 }
+function goReport() { uni.navigateTo({ url: '/pages/report/index' }) }
 function openCreate(type: SupportCaseType) {
   form.caseType = routePrefill.targetType === 'general' ? type : routePrefill.caseType
   form.targetType = routePrefill.targetType
@@ -237,6 +259,18 @@ function openCreate(type: SupportCaseType) {
   formAttempted.value = false
   uploads.value = []
   sheetMode.value = 'create'
+  if (routePrefill.targetType === 'general') loadFeedbackOrders()
+}
+async function loadFeedbackOrders() {
+  try { feedbackOrders.value = (await getProviderOrders()).data.items.map((item) => ({ order_no: item.order_no, service_name: item.service_name })) }
+  catch { feedbackOrders.value = [] }
+}
+function selectFeedbackOrder(event: { detail: { value: string } }) {
+  const index = Number(event.detail.value) - 1
+  const order = feedbackOrders.value[index]
+  form.targetType = order ? 'provider_order' : 'general'
+  form.targetId = order?.order_no || ''
+  form.targetTitle = order ? `${order.service_name} · ${order.order_no}` : ''
 }
 function closeSheet() { if (!submitting.value && !uploading.value) sheetMode.value = '' }
 async function loadCases() {
@@ -341,6 +375,10 @@ onLoad((query) => {
   const allowedTypes: SupportCaseType[] = ['consultation', 'complaint', 'report']
   const allowedReasons = reasonOptions.map((item) => item.value)
   if (typeof query?.targetType === 'string' && allowedTargets.includes(query.targetType as SupportTargetType)) routePrefill.targetType = query.targetType as SupportTargetType
+  if (routePrefill.targetType === 'general' && query?.caseType === 'report') {
+    uni.redirectTo({ url: '/pages/report/index' })
+    return
+  }
   if (typeof query?.caseType === 'string' && allowedTypes.includes(query.caseType as SupportCaseType)) routePrefill.caseType = query.caseType as SupportCaseType
   if (typeof query?.targetId === 'string') routePrefill.targetId = query.targetId
   if (typeof query?.targetTitle === 'string') routePrefill.targetTitle = decodeURIComponent(query.targetTitle)

@@ -67,6 +67,8 @@ export interface ProviderReviewListResponse extends ListResponse<ProviderReview>
 export type SupportCaseType = 'consultation' | 'complaint' | 'report'
 export type SupportTargetType = 'general' | 'provider' | 'provider_order' | 'activity' | 'review'
 export type SupportCaseReason =
+  | 'platform_process'
+  | 'platform_product'
   | 'service_quality'
   | 'false_information'
   | 'inappropriate_content'
@@ -111,6 +113,8 @@ export interface SupportCase {
   resolved_at: string | null
   review_requested_at: string | null
   review_reason: string
+  reward_eligible: boolean
+  reward_issued: boolean
   records: SupportCaseRecord[]
   created_at: string
   updated_at: string
@@ -579,6 +583,16 @@ export interface ProviderOrderQuote {
   pricing_snapshot: Record<string, unknown>
 }
 
+export interface UserCoupon {
+  public_id: string
+  face_amount: number
+  min_order_amount: number
+  expires_at: string
+  status: 'available' | 'reserved' | 'used' | 'expired'
+  source: string
+  created_at: string
+}
+
 export interface ProviderOrder {
   public_id: string
   order_no: string
@@ -617,6 +631,7 @@ export interface ProviderOrder {
   confirmation_expires_at: string | null
   customer_confirmed_at: string | null
   auto_confirmed_at: string | null
+  review_expires_at: string | null
   review: ProviderOrderReview | null
   payment_order: ProviderOrderPaymentSummary | null
   refund_orders: ProviderOrderRefundSummary[]
