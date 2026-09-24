@@ -105,6 +105,10 @@
       "style": { "navigationStyle": "custom" }
     },
     {
+      "path": "pages/security/phone",
+      "style": { "navigationStyle": "custom" }
+    },
+    {
       "path": "pages/profile/edit",
       "style": { "navigationStyle": "custom" }
     },

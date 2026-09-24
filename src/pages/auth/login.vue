@@ -28,6 +28,12 @@
 
         <view v-if="mode === 'password'" class="auth-inline-link" @tap="openReset">忘记密码</view>
         <button class="auth-primary" :disabled="submitting" @tap="submit">{{ submitting ? '登录中…' : '登录' }}</button>
+        <!-- #ifdef MP-WEIXIN -->
+        <view class="wechat-divider"><text>或</text></view>
+        <button class="wechat-login" open-type="getPhoneNumber" :disabled="wechatSubmitting" @getphonenumber="wechatLogin">
+          {{ wechatSubmitting ? '微信登录中…' : '微信一键登录' }}
+        </button>
+        <!-- #endif -->
         <view class="auth-secondary-link">还没有账号？<text @tap="openRegister">立即注册</text></view>
       </view>
 
@@ -45,7 +51,7 @@ import { ref } from 'vue'
 
 import AuthBrand from '@/components/AuthBrand.vue'
 import { useSmsCode } from '@/composables/useSmsCode'
-import { loginWithPassword, loginWithSms } from '@/services/auth'
+import { loginWithPassword, loginWithSms, loginWithWechatMiniProgram } from '@/services/auth'
 import { returnAfterAuthentication } from '@/services/session'
 
 const mode = ref<'password' | 'sms'>('password')
@@ -55,6 +61,7 @@ const code = ref('')
 const passwordVisible = ref(false)
 const agreed = ref(false)
 const submitting = ref(false)
+const wechatSubmitting = ref(false)
 const redirect = ref('')
 const sms = useSmsCode('login')
 
@@ -64,6 +71,29 @@ onLoad((query) => {
 
 function validPhone() { return /^1[3-9]\d{9}$/.test(phone.value) }
 function warn(title: string) { uni.showToast({ title, icon: 'none' }) }
+
+function getWechatLoginCode(): Promise<string> {
+  return new Promise((resolve, reject) => {
+    uni.login({
+      provider: 'weixin',
+      success: (result) => result.code ? resolve(result.code) : reject(new Error('微信登录凭证获取失败')),
+      fail: () => reject(new Error('微信登录凭证获取失败')),
+    })
+  })
+}
+
+async function wechatLogin(event: { detail?: { code?: string; errMsg?: string } }) {
+  if (!agreed.value) return warn('请先阅读并同意用户协议和隐私政策')
+  const phoneCode = event.detail?.code
+  if (!phoneCode) return warn(event.detail?.errMsg?.includes('deny') ? '需要授权手机号才能首次登录' : '微信手机号授权失败')
+  wechatSubmitting.value = true
+  try {
+    await loginWithWechatMiniProgram(await getWechatLoginCode(), phoneCode)
+    uni.showToast({ title: '登录成功', icon: 'success' })
+    setTimeout(() => returnAfterAuthentication(redirect.value), 350)
+  } catch (error) { warn(error instanceof Error ? error.message : '微信登录失败') }
+  finally { wechatSubmitting.value = false }
+}
 
 async function requestCode() {
   if (!validPhone()) return warn('请输入正确的手机号')
@@ -92,4 +122,5 @@ function openReset() { uni.navigateTo({ url: `/pages/auth/reset-password?phone=$
 
 <style lang="scss" scoped>
 @use '../../styles/auth.scss';
+.wechat-divider{display:flex;align-items:center;gap:18rpx;margin:28rpx 0 20rpx;color:#98a2b3;font-size:21rpx}.wechat-divider::before,.wechat-divider::after{height:1rpx;flex:1;background:#e1e9ea;content:''}.wechat-login{display:flex;width:100%;height:96rpx;align-items:center;justify-content:center;margin:0;border:1rpx solid #d8e7e7;border-radius:18rpx;color:#15875b;background:#f5fffa;font-size:28rpx;font-weight:650}.wechat-login[disabled]{opacity:.58}
 </style>

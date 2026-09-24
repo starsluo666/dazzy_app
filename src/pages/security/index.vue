@@ -6,7 +6,7 @@
       <NetworkState v-else-if="error" :message="error" error @retry="load"/>
       <template v-else>
         <section class="summary"><view class="summary-icon"><image src="/static/security/shield.svg" mode="aspectFit"/></view><view class="summary-copy"><view><strong>账号保护正常</strong><text>安全</text></view><p>敏感操作需要再次验证身份。</p></view><view class="summary-status"><view><text>账号状态</text><strong>{{ security?.account_status_label || '正常' }}</strong></view><view><text>登录密码</text><strong>{{ security?.password_set ? '已设置' : '未设置' }}</strong></view></view></section>
-        <h2>账号信息</h2><section class="card"><view class="row static-row"><view class="row-icon"><image src="/static/security/phone.svg" mode="aspectFit"/></view><view class="copy"><strong>登录手机号</strong><text>用于登录和身份核验</text></view><view class="value"><strong>{{ security?.phone_masked }}</strong><text>已绑定</text></view></view></section>
+        <h2>账号信息</h2><section class="card"><button class="row" aria-label="修改登录手机号" @tap="openPhoneChange"><view class="row-icon"><image src="/static/security/phone.svg" mode="aspectFit"/></view><view class="copy"><strong>登录手机号</strong><text>用于登录和身份核验</text></view><view class="value"><strong>{{ security?.phone_masked }}</strong><b>›</b></view></button></section>
         <h2>安全设置</h2><section class="card"><button class="row" aria-label="修改登录密码" @tap="openPanel('password')"><view class="row-icon"><image src="/static/security/password.svg" mode="aspectFit"/></view><view class="copy"><strong>登录密码</strong><text>定期更换密码可降低账号风险</text></view><view class="value"><strong>修改</strong><b>›</b></view></button><button class="row" aria-label="退出其他设备" @tap="openPanel('sessions')"><view class="row-icon"><image src="/static/security/devices.svg" mode="aspectFit"/></view><view class="copy"><strong>其他设备登录</strong><text>发现异常时让其他设备立即退出</text></view><view class="value"><strong class="danger">退出</strong><b>›</b></view></button></section>
         <h2>账号操作</h2><section class="card"><button class="row" aria-label="注销账号" @tap="confirmClose"><view class="row-icon"><image src="/static/security/shield.svg" mode="aspectFit"/></view><view class="copy"><strong>注销账号</strong><text>注销后账号资料和登录状态将被停用</text></view><view class="value"><strong class="danger">注销</strong><b>›</b></view></button></section>
         <section class="tip"><strong>安全提醒</strong><text>平台不会通过电话或聊天索要密码、短信验证码。</text></section>
@@ -27,6 +27,7 @@ type Panel = 'password' | 'sessions' | 'close' | ''
 const security = ref<AccountSecurity | null>(null); const loading = ref(true); const error = ref(''); const panel = ref<Panel>(''); const currentPassword = ref(''); const newPassword = ref(''); const confirmation = ref(''); const saving = ref(false)
 const panelTitle = computed(() => panel.value === 'password' ? '修改登录密码' : panel.value === 'close' ? '注销账号' : '退出其他设备')
 function goBack() { uni.navigateBack({ fail: () => uni.reLaunch({ url: '/pages/settings/index' }) }) }
+function openPhoneChange() { uni.navigateTo({ url: '/pages/security/phone' }) }
 function warn(title: string) { uni.showToast({ title, icon: 'none' }) }
 function clearForm() { currentPassword.value = ''; newPassword.value = ''; confirmation.value = '' }
 function openPanel(value: Exclude<Panel, ''>) { clearForm(); panel.value = value }

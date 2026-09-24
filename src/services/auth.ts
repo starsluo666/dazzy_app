@@ -25,6 +25,16 @@ export async function loginWithSms(phone: string, code: string) {
   return response.data
 }
 
+export async function loginWithWechatMiniProgram(loginCode: string, phoneCode?: string) {
+  const response = await request<DataResponse<AuthSession>>('/auth/login/wechat-mini-program/', {
+    method: 'POST',
+    data: { client_type: 'customer', login_code: loginCode, ...(phoneCode ? { phone_code: phoneCode } : {}) },
+    skipAuth: true,
+  })
+  saveSession(response.data)
+  return response.data
+}
+
 export async function register(phone: string, code: string, password: string) {
   const response = await request<DataResponse<AuthSession>>('/auth/register/', {
     method: 'POST', data: { phone, code, password }, skipAuth: true,
@@ -51,6 +61,22 @@ export function changePassword(currentPassword: string, newPassword: string) {
   return request<DataResponse<AuthSession>>('/auth/password/change/', {
     method: 'POST', data: { current_password: currentPassword, new_password: newPassword },
   }).then((response) => { saveSession(response.data); return response })
+}
+
+export function sendPhoneChangeCode(target: 'current' | 'new', newPhone?: string) {
+  return request<DataResponse<{ expires_in: number; retry_after: number; destination_masked: string; debug_code?: string }>>(
+    '/auth/phone/change/code/',
+    { method: 'POST', data: { target, ...(newPhone ? { new_phone: newPhone } : {}) } },
+  )
+}
+
+export async function changePhone(currentCode: string, newPhone: string, newCode: string) {
+  const response = await request<DataResponse<AuthSession>>('/auth/phone/change/', {
+    method: 'POST',
+    data: { current_code: currentCode, new_phone: newPhone, new_code: newCode },
+  })
+  saveSession(response.data)
+  return response.data
 }
 
 export function logoutOtherSessions(currentPassword: string) {
