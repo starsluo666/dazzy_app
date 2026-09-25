@@ -42,10 +42,11 @@
           </view>
         </picker>
 
-        <view class="form-row readonly">
+        <view class="form-row phone-row dz-tappable" role="button" aria-label="修改登录手机号" hover-class="dz-pressed" @tap="openPhoneChange">
           <text>手机号</text>
           <view class="field-value">{{ maskedPhone }}</view>
-          <small>不可修改</small>
+          <text class="phone-action">修改</text>
+          <text class="chevron">›</text>
         </view>
       </section>
 
@@ -69,7 +70,7 @@
 </template>
 
 <script setup lang="ts">
-import { onLoad } from '@dcloudio/uni-app'
+import { onLoad, onShow } from '@dcloudio/uni-app'
 import { computed, ref, shallowRef } from 'vue'
 
 import { getCurrentUser, updateCurrentUser, uploadAvatar } from '@/services/auth'
@@ -89,6 +90,7 @@ const avatarFile = shallowRef<unknown>()
 const genderSheetVisible = ref(false)
 const saving = ref(false)
 const saveAttempted = ref(false)
+const profileLoaded = ref(false)
 const today = businessDateKey()
 const genderOptions: Array<{ label: string; value: Gender }> = [
   { label: '保密', value: 'unspecified' },
@@ -100,6 +102,7 @@ const maskedPhone = computed(() => phone.value.replace(/(\d{3})\d{4}(\d{4})/, '$
 const canSave = computed(() => nickname.value.trim().length > 0 && nickname.value.trim().length <= 30)
 
 function goBack() { uni.navigateBack({ fail: () => uni.redirectTo({ url: '/pages/settings/index' }) }) }
+function openPhoneChange() { uni.navigateTo({ url: '/pages/security/phone' }) }
 function returnToSettings() {
   if (getCurrentPages().length > 1) { uni.navigateBack(); return }
   uni.redirectTo({ url: '/pages/settings/index' })
@@ -152,7 +155,13 @@ onLoad(async () => {
     gender.value = user.gender
     birthDate.value = user.birth_date || ''
     avatarPreview.value = user.avatar_url || ''
+    profileLoaded.value = true
   } catch (error) { warn((error as Error).message || '资料加载失败') }
+})
+onShow(async () => {
+  if (!profileLoaded.value) return
+  try { phone.value = (await getCurrentUser()).data.phone }
+  catch (error) { warn((error as Error).message || '手机号刷新失败') }
 })
 </script>
 
@@ -180,7 +189,8 @@ onLoad(async () => {
 .field-value.placeholder { color: $dz-text-tertiary; }
 .form-row small { margin-left: 14rpx; color: $dz-text-tertiary; font-size:$dz-fs-caption; }
 .chevron { margin-left: 12rpx; color:$dz-text-tertiary; font-size:$dz-fs-title; font-weight: 300; }
-.readonly .field-value { color: $dz-text-secondary; }
+.phone-row .field-value { color: $dz-text-secondary; }
+.phone-action { width: auto!important; margin-left: 14rpx; color: $dz-brand-deep; font-size: $dz-fs-caption!important; font-weight: $dz-fw-semibold!important; }
 .save-button { height: 92rpx; margin-top: 34rpx; border-radius:$dz-radius-full; color: #fff; background: $dz-gradient-brand; font-size:$dz-fs-body-strong; font-weight: 750; box-shadow: 0 12rpx 28rpx rgba(8, 181, 194, .18); }
 .save-button[disabled] { opacity: .5; }
 .sheet-mask { position: fixed; z-index: 80; inset: 0; background: rgba(18, 31, 35, .5); }

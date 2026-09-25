@@ -27,6 +27,7 @@ import { ref } from 'vue'
 import AuthBrand from '@/components/AuthBrand.vue'
 import { useSmsCode } from '@/composables/useSmsCode'
 import { register } from '@/services/auth'
+import { clearPendingInviteCode, getPendingInviteCode, savePendingInviteCode } from '@/services/growth'
 import { returnAfterAuthentication } from '@/services/session'
 
 const phone = ref(''), code = ref(''), password = ref(''), confirmation = ref('')
@@ -36,7 +37,10 @@ const sms = useSmsCode('register')
 const warn = (title: string) => uni.showToast({ title, icon: 'none' })
 const validPhone = () => /^1[3-9]\d{9}$/.test(phone.value)
 
-onLoad((query) => { redirect.value = typeof query?.redirect === 'string' ? decodeURIComponent(query.redirect) : '' })
+onLoad((query) => {
+  redirect.value = typeof query?.redirect === 'string' ? decodeURIComponent(query.redirect) : ''
+  if (typeof query?.invite_code === 'string') savePendingInviteCode(query.invite_code)
+})
 
 async function requestCode() {
   if (!validPhone()) return warn('请输入正确的手机号')
@@ -50,7 +54,8 @@ async function submit() {
   if (!agreed.value) return warn('请先阅读并同意用户协议和隐私政策')
   submitting.value = true
   try {
-    await register(phone.value, code.value, password.value)
+    await register(phone.value, code.value, password.value, getPendingInviteCode())
+    clearPendingInviteCode()
     uni.showToast({ title: '注册成功', icon: 'success' })
     setTimeout(() => returnAfterAuthentication(redirect.value), 350)
   } catch (error) { warn((error as Error).message) }

@@ -72,9 +72,9 @@
         </view>
       </section>
 
-      <section class="invite-banner" hover-class="invite-banner--pressed" role="button" aria-label="邀请好友一起玩" @tap="showPending('邀请奖励')">
+      <section class="invite-banner" hover-class="invite-banner--pressed" role="button" aria-label="邀请好友一起玩" @tap="openInvitations">
         <view class="invite-art"><text>¥</text><i>✦</i></view>
-        <view class="invite-copy"><strong>邀请好友一起玩</strong><text>邀请奖励即将开放</text></view>
+        <view class="invite-copy"><strong>邀请好友一起玩</strong><text>好友注册和首单完成，奖励分两次到账</text></view>
         <view class="invite-action">去邀请 <text>›</text></view>
       </section>
 
@@ -137,7 +137,7 @@ const providerEntry = computed(() => {
 })
 
 const accountEntries = computed<AccountEntry[]>(() => [
-  { label: '账户余额', value: overview.value?.balance_amount == null ? '--' : `¥${(overview.value.balance_amount / 100).toFixed(2)}` },
+  { label: '账户余额', value: overview.value?.balance_amount == null ? '--' : `¥${(overview.value.balance_amount / 100).toFixed(2)}`, route: '/pages/wallet/index' },
   { label: '优惠券', value: overview.value?.coupon_count == null ? '--' : `${overview.value.coupon_count}张`, route: '/pages/coupons/index' },
   { label: '我的订单', value: String(overview.value?.order_count ?? 0), bucket: 'all' },
   { label: '我的收藏', value: overview.value?.favorite_count == null ? '--' : String(overview.value.favorite_count), route: '/pages/favorites/index' },
@@ -158,12 +158,17 @@ const functionEntries: FunctionEntry[] = [
   { label: '常用地址', icon: '/static/functions/addresses.svg', route: '/pages/addresses/index' },
   { label: '客服中心', icon: '/static/functions/customer-service.svg', action: 'customer_service' },
   { label: '帮助中心', icon: '/static/functions/help-center.svg' },
-  { label: '问题反馈', icon: '/static/functions/feedback.svg', route: '/pages/support/index?mode=new&caseType=consultation' },
+  { label: '问题反馈', icon: '/static/functions/feedback.svg', route: '/pages/support/index?mode=new&caseType=complaint' },
   { label: '举报有奖', icon: '/static/functions/report-reward.svg', route: '/pages/report/index' },
 ]
 
 function showPending(feature: string) {
   uni.showToast({ title: `${feature}功能即将接入`, icon: 'none' })
+}
+
+function openInvitations() {
+  if (!requireAuthentication('/pages/invitations/index')) return
+  uni.navigateTo({ url: '/pages/invitations/index' })
 }
 
 function openOrders(bucket: string) {

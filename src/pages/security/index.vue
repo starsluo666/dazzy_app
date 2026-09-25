@@ -1,45 +1,516 @@
 <template>
   <view class="dz-page security-page">
-    <view class="security-hero"><view class="dz-safe-top"/><header class="dz-page-head dz-container"><button class="dz-tappable" aria-label="返回" hover-class="dz-pressed" @tap="goBack">‹</button><strong>账号与安全</strong><view class="head-space"/></header></view>
+    <view class="security-hero">
+      <view class="dz-safe-top" />
+      <header class="dz-page-head dz-container">
+        <button class="dz-tappable" aria-label="返回" hover-class="dz-pressed" @tap="goBack">‹</button>
+        <strong>账号与安全</strong>
+        <view class="head-space" />
+      </header>
+    </view>
+
     <main class="dz-container security-content">
-      <NetworkState v-if="loading" message="正在检查账号安全状态…"/>
-      <NetworkState v-else-if="error" :message="error" error @retry="load"/>
+      <NetworkState v-if="loading" message="正在检查账号安全状态…" />
+      <NetworkState v-else-if="error" :message="error" error @retry="load" />
       <template v-else>
-        <section class="summary"><view class="summary-icon"><image src="/static/security/shield.svg" mode="aspectFit"/></view><view class="summary-copy"><view><strong>账号保护正常</strong><text>安全</text></view><p>敏感操作需要再次验证身份。</p></view><view class="summary-status"><view><text>账号状态</text><strong>{{ security?.account_status_label || '正常' }}</strong></view><view><text>登录密码</text><strong>{{ security?.password_set ? '已设置' : '未设置' }}</strong></view></view></section>
-        <h2>账号信息</h2><section class="card"><button class="row" aria-label="修改登录手机号" @tap="openPhoneChange"><view class="row-icon"><image src="/static/security/phone.svg" mode="aspectFit"/></view><view class="copy"><strong>登录手机号</strong><text>用于登录和身份核验</text></view><view class="value"><strong>{{ security?.phone_masked }}</strong><b>›</b></view></button></section>
-        <h2>安全设置</h2><section class="card"><button class="row" aria-label="修改登录密码" @tap="openPanel('password')"><view class="row-icon"><image src="/static/security/password.svg" mode="aspectFit"/></view><view class="copy"><strong>登录密码</strong><text>定期更换密码可降低账号风险</text></view><view class="value"><strong>修改</strong><b>›</b></view></button><button class="row" aria-label="退出其他设备" @tap="openPanel('sessions')"><view class="row-icon"><image src="/static/security/devices.svg" mode="aspectFit"/></view><view class="copy"><strong>其他设备登录</strong><text>发现异常时让其他设备立即退出</text></view><view class="value"><strong class="danger">退出</strong><b>›</b></view></button></section>
-        <h2>账号操作</h2><section class="card"><button class="row" aria-label="注销账号" @tap="confirmClose"><view class="row-icon"><image src="/static/security/shield.svg" mode="aspectFit"/></view><view class="copy"><strong>注销账号</strong><text>注销后账号资料和登录状态将被停用</text></view><view class="value"><strong class="danger">注销</strong><b>›</b></view></button></section>
-        <section class="tip"><strong>安全提醒</strong><text>平台不会通过电话或聊天索要密码、短信验证码。</text></section>
+        <section class="summary panel">
+          <view class="summary-icon">
+            <image src="/static/security/shield.svg" mode="aspectFit" />
+          </view>
+          <view class="summary-copy">
+            <view class="summary-title">
+              <strong class="summary-heading">账号保护正常</strong>
+              <text>安全</text>
+            </view>
+            <text class="summary-description">敏感操作需要再次验证身份。</text>
+          </view>
+          <view class="summary-status">
+            <view class="status-item">
+              <text>账号状态</text>
+              <view class="status-value">
+                <i class="status-dot" />
+                <strong class="status-label">{{ security?.account_status_label || '正常' }}</strong>
+              </view>
+            </view>
+            <view class="status-item">
+              <text>登录密码</text>
+              <strong class="status-label">{{ security?.password_set ? '已设置' : '未设置' }}</strong>
+            </view>
+          </view>
+        </section>
+
+        <text class="section-title">账号信息</text>
+        <section class="card panel">
+          <button class="row dz-tappable" aria-label="修改登录手机号" hover-class="dz-pressed" @tap="openPhoneChange">
+            <view class="row-icon phone-tone"><image src="/static/security/phone.svg" mode="aspectFit" /></view>
+            <view class="copy"><strong class="row-title">登录手机号</strong><text>用于登录和身份核验</text></view>
+            <view class="value"><strong class="value-label">{{ security?.phone_masked || '—' }}</strong><b class="row-chevron">›</b></view>
+          </button>
+        </section>
+
+        <text class="section-title">安全设置</text>
+        <section class="card panel">
+          <button class="row dz-tappable" aria-label="修改登录密码" hover-class="dz-pressed" @tap="openPanel('password')">
+            <view class="row-icon password-tone"><image src="/static/security/password.svg" mode="aspectFit" /></view>
+            <view class="copy"><strong class="row-title">登录密码</strong><text>定期更换密码可降低账号风险</text></view>
+            <view class="value action-value"><strong class="value-label">修改</strong><b class="row-chevron">›</b></view>
+          </button>
+          <button class="row dz-tappable" aria-label="退出其他设备" hover-class="dz-pressed" @tap="openPanel('sessions')">
+            <view class="row-icon device-tone"><image src="/static/security/devices.svg" mode="aspectFit" /></view>
+            <view class="copy"><strong class="row-title">其他设备登录</strong><text>发现异常时让其他设备立即退出</text></view>
+            <view class="value"><strong class="value-label danger">退出</strong><b class="row-chevron">›</b></view>
+          </button>
+        </section>
+
+        <text class="section-title">账号操作</text>
+        <section class="card panel">
+          <button class="row dz-tappable" aria-label="注销账号" hover-class="dz-pressed" @tap="confirmClose">
+            <view class="row-icon danger-tone"><image src="/static/security/shield-danger.svg" mode="aspectFit" /></view>
+            <view class="copy"><strong class="row-title">注销账号</strong><text>注销后账号资料和登录状态将被停用</text></view>
+            <view class="value"><strong class="value-label danger">注销</strong><b class="row-chevron">›</b></view>
+          </button>
+        </section>
+
+        <section class="tip">
+          <view class="tip-icon" aria-hidden="true"><text>!</text></view>
+          <view class="tip-copy"><strong class="tip-title">安全提醒</strong><text>平台不会通过电话或聊天索要密码、短信验证码。</text></view>
+        </section>
       </template>
     </main>
-    <view v-if="panel" class="mask" @tap.self="closePanel"><section class="sheet" role="dialog" :aria-label="panelTitle"><i/><header><view><strong>{{ panelTitle }}</strong><text>{{ panel === 'password' ? '修改后，其他设备上的旧登录状态将失效。' : '验证当前密码，保护账号不被继续使用。' }}</text></view><button aria-label="关闭" @tap="closePanel">×</button></header><view class="form"><label>当前登录密码<view class="password-field"><input v-model="currentPassword" password placeholder="请输入当前密码" maxlength="20"/></view></label><template v-if="panel === 'password'"><label>新密码<view class="password-field"><input v-model="newPassword" password placeholder="8–20 位，建议包含字母和数字" maxlength="20"/></view></label><label>确认新密码<view class="password-field"><input v-model="confirmation" password placeholder="请再次输入新密码" maxlength="20"/></view></label></template><view v-else class="session-note"><strong>{{ panel === 'close' ? '注销后无法恢复' : '当前设备会保持登录' }}</strong><text>{{ panel === 'close' ? '账号资料和登录状态将被停用，请确认仍要继续。' : '其他手机、浏览器和小程序登录状态都会失效。' }}</text></view><button class="submit" :class="{ dangerButton: panel === 'sessions' || panel === 'close' }" :disabled="saving" @tap="submit">{{ saving ? '正在处理…' : panel === 'password' ? '确认修改' : panel === 'close' ? '确认注销' : '退出其他设备' }}</button></view></section></view>
+
+    <DzBottomSheet :visible="Boolean(panel)" :title="panelTitle" @close="closePanel()">
+      <view class="sheet-content" role="dialog" :aria-label="panelTitle">
+        <text class="sheet-description">{{ panelDescription }}</text>
+        <view class="form">
+          <label>
+            当前登录密码
+            <view class="password-field"><input v-model="currentPassword" password placeholder="请输入当前密码" maxlength="20" /></view>
+          </label>
+          <template v-if="panel === 'password'">
+            <label>
+              新密码
+              <view class="password-field"><input v-model="newPassword" password placeholder="8–20 位，建议包含字母和数字" maxlength="20" /></view>
+            </label>
+            <label>
+              确认新密码
+              <view class="password-field"><input v-model="confirmation" password placeholder="请再次输入新密码" maxlength="20" /></view>
+            </label>
+          </template>
+          <view v-else class="session-note">
+            <strong class="session-title">{{ panel === 'close' ? '注销后无法恢复' : '当前设备会保持登录' }}</strong>
+            <text>{{ panel === 'close' ? '账号资料和登录状态将被停用，请确认仍要继续。' : '其他手机、浏览器和小程序登录状态都会失效。' }}</text>
+          </view>
+          <button
+            class="submit dz-tappable"
+            :class="{ dangerButton: panel === 'sessions' || panel === 'close' }"
+            hover-class="dz-pressed"
+            :disabled="saving"
+            @tap="submit"
+          >
+            {{ submitLabel }}
+          </button>
+        </view>
+      </view>
+    </DzBottomSheet>
   </view>
 </template>
 
 <script setup lang="ts">
 import { onShow } from '@dcloudio/uni-app'
 import { computed, ref } from 'vue'
+
+import DzBottomSheet from '@/components/DzBottomSheet.vue'
 import NetworkState from '@/components/NetworkState.vue'
 import { changePassword, closeAccount, getAccountSecurity, logout, logoutOtherSessions } from '@/services/auth'
 import { guardCurrentPage } from '@/services/session'
 import type { AccountSecurity } from '@/types/api'
+
 type Panel = 'password' | 'sessions' | 'close' | ''
-const security = ref<AccountSecurity | null>(null); const loading = ref(true); const error = ref(''); const panel = ref<Panel>(''); const currentPassword = ref(''); const newPassword = ref(''); const confirmation = ref(''); const saving = ref(false)
+
+const security = ref<AccountSecurity | null>(null)
+const loading = ref(true)
+const error = ref('')
+const panel = ref<Panel>('')
+const currentPassword = ref('')
+const newPassword = ref('')
+const confirmation = ref('')
+const saving = ref(false)
+
 const panelTitle = computed(() => panel.value === 'password' ? '修改登录密码' : panel.value === 'close' ? '注销账号' : '退出其他设备')
-function goBack() { uni.navigateBack({ fail: () => uni.reLaunch({ url: '/pages/settings/index' }) }) }
-function openPhoneChange() { uni.navigateTo({ url: '/pages/security/phone' }) }
-function warn(title: string) { uni.showToast({ title, icon: 'none' }) }
-function clearForm() { currentPassword.value = ''; newPassword.value = ''; confirmation.value = '' }
-function openPanel(value: Exclude<Panel, ''>) { clearForm(); panel.value = value }
-function closePanel(force = false) { if (!saving.value || force) { panel.value = ''; clearForm() } }
-async function load() { loading.value = true; error.value = ''; try { security.value = (await getAccountSecurity()).data } catch (reason) { error.value = reason instanceof Error ? reason.message : '账号安全状态加载失败' } finally { loading.value = false } }
-function confirmClose() { uni.showModal({ title: '注销账号', content: '注销后将无法登录当前账号，资料也会被停用。确定继续吗？', confirmText: '继续注销', confirmColor: '#ef5a4f', success: ({ confirm }) => { if (confirm) openPanel('close') } }) }
-async function submit() { if (currentPassword.value.length < 8) return warn('请输入正确的当前密码'); if (panel.value === 'password') { if (newPassword.value.length < 8 || newPassword.value.length > 20) return warn('新密码长度须为 8–20 位'); if (newPassword.value === currentPassword.value) return warn('新密码不能与当前密码相同'); if (newPassword.value !== confirmation.value) return warn('两次输入的新密码不一致') }; saving.value = true; try { if (panel.value === 'close') { await closeAccount(currentPassword.value); await logout(); uni.showToast({ title: '账号已注销', icon: 'success' }); setTimeout(() => uni.reLaunch({ url: '/pages/auth/login' }), 350); return } else if (panel.value === 'password') { await changePassword(currentPassword.value, newPassword.value); uni.showToast({ title: '密码修改成功', icon: 'success' }) } else { await logoutOtherSessions(currentPassword.value); uni.showToast({ title: '其他设备已退出', icon: 'success' }) }; closePanel(true); await load() } catch (reason) { warn(reason instanceof Error ? reason.message : '操作失败，请重试') } finally { saving.value = false } }
-onShow(() => { if (guardCurrentPage()) load() })
+const panelDescription = computed(() => panel.value === 'password'
+  ? '修改后，其他设备上的旧登录状态将失效。'
+  : panel.value === 'close'
+    ? '验证当前密码后注销账号，此操作无法撤销。'
+    : '验证当前密码，保护账号不被继续使用。')
+const submitLabel = computed(() => saving.value
+  ? '正在处理…'
+  : panel.value === 'password'
+    ? '确认修改'
+    : panel.value === 'close'
+      ? '确认注销'
+      : '退出其他设备')
+
+function goBack() {
+  uni.navigateBack({ fail: () => uni.reLaunch({ url: '/pages/settings/index' }) })
+}
+
+function openPhoneChange() {
+  uni.navigateTo({ url: '/pages/security/phone' })
+}
+
+function warn(title: string) {
+  uni.showToast({ title, icon: 'none' })
+}
+
+function clearForm() {
+  currentPassword.value = ''
+  newPassword.value = ''
+  confirmation.value = ''
+}
+
+function openPanel(value: Exclude<Panel, ''>) {
+  clearForm()
+  panel.value = value
+}
+
+function closePanel(force = false) {
+  if (!saving.value || force) {
+    panel.value = ''
+    clearForm()
+  }
+}
+
+async function load() {
+  loading.value = true
+  error.value = ''
+  try {
+    security.value = (await getAccountSecurity()).data
+  } catch (reason) {
+    error.value = reason instanceof Error ? reason.message : '账号安全状态加载失败'
+  } finally {
+    loading.value = false
+  }
+}
+
+function confirmClose() {
+  uni.showModal({
+    title: '注销账号',
+    content: '注销后将无法登录当前账号，资料也会被停用。确定继续吗？',
+    confirmText: '继续注销',
+    confirmColor: '#ef5a4f',
+    success: ({ confirm }) => {
+      if (confirm) openPanel('close')
+    },
+  })
+}
+
+async function submit() {
+  if (currentPassword.value.length < 8) return warn('请输入正确的当前密码')
+  if (panel.value === 'password') {
+    if (newPassword.value.length < 8 || newPassword.value.length > 20) return warn('新密码长度须为 8–20 位')
+    if (newPassword.value === currentPassword.value) return warn('新密码不能与当前密码相同')
+    if (newPassword.value !== confirmation.value) return warn('两次输入的新密码不一致')
+  }
+
+  saving.value = true
+  try {
+    if (panel.value === 'close') {
+      await closeAccount(currentPassword.value)
+      await logout()
+      uni.showToast({ title: '账号已注销', icon: 'success' })
+      setTimeout(() => uni.reLaunch({ url: '/pages/auth/login' }), 350)
+      return
+    }
+    if (panel.value === 'password') {
+      await changePassword(currentPassword.value, newPassword.value)
+      uni.showToast({ title: '密码修改成功', icon: 'success' })
+    } else {
+      await logoutOtherSessions(currentPassword.value)
+      uni.showToast({ title: '其他设备已退出', icon: 'success' })
+    }
+    closePanel(true)
+    await load()
+  } catch (reason) {
+    warn(reason instanceof Error ? reason.message : '操作失败，请重试')
+  } finally {
+    saving.value = false
+  }
+}
+
+onShow(() => {
+  if (guardCurrentPage()) load()
+})
 </script>
 
 <style lang="scss" scoped>
 @use '../../styles/tokens.scss' as *;
-.security-page{background:linear-gradient(180deg,#eafafa 0,$dz-surface-page 420rpx)}.security-hero{background:linear-gradient(145deg,rgba(221,248,247,.92),rgba(255,255,255,.92))}.head-space{width:72rpx}.security-content{padding-top:24rpx;padding-bottom:48rpx}.summary{display:grid;grid-template-columns:82rpx 1fr;gap:20rpx;padding:28rpx;border:1rpx solid #d9eeee;border-radius:$dz-radius-lg;background:$dz-surface-card;box-shadow:$dz-shadow-card}.summary-icon,.row-icon{display:flex;align-items:center;justify-content:center;background:$dz-brand-soft}.summary-icon{width:82rpx;height:82rpx;border-radius:$dz-radius-md}.summary-icon image{width:50rpx;height:50rpx}.summary-copy>view{display:flex;align-items:center;gap:12rpx}.summary-copy strong{font-size:$dz-fs-body-strong}.summary-copy text{padding:5rpx 12rpx;border-radius:$dz-radius-sm;color:#13885d;background:#e9f9f0;font-size:$dz-fs-micro;font-weight:$dz-fw-bold}.summary-copy p{margin:10rpx 0 0;color:$dz-text-secondary;font-size:$dz-fs-caption}.summary-status{display:grid;grid-column:1/-1;grid-template-columns:repeat(2,1fr);margin-top:4rpx;padding-top:22rpx;border-top:1rpx solid $dz-border-subtle}.summary-status view{display:flex;gap:8rpx;align-items:center;flex-direction:column;border-right:1rpx solid $dz-border-subtle}.summary-status view:last-child{border:0}.summary-status text{color:$dz-text-tertiary;font-size:$dz-fs-micro}.summary-status strong{font-size:$dz-fs-caption}h2{margin:34rpx 4rpx 16rpx;font-size:$dz-fs-body}.card{overflow:hidden;border:1rpx solid $dz-border-subtle;border-radius:$dz-radius-lg;background:$dz-surface-card;box-shadow:$dz-shadow-card}.row{display:flex;width:100%;min-height:114rpx;justify-content:flex-start;align-items:center;margin:0;padding:18rpx 24rpx;border:0;border-bottom:1rpx solid $dz-border-subtle;background:$dz-surface-card;text-align:left}.row:last-child{border:0}.row-icon{width:64rpx;height:64rpx;border-radius:$dz-radius-sm;flex:none}.row-icon image{width:39rpx;height:39rpx}.copy{display:flex;min-width:0;gap:7rpx;margin-left:18rpx;flex:1;flex-direction:column}.copy strong{font-size:$dz-fs-caption}.copy text{color:$dz-text-secondary;font-size:$dz-fs-caption}.value{display:flex;gap:9rpx;align-items:center;justify-content:center;margin-left:12rpx;flex-direction:column;color:$dz-text-secondary}.value strong{font-size:$dz-fs-caption;text-align:center;white-space:nowrap}.static-row .value{min-width:180rpx}.static-row .value strong{font-size:$dz-fs-micro;letter-spacing:.5rpx}.value text{color:#18885f;font-size:$dz-fs-micro}.value b{font-size:$dz-fs-heading;font-weight:$dz-fw-regular}.danger{color:$dz-price-primary}.tip{display:flex;gap:10rpx;margin-top:26rpx;padding:24rpx;border-radius:$dz-radius-md;color:#705b26;background:#fff9e8;flex-direction:column}.tip text{font-size:$dz-fs-caption}.mask{position:fixed;z-index:50;inset:0;display:flex;align-items:flex-end;background:rgba(12,28,32,.46)}.sheet{width:100%;padding:14rpx 30rpx calc(34rpx + env(safe-area-inset-bottom));border-radius:$dz-radius-lg 38rpx 0 0;background:$dz-surface-card}.sheet>i{display:block;width:76rpx;height:8rpx;margin:0 auto 14rpx;border-radius:$dz-radius-sm;background:#dce5e7}.sheet header{display:flex;align-items:flex-start;justify-content:space-between;padding:10rpx 0 22rpx}.sheet header view{display:flex;gap:8rpx;flex-direction:column}.sheet header strong{font-size:$dz-fs-body-strong}.sheet header text{color:$dz-text-secondary;font-size:$dz-fs-caption}.sheet header button{width:72rpx;height:72rpx;padding:0;border:0;border-radius:50%;color:$dz-text-secondary;background:$dz-brand-soft;font-size:$dz-fs-title}.form{display:flex;gap:22rpx;flex-direction:column}.form label{display:flex;gap:10rpx;flex-direction:column;font-size:$dz-fs-caption;font-weight:$dz-fw-bold}.password-field{height:92rpx;padding:0 24rpx;border:1rpx solid #dbe7e9;border-radius:$dz-radius-md;background:#f9fbfb}.password-field input{width:100%;height:100%;font-size:$dz-fs-caption}.session-note{display:flex;gap:8rpx;padding:22rpx;border-radius:$dz-radius-md;background:$dz-price-soft;flex-direction:column}.session-note text{color:$dz-text-secondary;font-size:$dz-fs-caption}.submit{display:flex;align-items:center;justify-content:center;width:100%;height:92rpx;border-radius:$dz-radius-md;color:$dz-text-inverse;background:$dz-gradient-brand;font-size:$dz-fs-body;font-weight:$dz-fw-bold}.dangerButton{background:linear-gradient(135deg,#ff696f,#ff3e46)}.submit[disabled]{opacity:.58}
-@media screen and (min-width:480px){.security-content{padding-top:16px;padding-bottom:32px}.summary{grid-template-columns:52px 1fr;gap:14px;padding:20px;border-radius:20px}.summary-icon{width:52px;height:52px;border-radius:14px}.summary-icon image{width:30px;height:30px}.summary-copy strong{font-size:19px}.summary-copy p{font-size:13px}.summary-status{padding-top:14px}.summary-status text{font-size:12px}.summary-status strong{font-size:14px}h2{margin:24px 3px 12px;font-size:18px}.card{border-radius:18px}.row{min-height:74px;padding:12px 16px}.row-icon{width:42px;height:42px;border-radius:12px}.row-icon image{width:25px;height:25px}.copy{gap:4px;margin-left:12px}.copy strong{font-size:15px}.copy text{font-size:12px}.value strong{font-size:13px}.value text{font-size:11px}.value b{font-size:23px}.tip{margin-top:18px;padding:16px;border-radius:16px}.tip text{font-size:13px}.sheet{max-width:430px;padding:9px 20px 22px;border-radius:24px 24px 0 0;align-self:flex-end}.sheet header strong{font-size:20px}.sheet header text{font-size:13px}.sheet header button{width:48px;height:48px;font-size:25px}.form{gap:15px}.form label{gap:7px;font-size:14px}.password-field{height:58px;border-radius:14px}.password-field input{font-size:15px}.session-note{padding:15px}.session-note text{font-size:13px}.submit{height:58px;border-radius:15px;font-size:17px}}
+
+.security-page { background: $dz-surface-page; }
+.security-hero {
+  position: sticky;
+  z-index: 20;
+  top: 0;
+  border-bottom: 1rpx solid transparent;
+  background: $dz-surface-glass-strong;
+}
+.security-hero::after {
+  position: absolute;
+  right: 0;
+  bottom: -16rpx;
+  left: 0;
+  height: 16rpx;
+  background: linear-gradient(180deg, rgba(31, 65, 72, .045), transparent);
+  content: '';
+  pointer-events: none;
+}
+.head-space { width: 72rpx; }
+.security-content {
+  padding-top: $dz-space-3;
+  padding-right: 40rpx;
+  padding-bottom: calc($dz-space-5 + env(safe-area-inset-bottom));
+  padding-left: 40rpx;
+}
+.panel { border: 1rpx solid $dz-border-material; background: $dz-surface-card; box-shadow: $dz-shadow-card; }
+
+.summary {
+  display: grid;
+  grid-template-columns: 96rpx minmax(0, 1fr);
+  gap: 0 $dz-space-3;
+  padding: $dz-space-4;
+  border-radius: $dz-radius-lg;
+}
+.summary-icon, .row-icon { display: flex; flex: none; align-items: center; justify-content: center; }
+.summary-icon { width: 96rpx; height: 96rpx; border-radius: $dz-radius-md; background: $dz-brand-soft; }
+.summary-icon image { width: 56rpx; height: 56rpx; }
+.summary-copy { display: flex; min-width: 0; justify-content: center; flex-direction: column; }
+.summary-title { display: flex; gap: 12rpx; align-items: center; }
+.summary-heading { color: $dz-text-primary; font-size: $dz-fs-body-strong; line-height: $dz-lh-body-strong; }
+.summary-title text {
+  padding: 5rpx 12rpx;
+  border-radius: $dz-radius-full;
+  color: $dz-status-success-deep;
+  background: $dz-status-success-soft;
+  font-size: $dz-fs-micro;
+  font-weight: $dz-fw-bold;
+  line-height: $dz-lh-micro;
+}
+.summary-description { margin-top: 4rpx; color: $dz-text-secondary; font-size: $dz-fs-caption; line-height: $dz-lh-caption; }
+.summary-status {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12rpx;
+  margin-top: $dz-space-3;
+}
+.status-item {
+  display: flex;
+  min-width: 0;
+  min-height: 72rpx;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 18rpx;
+  border-radius: $dz-radius-sm;
+  background: $dz-surface-page;
+}
+.status-item > text { color: $dz-text-secondary; font-size: $dz-fs-caption; }
+.status-label {
+  overflow: hidden;
+  color: $dz-text-primary;
+  font-size: $dz-fs-caption;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.status-value { display: flex; min-width: 0; gap: 8rpx; align-items: center; }
+.status-dot {
+  display: block;
+  width: 12rpx;
+  height: 12rpx;
+  border: 4rpx solid $dz-status-success-soft;
+  border-radius: $dz-radius-full;
+  background: $dz-status-success;
+  box-sizing: content-box;
+}
+.section-title {
+  display: block;
+  margin: $dz-space-4 8rpx 14rpx;
+  color: $dz-text-primary;
+  font-size: $dz-fs-heading;
+  font-weight: $dz-fw-bold;
+  line-height: $dz-lh-heading;
+}
+.card { overflow: hidden; border-radius: $dz-radius-lg; }
+.row {
+  display: flex;
+  width: 100%;
+  min-height: 132rpx;
+  align-items: center;
+  justify-content: flex-start;
+  margin: 0;
+  padding: 20rpx $dz-space-3;
+  border: 0;
+  border-bottom: 1rpx solid $dz-border-subtle;
+  border-radius: 0;
+  background: $dz-surface-card;
+  line-height: normal;
+  text-align: left;
+}
+.row::after { display: none; }
+.row:last-child { border-bottom: 0; }
+.row-icon { width: 76rpx; height: 76rpx; border-radius: $dz-radius-sm; }
+.row-icon image { width: 44rpx; height: 44rpx; }
+.phone-tone { background: $dz-brand-soft; }
+.password-tone { background: $dz-price-soft; }
+.device-tone { background: #eceafd; }
+.danger-tone { background: $dz-status-danger-soft; }
+.copy { display: flex; min-width: 0; gap: 4rpx; margin-left: 20rpx; flex: 1; flex-direction: column; }
+.row-title { color: $dz-text-primary; font-size: $dz-fs-body-strong; line-height: $dz-lh-body-strong; }
+.copy text {
+  overflow: hidden;
+  color: $dz-text-secondary;
+  font-size: $dz-fs-caption;
+  line-height: $dz-lh-caption;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.value { display: flex; flex: none; gap: 8rpx; align-items: center; margin-left: 12rpx; color: $dz-text-secondary; }
+.value-label { color: $dz-text-primary; font-size: $dz-fs-body; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.row-chevron { color: $dz-text-tertiary; font-size: $dz-fs-heading; font-weight: $dz-fw-regular; }
+.value.action-value .value-label { color: $dz-brand-deep; }
+.value .danger { color: $dz-status-danger; }
+
+.tip {
+  display: flex;
+  gap: $dz-space-3;
+  align-items: center;
+  margin-top: $dz-space-4;
+  padding: $dz-space-4;
+  border-radius: $dz-radius-md;
+  color: $dz-status-warning-deep;
+  background: $dz-status-warning-soft;
+}
+.tip-icon {
+  display: flex;
+  width: 64rpx;
+  height: 64rpx;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  border-radius: $dz-radius-full;
+  background: rgba(245, 166, 35, .14);
+}
+.tip-icon text {
+  display: flex;
+  width: 30rpx;
+  height: 30rpx;
+  align-items: center;
+  justify-content: center;
+  border: 2rpx solid $dz-status-warning;
+  border-radius: $dz-radius-full;
+  color: $dz-status-warning-deep;
+  font-size: $dz-fs-micro;
+  font-weight: $dz-fw-bold;
+  line-height: 1;
+}
+.tip-copy { display: flex; min-width: 0; gap: 4rpx; flex-direction: column; }
+.tip-title, .tip-copy text { font-size: $dz-fs-caption; line-height: $dz-lh-caption; }
+
+:deep(.dz-sheet__panel) {
+  right: 20rpx;
+  bottom: calc(16rpx + env(safe-area-inset-bottom));
+  left: 20rpx;
+  overflow: hidden;
+  width: auto;
+  max-width: 710px;
+  margin: 0 auto;
+  padding-bottom: 0;
+  border-bottom: 1rpx solid $dz-border-material;
+  border-radius: 48rpx;
+}
+:deep(.dz-sheet__grabber) { width: 80rpx; height: 8rpx; margin-top: 18rpx; }
+:deep(.dz-sheet__header) { padding: 20rpx 40rpx $dz-space-2; }
+.sheet-content { padding: 0 40rpx 40rpx; }
+.sheet-description {
+  display: block;
+  margin-bottom: $dz-space-3;
+  color: $dz-text-secondary;
+  font-size: $dz-fs-caption;
+  line-height: $dz-lh-caption;
+}
+.form { display: flex; gap: 22rpx; flex-direction: column; }
+.form label {
+  display: flex;
+  gap: 10rpx;
+  color: $dz-text-primary;
+  flex-direction: column;
+  font-size: $dz-fs-caption;
+  font-weight: $dz-fw-bold;
+  line-height: $dz-lh-caption;
+}
+.password-field {
+  height: 92rpx;
+  padding: 0 $dz-space-3;
+  border: 2rpx solid $dz-border-subtle;
+  border-radius: $dz-radius-md;
+  background: $dz-surface-card;
+}
+.password-field:focus-within { border-color: $dz-brand-primary; box-shadow: 0 0 0 8rpx $dz-brand-soft; }
+.password-field input { width: 100%; height: 100%; color: $dz-text-primary; font-size: $dz-fs-body; }
+.session-note {
+  display: flex;
+  gap: 6rpx;
+  padding: $dz-space-3;
+  border-radius: $dz-radius-md;
+  background: $dz-price-soft;
+  flex-direction: column;
+}
+.session-title { color: $dz-price-deep; font-size: $dz-fs-caption; line-height: $dz-lh-caption; }
+.session-note text { color: $dz-text-secondary; font-size: $dz-fs-caption; line-height: $dz-lh-caption; }
+.submit {
+  display: flex;
+  width: 100%;
+  height: 92rpx;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  border: 0;
+  border-radius: $dz-radius-md;
+  color: $dz-text-inverse;
+  background: $dz-gradient-brand;
+  box-shadow: $dz-shadow-brand;
+  font-size: $dz-fs-body-strong;
+  font-weight: $dz-fw-bold;
+  line-height: normal;
+}
+.submit::after { display: none; }
+.submit.dangerButton { background: $dz-status-danger; box-shadow: 0 10rpx 26rpx rgba(255, 65, 65, 0.2); }
+.submit[disabled] { opacity: 0.58; }
+
+/* #ifdef H5 */
+.security-hero {
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  backdrop-filter: saturate(180%) blur(20px);
+}
+/* #endif */
+
+@media screen and (min-width: 480px) {
+  .security-content { padding: 16px 20px 32px; }
+  .summary { grid-template-columns: 56px minmax(0, 1fr); gap: 0 14px; padding: 20px; border-radius: 20px; }
+  .summary-icon { width: 56px; height: 56px; border-radius: 14px; }
+  .summary-icon image { width: 32px; height: 32px; }
+  .summary-status { gap: 8px; margin-top: 14px; }
+  .status-item { min-height: 42px; padding: 0 12px; border-radius: 10px; }
+  .section-title { margin: 20px 4px 10px; }
+  .card { border-radius: 18px; }
+  .row { min-height: 78px; padding: 12px 16px; }
+  .row-icon { width: 44px; height: 44px; border-radius: 12px; }
+  .row-icon image { width: 26px; height: 26px; }
+  .copy { gap: 2px; margin-left: 12px; }
+  .tip { gap: 12px; margin-top: 20px; padding: 16px; border-radius: 16px; }
+  .tip-icon { width: 36px; height: 36px; }
+  .sheet-content { padding: 0 24px 24px; }
+  .form { gap: 15px; }
+  .password-field { height: 58px; padding: 0 16px; border-radius: 14px; }
+  .session-note { padding: 15px; border-radius: 14px; }
+  .submit { height: 58px; border-radius: 15px; }
+}
 </style>

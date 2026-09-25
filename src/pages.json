@@ -147,6 +147,22 @@
     {
       "path": "pages/coupons/index",
       "style": { "navigationStyle": "custom" }
+    },
+    {
+      "path": "pages/wallet/index",
+      "style": { "navigationStyle": "custom" }
+    },
+    {
+      "path": "pages/wallet/recharge",
+      "style": { "navigationStyle": "custom" }
+    },
+    {
+      "path": "pages/invitations/index",
+      "style": { "navigationStyle": "custom", "enableShareAppMessage": true, "enableShareTimeline": true }
+    },
+    {
+      "path": "pages/invitations/newcomer",
+      "style": { "navigationStyle": "custom" }
     }
   ],
   "globalStyle": {

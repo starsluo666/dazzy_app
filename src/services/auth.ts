@@ -25,19 +25,19 @@ export async function loginWithSms(phone: string, code: string) {
   return response.data
 }
 
-export async function loginWithWechatMiniProgram(loginCode: string, phoneCode?: string) {
+export async function loginWithWechatMiniProgram(loginCode: string, phoneCode?: string, inviteCode?: string) {
   const response = await request<DataResponse<AuthSession>>('/auth/login/wechat-mini-program/', {
     method: 'POST',
-    data: { client_type: 'customer', login_code: loginCode, ...(phoneCode ? { phone_code: phoneCode } : {}) },
+    data: { client_type: 'customer', login_code: loginCode, ...(phoneCode ? { phone_code: phoneCode } : {}), ...(inviteCode ? { invite_code: inviteCode } : {}) },
     skipAuth: true,
   })
   saveSession(response.data)
   return response.data
 }
 
-export async function register(phone: string, code: string, password: string) {
+export async function register(phone: string, code: string, password: string, inviteCode?: string) {
   const response = await request<DataResponse<AuthSession>>('/auth/register/', {
-    method: 'POST', data: { phone, code, password }, skipAuth: true,
+    method: 'POST', data: { phone, code, password, ...(inviteCode ? { invite_code: inviteCode } : {}) }, skipAuth: true,
   })
   saveSession(response.data)
   return response.data

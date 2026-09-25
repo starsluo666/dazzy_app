@@ -27,6 +27,7 @@ export function clearSession() {
   uni.removeStorageSync(ACCESS_TOKEN_KEY)
   uni.removeStorageSync(REFRESH_TOKEN_KEY)
   uni.removeStorageSync(USER_KEY)
+  uni.removeStorageSync('pendingRechargeOrderNo')
 }
 
 export function isAuthenticated(): boolean {
@@ -56,6 +57,8 @@ const protectedRoutes = [
   '/pages/history/index',
   '/pages/reviews/index',
   '/pages/support/index',
+  '/pages/wallet/index',
+  '/pages/wallet/recharge',
   '/pages/providers/apply',
 ]
 

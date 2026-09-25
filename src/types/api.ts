@@ -154,6 +154,8 @@ export interface UserNotification {
     | 'provider_application_result'
     | 'provider_status_changed'
     | 'provider_credit_changed'
+    | 'coupon_issued'
+    | 'coupon_revoked'
   event_type_label: string
   title: string
   content: string
@@ -299,13 +301,15 @@ export interface ActivityParticipationPaymentOrder {
   aa_principal_amount: number
   platform_service_fee_amount: number
   payable_amount: number
-  channel: 'mock_wechat' | 'mock_alipay' | 'wechat' | 'alipay'
+  channel: 'mock_wechat' | 'mock_alipay' | 'wechat' | 'alipay' | 'balance'
   channel_label: string
   status: 'pending_payment' | 'paid' | 'closed' | 'partially_refunded' | 'refunded'
   status_label: string
   expires_at: string
   paid_at: string | null
   closed_at: string | null
+  wallet_amount: number
+  external_amount: number
 }
 
 export interface ActivityParticipationRefundOrder {
@@ -317,6 +321,8 @@ export interface ActivityParticipationRefundOrder {
   principal_refund_amount: number
   service_fee_refund_amount: number
   refund_amount: number
+  wallet_refund_amount: number
+  external_refund_amount: number
   retained_principal_amount: number
   retained_service_fee_amount: number
   retained_principal_destination: 'none' | 'organizer' | 'platform'
@@ -454,6 +460,8 @@ export interface ActivityPublishOrder {
   expires_at: string
   paid_at: string | null
   closed_at: string | null
+  wallet_amount: number
+  external_amount: number
 }
 
 export interface MyActivityListItem extends ActivityListItem {
@@ -586,12 +594,63 @@ export interface ProviderOrderQuote {
 
 export interface UserCoupon {
   public_id: string
+  template_public_id: string | null
+  template_name: string
   face_amount: number
   min_order_amount: number
   expires_at: string
-  status: 'available' | 'reserved' | 'used' | 'expired'
+  status: 'available' | 'reserved' | 'used' | 'expired' | 'revoked'
   source: string
+  revoked_at: string | null
+  revoke_reason: string
   created_at: string
+}
+
+export interface GrowthCouponTemplate {
+  public_id: string
+  name: string
+  description: string
+  face_amount: number
+  min_order_amount: number
+  valid_days: number
+  is_active: boolean
+}
+
+export interface GrowthCampaign {
+  newcomer_gift_enabled: boolean
+  invitation_enabled: boolean
+  newcomer_gift_templates: GrowthCouponTemplate[]
+  registration_reward_template: GrowthCouponTemplate | null
+  first_order_reward_template: GrowthCouponTemplate | null
+  updated_at: string | null
+  invitation_valid: boolean
+  inviter_name: string
+  viewer: {
+    status: 'login_required' | 'pending' | 'received' | 'not_eligible'
+    received_coupon_count: number
+    granted_at?: string
+  }
+}
+
+export interface InvitationRecord {
+  public_id: string
+  invitee_name: string
+  registered_at: string
+  status: 'registered' | 'first_order_rewarded'
+  registration_rewarded: boolean
+  first_order_rewarded: boolean
+  first_order_completed_at: string | null
+}
+
+export interface MyInvitationSummary {
+  invite_code: string
+  campaign: Omit<GrowthCampaign, 'viewer' | 'invitation_valid' | 'inviter_name'>
+  summary: {
+    registered_count: number
+    registration_reward_count: number
+    first_order_reward_count: number
+  }
+  items: InvitationRecord[]
 }
 
 export interface ProviderOrder {
@@ -648,18 +707,80 @@ export interface ProviderOrderPaymentSummary {
   status: 'pending_payment' | 'paid' | 'closed' | 'partially_refunded' | 'refunded'
   status_label: string
   payable_amount: number
+  wallet_amount: number
+  external_amount: number
   paid_at: string | null
   closed_at: string | null
 }
 
 export interface ProviderOrderPaymentSession {
-  invoke_type: 'WECHAT_JSAPI' | 'WECHAT_APP'
+  invoke_type: 'WECHAT_JSAPI' | 'WECHAT_APP' | 'BALANCE'
   pay_info: Record<string, string | number>
+  wallet_amount: number
+  external_amount: number
 }
 
 export interface ProviderOrderPaymentAuthorization {
   authorized: boolean
   authorize_url: string
+  payment_method: 'balance' | 'mixed' | 'external'
+  wallet_amount: number
+  external_amount: number
+}
+
+export interface WalletLedgerEntry {
+  public_id: string
+  entry_type: 'recharge' | 'payment_hold' | 'payment_consume' | 'payment_release' | 'refund' | 'admin_adjustment'
+  entry_type_label: string
+  available_delta: number
+  frozen_delta: number
+  available_balance_after: number
+  description: string
+  reference_type: string
+  reference_no: string
+  created_at: string
+}
+
+export interface UserWallet {
+  available_balance: number
+  frozen_balance: number
+  total_balance: number
+  ledger_entries: WalletLedgerEntry[]
+}
+
+export interface RechargeDiscountTier {
+  min_quantity: number
+  discount_rate_bps: number
+}
+
+export interface RechargeCampaign {
+  is_enabled: boolean
+  unit_face_amount: number
+  max_quantity_per_order: number
+  rules_text: string
+  tiers: RechargeDiscountTier[]
+}
+
+export interface WalletRechargeOrder {
+  order_no: string
+  unit_face_amount: number
+  quantity: number
+  credited_amount: number
+  discount_rate_bps: number
+  discount_amount: number
+  payable_amount: number
+  status: 'pending_payment' | 'paid' | 'closed'
+  status_label: string
+  expires_at: string
+  paid_at: string | null
+  closed_at: string | null
+  created_at: string
+}
+
+export interface RechargePaymentSession {
+  invoke_type: 'WECHAT_JSAPI' | 'WECHAT_APP'
+  pay_info: Record<string, string | number>
+  order: WalletRechargeOrder
 }
 
 export interface ProviderOrderRefundSummary {

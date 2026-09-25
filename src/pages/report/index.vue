@@ -1,44 +1,111 @@
 <template>
   <view class="dz-page report-page">
-    <header class="page-head"><button @tap="goBack">‹</button><strong>举报有奖</strong></header>
+    <header class="page-head">
+      <button class="dz-tappable" hover-class="dz-pressed" aria-label="返回" @tap="goBack">‹</button>
+      <strong class="page-title">举报有奖</strong>
+      <view aria-hidden="true" />
+    </header>
     <scroll-view scroll-y class="report-content">
-      <section class="rules-card">
-        <strong class="rules-heading">维护真实、安全的服务体验</strong>
-        <text>订单确认完成后，在待评价期内提交举报。请关联本人订单，填写经过并上传至少一张证据图片。平台核实成立后发放优惠券。</text>
-        <view v-if="rules" class="reward-box">
-          <b>¥{{ money(rules.coupon_amount) }}</b>
-          <span>奖励优惠券</span>
-          <small>达人服务订单原价大于 ¥{{ money(rules.coupon_min_order_amount) }} 可用，有效期 {{ rules.coupon_valid_days }} 天</small>
-        </view>
-        <text v-if="rules">待评价期限为 {{ rules.review_timeout_days }} 天；过期、已评价或已举报的订单不可关联。最终是否发券以客服核查结果为准。</text>
-      </section>
+      <main class="report-main dz-container">
+        <section class="reward-card">
+          <image class="reward-rays" src="/static/report/reward-rays.svg" mode="aspectFill" aria-hidden="true" />
+          <view class="reward-medal" aria-hidden="true"><text>奖</text></view>
+          <view class="reward-eyebrow"><i class="eyebrow-line" /><text>举报有奖</text><i class="eyebrow-line" /></view>
+          <view v-if="rules" class="reward-primary">
+            <view class="reward-price"><text class="reward-currency">¥</text><text class="reward-amount">{{ money(rules.coupon_amount) }}</text></view>
+            <text class="reward-name">奖励优惠券</text>
+          </view>
+          <view v-if="rules" class="reward-terms">
+            <text>订单原价大于 ¥{{ money(rules.coupon_min_order_amount) }} 可用</text>
+            <i class="reward-separator" aria-hidden="true">·</i>
+            <text>有效期 {{ rules.coupon_valid_days }} 天</text>
+          </view>
+          <view v-else class="reward-state"><text>{{ loading ? '正在加载奖励规则…' : '奖励规则暂时无法显示' }}</text></view>
+        </section>
 
-      <section class="form-card">
-        <strong class="field-heading">关联订单 <em>必选</em></strong>
-        <view v-if="loading" class="empty">正在加载可举报订单…</view>
-        <view v-else-if="!rules?.eligible_orders.length" class="empty">暂无可关联订单。仅显示待评价期限内的本人订单。</view>
-        <button v-for="order in rules?.eligible_orders || []" :key="order.order_no" class="order-option" :class="{ active: orderNo === order.order_no }" @tap="orderNo = order.order_no">
-          <view><b>{{ order.service_name }} · {{ order.provider_name }}</b><text>{{ order.order_no }}</text><small>评价截止：{{ order.review_expires_at.slice(0, 16).replace('T', ' ') }}</small></view>
-          <i>{{ orderNo === order.order_no ? '✓' : '' }}</i>
-        </button>
-        <text v-if="attempted && !orderNo" class="error">请选择待评价订单</text>
-      </section>
+        <section v-if="rules" class="rule-summary panel">
+          <view class="rule-clock" aria-hidden="true"><i class="clock-hand" /></view>
+          <text class="rule-copy"><b class="rule-emphasis">维护真实、安全的服务体验。</b>订单确认完成后，在待评价期内关联本人订单并提交真实、完整的证据；待评价期限 <b class="rule-days">{{ rules.review_timeout_days }} 天</b>，过期、已评价或已举报的订单不可关联。最终是否发券以客服核查结果为准。</text>
+        </section>
+        <section v-else-if="loading" class="rule-summary rule-summary--loading panel">
+          <view class="rule-clock" aria-hidden="true"><i class="clock-hand" /></view>
+          <text class="rule-copy">正在读取举报奖励规则…</text>
+        </section>
 
-      <section class="form-card">
-        <strong class="field-heading">举报问题 <em>必选</em></strong>
-        <view class="reason-options"><button v-for="item in reasons" :key="item.value" :class="{ active: reason === item.value }" @tap="reason = item.value">{{ item.label }}</button></view>
-        <strong class="field-heading">问题描述 <em>必填</em></strong>
-        <textarea v-model="description" maxlength="1000" placeholder="请说明发生时间、地点、具体经过和希望平台核查的事项" />
-        <text v-if="attempted && description.trim().length < 5" class="error">问题描述至少填写 5 个字</text>
-        <strong class="field-heading">证据图片 <em>至少 1 张</em></strong>
-        <view class="uploads">
-          <view v-for="(item, index) in uploads" :key="item.id" class="upload-item"><image :src="item.url" mode="aspectFill" /><button @tap="uploads.splice(index, 1)">×</button></view>
-          <button v-if="uploads.length < 3" class="upload-add" :disabled="uploading" @tap="chooseImages">{{ uploading ? '上传中' : '＋ 添加图片' }}</button>
-        </view>
-        <text v-if="attempted && !uploads.length" class="error">至少上传一张证据图片</text>
-      </section>
+        <section class="form-card panel order-card">
+          <view class="field-title-row">
+            <strong class="field-heading">关联订单</strong>
+            <text class="required-badge">必选</text>
+          </view>
+          <text class="field-hint">仅可关联待评价期限内的本人订单</text>
+          <view v-if="loading" class="empty-state"><view class="state-icon">…</view><text class="state-title">正在加载可举报订单</text></view>
+          <view v-else-if="!rules?.eligible_orders.length" class="empty-state"><view class="state-icon">!</view><text class="state-title">暂无可关联订单</text><small class="state-detail">订单过期、已评价或已举报后将无法关联</small></view>
+          <button
+            v-for="order in rules?.eligible_orders || []"
+            :key="order.order_no"
+            class="order-option dz-tappable"
+            :class="{ active: orderNo === order.order_no, invalid: attempted && !orderNo }"
+            hover-class="dz-pressed"
+            @tap="orderNo = order.order_no"
+          >
+            <view class="order-copy">
+              <b class="order-title">{{ order.service_name }} · {{ order.provider_name }}</b>
+              <text class="order-number">{{ order.order_no }}</text>
+              <small class="order-deadline">评价截止：{{ order.review_expires_at.slice(0, 16).replace('T', ' ') }}</small>
+            </view>
+            <i aria-hidden="true">{{ orderNo === order.order_no ? '✓' : '' }}</i>
+          </button>
+          <text v-if="attempted && !orderNo" class="field-error">请选择一个仍在待评价期内的订单</text>
+        </section>
+
+        <section class="form-card panel issue-card">
+          <view class="field-title-row">
+            <strong class="field-heading">举报问题</strong>
+            <text class="required-badge">必选</text>
+          </view>
+          <view class="reason-options">
+            <button v-for="item in reasons" :key="item.value" class="dz-tappable" :class="{ active: reason === item.value }" hover-class="dz-pressed" @tap="reason = item.value">{{ item.label }}</button>
+          </view>
+
+          <view class="field-title-row field-section">
+            <strong class="field-heading">问题描述</strong>
+            <text class="required-badge">必填</text>
+          </view>
+          <view class="textarea-shell" :class="{ invalid: attempted && description.trim().length < 5 }">
+            <textarea v-model="description" maxlength="1000" placeholder="请说明发生时间、地点、具体经过和希望平台核查的事项" />
+            <text class="counter">{{ description.length }} / 1000</text>
+          </view>
+          <text v-if="attempted && description.trim().length < 5" class="field-error">问题描述至少填写 5 个字，还差 {{ 5 - description.trim().length }} 字</text>
+
+          <view class="field-title-row field-section">
+            <view class="field-heading-group"><strong class="field-heading">证据图片</strong><text class="required-badge">至少 1 张</text></view>
+            <text class="upload-count">{{ uploads.length }} / 3</text>
+          </view>
+          <text class="field-hint">请上传能清晰说明问题的聊天、现场或服务凭证</text>
+          <view class="uploads" :class="{ invalid: attempted && !uploads.length }">
+            <view v-for="(item, index) in uploads" :key="item.id" class="upload-item">
+              <image :src="item.url" mode="aspectFill" />
+              <button class="dz-tappable" hover-class="dz-pressed" aria-label="删除图片" @tap="uploads.splice(index, 1)">×</button>
+            </view>
+            <button v-if="uploads.length < 3" class="upload-add dz-tappable" hover-class="dz-pressed" :disabled="uploading" @tap="chooseImages">
+              <b class="upload-symbol">{{ uploading ? '…' : '+' }}</b>
+              <text class="upload-label">{{ uploading ? '上传中' : '添加图片' }}</text>
+            </button>
+          </view>
+          <text v-if="attempted && !uploads.length" class="field-error">至少上传一张证据图片</text>
+        </section>
+        <view class="privacy-note"><text class="privacy-icon" aria-hidden="true">◉</text><span class="privacy-copy">举报材料仅用于平台核查，我们会妥善保护你的隐私。</span></view>
+      </main>
     </scroll-view>
-    <footer><button :disabled="submitting || uploading || loading" @tap="submit">{{ submitting ? '提交中…' : '提交举报' }}</button></footer>
+    <footer class="action-bar">
+      <button
+        class="submit-button dz-tappable"
+        :class="{ blocked: attempted && (!orderNo || description.trim().length < 5 || !uploads.length) }"
+        hover-class="dz-pressed"
+        :disabled="submitting || uploading || loading"
+        @tap="submit"
+      ><text class="submit-icon" aria-hidden="true">➤</text><strong class="submit-label">{{ submitting ? '提交中…' : '提交举报' }}</strong></button>
+    </footer>
   </view>
 </template>
 
@@ -115,25 +182,364 @@ onLoad(async (query) => {
 </script>
 
 <style scoped lang="scss">
-.report-page { min-height: 100vh; background: #f5f7f8; padding-bottom: 110rpx; }
-.page-head { height: 100rpx; display: flex; align-items: center; justify-content: center; background: #fff; }
-.page-head button { position: absolute; left: 18rpx; border: 0; background: transparent; font-size: 48rpx; }
-.page-head strong { font-size: 32rpx; }
-.report-content { height: calc(100vh - 210rpx); }
-.rules-card, .form-card { display: flex; flex-direction: column; gap: 16rpx; margin: 20rpx 24rpx; padding: 24rpx; border-radius: 16rpx; background: #fff; }
-.rules-card { background: linear-gradient(135deg, #e5faf9, #fff); }
-.rules-heading { font-size: 32rpx; }
-.rules-card > text, .reward-box small { color: #65727e; font-size: 23rpx; line-height: 1.6; }
-.reward-box { display: flex; align-items: center; gap: 12rpx; padding: 18rpx; background: #fff; border-radius: 12rpx; }
-.reward-box b { color: #ee7045; font-size: 44rpx; }.reward-box span { font-weight: 600; }
-.reward-box small { flex: 1; text-align: right; }
-.field-heading { font-size: 28rpx; }.form-card em { color: #e75a52; font-size: 22rpx; font-style: normal; }
-.order-option { display: flex; align-items: center; justify-content: space-between; width: 100%; padding: 18rpx; border: 1rpx solid #e4e9eb; border-radius: 10rpx; background: #fff; text-align: left; }
-.order-option.active { border-color: #08b5ba; background: #f0fbfb; }.order-option view { display: flex; flex-direction: column; gap: 7rpx; }
-.order-option b { font-size: 25rpx; }.order-option text,.order-option small,.empty { color: #7a8492; font-size: 21rpx; }.order-option i { color: #08b5ba; }
-.reason-options { display: flex; flex-wrap: wrap; gap: 10rpx; }.reason-options button { margin: 0; padding: 0 18rpx; border: 1rpx solid #e4e9eb; border-radius: 25rpx; background: #fff; font-size: 22rpx; }.reason-options button.active { color: #078f93; border-color: #08b5ba; background: #f0fbfb; }
-textarea { width: 100%; min-height: 180rpx; padding: 15rpx; box-sizing: border-box; border: 1rpx solid #e4e9eb; border-radius: 10rpx; font-size: 24rpx; }
-.uploads { display: flex; gap: 12rpx; }.upload-item { position: relative; width: 140rpx; height: 140rpx; }.upload-item image { width: 100%; height: 100%; border-radius: 10rpx; }.upload-item button { position: absolute; top: -10rpx; right: -10rpx; width: 34rpx; height: 34rpx; padding: 0; border: 0; border-radius: 50%; color: #fff; background: #e75a52; line-height: 34rpx; }.upload-add { width: 140rpx; height: 140rpx; margin: 0; border: 1rpx dashed #a8bfc0; border-radius: 10rpx; background: #f5fbfb; font-size: 22rpx; }
-.error { color: #e75a52; font-size: 21rpx; }
-footer { position: fixed; bottom: 0; left: 0; right: 0; padding: 16rpx 24rpx 30rpx; background: #fff; }footer button { width: 100%; height: 76rpx; border: 0; border-radius: 40rpx; color: #fff; background: #08b5ba; font-size: 28rpx; }footer button[disabled] { opacity: .5; }
+@use '../../styles/tokens.scss' as *;
+
+.report-page {
+  height: 100vh;
+  height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
+  background: $dz-surface-page;
+}
+
+.page-head {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: grid;
+  grid-template-columns: 72rpx 1fr 72rpx;
+  height: calc(96rpx + env(safe-area-inset-top));
+  flex: none;
+  align-items: end;
+  padding: env(safe-area-inset-top) 20rpx 12rpx;
+  border-bottom: 1rpx solid transparent;
+  background: $dz-surface-glass-strong;
+  box-sizing: border-box;
+}
+
+.page-head::after {
+  position: absolute;
+  right: 0;
+  bottom: -16rpx;
+  left: 0;
+  height: 16rpx;
+  background: linear-gradient(180deg, rgba(31, 65, 72, .05), transparent);
+  content: '';
+  pointer-events: none;
+}
+
+.page-head button {
+  display: flex;
+  width: 64rpx;
+  height: 64rpx;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: $dz-radius-full;
+  color: $dz-text-primary;
+  background: transparent;
+  font-size: $dz-fs-price-lg;
+  font-weight: $dz-fw-regular;
+  line-height: 1;
+}
+
+.page-head button::after,
+.order-option::after,
+.reason-options button::after,
+.upload-item button::after,
+.upload-add::after,
+.submit-button::after {
+  display: none;
+}
+
+.page-title {
+  padding-bottom: 13rpx;
+  font-size: $dz-fs-heading;
+  font-weight: $dz-fw-bold;
+  line-height: $dz-lh-heading;
+  text-align: center;
+  letter-spacing: -.02em;
+}
+
+.report-content {
+  height: calc(100vh - 208rpx - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+  height: calc(100dvh - 208rpx - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+}
+
+.report-main {
+  padding-top: $dz-space-3;
+  padding-bottom: $dz-space-5;
+}
+
+.field-title-row,
+.field-heading-group,
+.privacy-note {
+  display: flex;
+  align-items: center;
+}
+
+.reward-card {
+  position: relative;
+  overflow: hidden;
+  height: 272rpx;
+  border: 1rpx solid rgba(255, 255, 255, .55);
+  border-radius: $dz-radius-lg;
+  color: $dz-text-inverse;
+  background: $dz-price-primary;
+  box-shadow: 0 18rpx 42rpx rgba(232, 80, 31, .18);
+  box-sizing: border-box;
+}
+
+.reward-rays {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.reward-medal {
+  position: absolute;
+  z-index: 2;
+  top: 28rpx;
+  right: 38rpx;
+  display: flex;
+  width: 76rpx;
+  height: 76rpx;
+  align-items: center;
+  justify-content: center;
+  border: 6rpx solid rgba(255, 245, 198, .82);
+  border-radius: $dz-radius-full;
+  color: #9b5200;
+  background: linear-gradient(145deg, #ffe79a, #ffc13e);
+  box-shadow: 0 8rpx 20rpx rgba(140, 55, 0, .18), inset 0 0 0 2rpx rgba(255, 255, 255, .55);
+  box-sizing: border-box;
+}
+
+.reward-medal text { font-size: $dz-fs-body-strong; font-weight: $dz-fw-bold; line-height: 1; }
+
+.reward-eyebrow {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  gap: $dz-space-2;
+  align-items: center;
+  justify-content: center;
+  padding-top: 50rpx;
+}
+
+.reward-eyebrow text { font-size: $dz-fs-caption; font-weight: $dz-fw-bold; letter-spacing: .16em; }
+.eyebrow-line { width: 58rpx; height: 2rpx; background: rgba(255, 255, 255, .72); }
+
+.reward-primary {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  margin-top: 10rpx;
+}
+
+.reward-price { display: flex; align-items: baseline; }
+.reward-currency { font-size: 62rpx; font-weight: $dz-fw-bold; line-height: 1; letter-spacing: -.04em; }
+.reward-amount { font-size: 88rpx; font-weight: $dz-fw-bold; line-height: .9; letter-spacing: -.06em; }
+.reward-name { margin: 0 0 8rpx 12rpx; font-size: $dz-fs-body-strong; font-weight: $dz-fw-bold; line-height: $dz-lh-body-strong; }
+
+.reward-terms {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  gap: 12rpx;
+  align-items: center;
+  justify-content: center;
+  margin-top: 22rpx;
+  color: rgba(255, 255, 255, .94);
+  font-size: $dz-fs-caption;
+  line-height: $dz-lh-caption;
+}
+
+.reward-separator { font-style: normal; }
+.reward-state { position: relative; z-index: 2; display: flex; height: 142rpx; align-items: center; justify-content: center; }
+.reward-state text { color: rgba(255, 255, 255, .9); font-size: $dz-fs-caption; }
+
+.rule-summary {
+  display: grid;
+  grid-template-columns: 42rpx minmax(0, 1fr);
+  gap: $dz-space-2;
+  align-items: start;
+  margin-top: $dz-space-3;
+  padding: $dz-space-3 $dz-space-4;
+  border-radius: $dz-radius-lg;
+  background: $dz-surface-card;
+}
+
+.rule-clock {
+  position: relative;
+  width: 32rpx;
+  height: 32rpx;
+  margin-top: 4rpx;
+  border: 3rpx solid $dz-brand-deep;
+  border-radius: $dz-radius-full;
+  box-sizing: border-box;
+}
+
+.clock-hand {
+  position: absolute;
+  left: 50%;
+  top: 5rpx;
+  width: 2rpx;
+  height: 9rpx;
+  background: $dz-brand-deep;
+  transform: translateX(-50%);
+}
+
+.clock-hand::after {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 8rpx;
+  height: 2rpx;
+  background: $dz-brand-deep;
+  content: '';
+  transform: rotate(32deg);
+  transform-origin: left center;
+}
+
+.rule-copy { color: $dz-text-secondary; font-size: $dz-fs-caption; line-height: 1.72; }
+.rule-emphasis { color: $dz-text-primary; font-weight: $dz-fw-bold; }
+.rule-days { color: $dz-text-primary; font-weight: $dz-fw-bold; }
+.rule-summary--loading { color: $dz-text-tertiary; }
+
+.form-card {
+  margin-top: $dz-space-3;
+  padding: $dz-space-4;
+  border-radius: $dz-radius-lg;
+  background: $dz-surface-card;
+}
+
+.field-title-row { justify-content: space-between; }
+.field-heading-group { gap: $dz-space-2; }
+.field-heading { font-size: $dz-fs-body; font-weight: $dz-fw-bold; line-height: $dz-lh-body; }
+.required-badge { padding: 4rpx 12rpx; border-radius: $dz-radius-full; color: $dz-status-danger-deep; background: $dz-status-danger-soft; font-size: $dz-fs-micro; line-height: $dz-lh-micro; }
+.field-title-row > .required-badge { margin-left: $dz-space-2; margin-right: auto; }
+.field-heading-group .required-badge { margin: 0; }
+.field-hint { display: block; margin-top: $dz-space-1; color: $dz-text-tertiary; font-size: $dz-fs-micro; line-height: $dz-lh-micro; }
+.field-section { margin-top: $dz-space-4; }
+
+.empty-state {
+  display: flex;
+  min-height: 180rpx;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: $dz-space-1;
+  margin-top: $dz-space-3;
+  border: 1rpx dashed $dz-border-subtle;
+  border-radius: $dz-radius-md;
+  color: $dz-text-secondary;
+  background: $dz-surface-page;
+}
+
+.state-icon { display: flex; width: 50rpx; height: 50rpx; align-items: center; justify-content: center; border-radius: 50%; color: $dz-brand-deep; background: $dz-brand-soft; font-size: $dz-fs-body-strong; font-weight: $dz-fw-bold; }
+.state-title { font-size: $dz-fs-caption; }
+.state-detail { color: $dz-text-tertiary; font-size: $dz-fs-micro; }
+
+.order-option {
+  display: flex;
+  width: 100%;
+  min-height: 126rpx;
+  align-items: center;
+  justify-content: space-between;
+  margin: $dz-space-3 0 0;
+  padding: $dz-space-3;
+  border: 2rpx solid $dz-border-subtle;
+  border-radius: $dz-radius-md;
+  color: $dz-text-primary;
+  background: $dz-surface-page;
+  text-align: left;
+  box-sizing: border-box;
+}
+
+.order-option.active { border-color: $dz-brand-primary; background: $dz-brand-soft; box-shadow: 0 0 0 6rpx rgba(24, 199, 198, .1); }
+.order-option.invalid { border-color: $dz-status-danger; background: $dz-status-danger-soft; }
+.order-copy { display: flex; min-width: 0; flex: 1; flex-direction: column; gap: $dz-space-1; }
+.order-title { overflow: hidden; font-size: $dz-fs-caption; line-height: $dz-lh-caption; text-overflow: ellipsis; white-space: nowrap; }
+.order-number { color: $dz-text-tertiary; font-size: $dz-fs-micro; line-height: $dz-lh-micro; }
+.order-deadline { color: $dz-price-primary; font-size: $dz-fs-micro; line-height: $dz-lh-micro; }
+.order-option i { display: flex; width: 48rpx; height: 48rpx; flex: none; align-items: center; justify-content: center; margin-left: $dz-space-2; border: 2rpx solid $dz-border-subtle; border-radius: 50%; color: transparent; background: $dz-surface-card; font-size: $dz-fs-caption; font-style: normal; }
+.order-option.active i { border-color: $dz-brand-primary; color: $dz-text-inverse; background: $dz-brand-primary; }
+
+.reason-options { display: flex; flex-wrap: wrap; gap: $dz-space-2; margin-top: $dz-space-3; }
+.reason-options button { min-width: 0; height: 64rpx; margin: 0; padding: 0 $dz-space-3; border: 1rpx solid transparent; border-radius: $dz-radius-full; color: $dz-text-secondary; background: $dz-surface-page; font-size: $dz-fs-caption; line-height: 64rpx; }
+.reason-options button.active { border-color: $dz-brand-primary; color: $dz-brand-deep; background: $dz-brand-soft; font-weight: $dz-fw-semibold; }
+
+.textarea-shell {
+  overflow: hidden;
+  margin-top: $dz-space-2;
+  border: 2rpx solid transparent;
+  border-radius: $dz-radius-md;
+  background: $dz-surface-page;
+}
+
+.textarea-shell.invalid { border-color: $dz-status-danger; background: $dz-status-danger-soft; }
+.textarea-shell textarea { width: 100%; height: 220rpx; padding: $dz-space-3 $dz-space-3 0; color: $dz-text-primary; background: transparent; font-size: $dz-fs-caption; line-height: 1.65; box-sizing: border-box; }
+.counter { display: block; padding: 0 $dz-space-3 $dz-space-2; color: $dz-text-tertiary; font-size: $dz-fs-micro; line-height: $dz-lh-micro; text-align: right; }
+.field-error { display: block; margin-top: $dz-space-1; color: $dz-status-danger; font-size: $dz-fs-micro; line-height: $dz-lh-micro; }
+.upload-count { color: $dz-text-tertiary; font-size: $dz-fs-micro; }
+
+.uploads { display: flex; flex-wrap: wrap; gap: $dz-space-2; margin-top: $dz-space-2; padding: 2rpx; border-radius: $dz-radius-md; }
+.uploads.invalid { padding: $dz-space-2; border: 2rpx solid $dz-status-danger; background: $dz-status-danger-soft; }
+.upload-item { position: relative; width: 132rpx; height: 132rpx; }
+.upload-item image { width: 100%; height: 100%; border-radius: $dz-radius-md; background: $dz-surface-page; }
+.upload-item button { position: absolute; right: -6rpx; top: -6rpx; display: flex; width: 40rpx; height: 40rpx; align-items: center; justify-content: center; margin: 0; padding: 0; border: 3rpx solid $dz-surface-card; border-radius: 50%; color: $dz-text-inverse; background: $dz-text-secondary; font-size: $dz-fs-caption; line-height: 1; }
+.upload-add { display: flex; width: 132rpx; height: 132rpx; flex-direction: column; align-items: center; justify-content: center; gap: $dz-space-1; margin: 0; padding: 0; border: 2rpx dashed rgba(8, 174, 180, .35); border-radius: $dz-radius-md; color: $dz-brand-deep; background: $dz-brand-soft; }
+.upload-symbol { font-size: $dz-fs-heading; font-weight: $dz-fw-regular; line-height: 1; }
+.upload-label { font-size: $dz-fs-micro; }
+.upload-add[disabled] { opacity: .55; }
+
+.privacy-note { justify-content: center; gap: $dz-space-1; padding: $dz-space-3 $dz-space-2 0; color: $dz-text-tertiary; }
+.privacy-icon { color: $dz-brand-deep; font-size: $dz-fs-micro; }
+.privacy-copy { font-size: $dz-fs-micro; line-height: $dz-lh-micro; }
+
+.action-bar {
+  position: fixed;
+  z-index: 30;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  max-width: 750px;
+  margin: auto;
+  padding: 12rpx 28rpx calc(12rpx + env(safe-area-inset-bottom));
+  border-top: 1rpx solid $dz-border-material;
+  background: $dz-surface-glass-strong;
+  box-sizing: border-box;
+}
+
+.submit-button {
+  display: flex;
+  width: 100%;
+  height: 80rpx;
+  align-items: center;
+  justify-content: center;
+  gap: $dz-space-2;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: $dz-radius-full;
+  color: $dz-text-inverse;
+  background: $dz-gradient-brand;
+  box-shadow: $dz-shadow-brand;
+  line-height: 80rpx;
+}
+
+.submit-icon { font-size: $dz-fs-body; transform: rotate(-18deg); }
+.submit-label { font-size: $dz-fs-body; font-weight: $dz-fw-bold; }
+.submit-button.blocked { background: $dz-status-danger; box-shadow: none; }
+.submit-button[disabled] { opacity: .5; }
+
+/* #ifdef H5 */
+.page-head,
+.action-bar { -webkit-backdrop-filter: saturate(180%) blur(22px); backdrop-filter: saturate(180%) blur(22px); }
+/* #endif */
+
+@media (prefers-reduced-motion: reduce) {
+  .dz-tappable { transform: none; transition: opacity $dz-duration-fast $dz-ease-standard; }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .page-head,
+  .action-bar { background: $dz-surface-card; -webkit-backdrop-filter: none; backdrop-filter: none; }
+}
 </style>

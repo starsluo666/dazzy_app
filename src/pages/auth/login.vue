@@ -53,6 +53,7 @@ import AuthBrand from '@/components/AuthBrand.vue'
 import { useSmsCode } from '@/composables/useSmsCode'
 import { loginWithPassword, loginWithSms, loginWithWechatMiniProgram } from '@/services/auth'
 import { returnAfterAuthentication } from '@/services/session'
+import { clearPendingInviteCode, getPendingInviteCode, savePendingInviteCode } from '@/services/growth'
 
 const mode = ref<'password' | 'sms'>('password')
 const phone = ref('')
@@ -67,6 +68,7 @@ const sms = useSmsCode('login')
 
 onLoad((query) => {
   redirect.value = typeof query?.redirect === 'string' ? decodeURIComponent(query.redirect) : ''
+  if (typeof query?.invite_code === 'string') savePendingInviteCode(query.invite_code)
 })
 
 function validPhone() { return /^1[3-9]\d{9}$/.test(phone.value) }
@@ -88,7 +90,8 @@ async function wechatLogin(event: { detail?: { code?: string; errMsg?: string } 
   if (!phoneCode) return warn(event.detail?.errMsg?.includes('deny') ? '需要授权手机号才能首次登录' : '微信手机号授权失败')
   wechatSubmitting.value = true
   try {
-    await loginWithWechatMiniProgram(await getWechatLoginCode(), phoneCode)
+    await loginWithWechatMiniProgram(await getWechatLoginCode(), phoneCode, getPendingInviteCode())
+    clearPendingInviteCode()
     uni.showToast({ title: '登录成功', icon: 'success' })
     setTimeout(() => returnAfterAuthentication(redirect.value), 350)
   } catch (error) { warn(error instanceof Error ? error.message : '微信登录失败') }
@@ -109,6 +112,7 @@ async function submit() {
   try {
     if (mode.value === 'password') await loginWithPassword(phone.value, password.value)
     else await loginWithSms(phone.value, code.value)
+    clearPendingInviteCode()
     uni.showToast({ title: '登录成功', icon: 'success' })
     setTimeout(() => returnAfterAuthentication(redirect.value), 350)
   } catch (error) { warn((error as Error).message) }
@@ -116,7 +120,10 @@ async function submit() {
 }
 
 function redirectQuery() { return redirect.value ? `&redirect=${encodeURIComponent(redirect.value)}` : '' }
-function openRegister() { uni.navigateTo({ url: `/pages/auth/register?from=login${redirectQuery()}` }) }
+function openRegister() {
+  const inviteCode = getPendingInviteCode()
+  uni.navigateTo({ url: `/pages/auth/register?from=login${redirectQuery()}${inviteCode ? `&invite_code=${encodeURIComponent(inviteCode)}` : ''}` })
+}
 function openReset() { uni.navigateTo({ url: `/pages/auth/reset-password?phone=${phone.value}${redirectQuery()}` }) }
 </script>
 

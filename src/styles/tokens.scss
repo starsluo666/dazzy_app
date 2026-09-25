@@ -36,9 +36,21 @@ $dz-surface-dim: rgba(23, 33, 38, 0.45);
 $dz-surface-glass: rgba(248, 251, 251, 0.72);
 $dz-surface-glass-strong: rgba(250, 252, 252, 0.86);
 $dz-surface-highlight: rgba(255, 255, 255, 0.88);
+$dz-surface-hero-glass: rgba(255, 255, 255, 0.14);
+$dz-surface-subtle: #f7f9fa;
 $dz-border-subtle: rgba(23, 33, 38, 0.08);
 $dz-border-material: rgba(255, 255, 255, 0.82);
+$dz-border-hero: rgba(255, 255, 255, 0.30);
+$dz-hero-ray: rgba(255, 255, 255, 0.075);
 $dz-gradient-brand: linear-gradient(145deg, #55ddd8 0%, #18c7c6 52%, #08aeb4 100%);
+$dz-invite-primary: #ff6d3f;
+$dz-invite-deep: #ef4f27;
+$dz-invite-soft: #fff1e8;
+$dz-reward-gold: #ffd66e;
+$dz-reward-gold-deep: #8a4b00;
+$dz-newcomer-primary: #735ee9;
+$dz-newcomer-deep: #5140c8;
+$dz-newcomer-soft: #efedff;
 
 /*
  * 允许的字面色例外（不做令牌化）：
