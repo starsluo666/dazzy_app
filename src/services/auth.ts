@@ -35,6 +35,48 @@ export async function loginWithWechatMiniProgram(loginCode: string, phoneCode?: 
   return response.data
 }
 
+export function getWechatH5AuthorizeUrl() {
+  return request<DataResponse<{ authorize_url: string; state: string }>>('/auth/login/wechat/h5/start/', {
+    skipAuth: true,
+  })
+}
+
+export function getWechatMobileLoginTicket(code: string) {
+  return request<DataResponse<{ ticket: string }>>('/auth/login/wechat/mobile/', {
+    method: 'POST', data: { code }, skipAuth: true,
+  })
+}
+
+export async function resolveWechatLogin(ticket: string) {
+  const response = await request<DataResponse<
+    { status: 'bind_required' } | { status: 'authenticated'; session: AuthSession }
+  >>('/auth/login/wechat/resolve/', {
+    method: 'POST', data: { ticket }, skipAuth: true,
+  })
+  if (response.data.status === 'authenticated') saveSession(response.data.session)
+  return response.data
+}
+
+export function sendWechatBindCode(ticket: string, phone: string) {
+  return request<DataResponse<{ expires_in: number; retry_after: number; debug_code?: string }>>(
+    '/auth/login/wechat/bind/sms/', {
+      method: 'POST', data: { ticket, phone }, skipAuth: true,
+    },
+  )
+}
+
+export async function bindWechatPhone(ticket: string, phone: string, code: string, inviteCode?: string) {
+  const response = await request<DataResponse<{ created: boolean; session: AuthSession }>>(
+    '/auth/login/wechat/bind/', {
+      method: 'POST',
+      data: { ticket, phone, code, ...(inviteCode ? { invite_code: inviteCode } : {}) },
+      skipAuth: true,
+    },
+  )
+  saveSession(response.data.session)
+  return response.data
+}
+
 export async function register(phone: string, code: string, password: string, inviteCode?: string) {
   const response = await request<DataResponse<AuthSession>>('/auth/register/', {
     method: 'POST', data: { phone, code, password, ...(inviteCode ? { invite_code: inviteCode } : {}) }, skipAuth: true,
@@ -74,6 +116,20 @@ export async function changePhone(currentCode: string, newPhone: string, newCode
   const response = await request<DataResponse<AuthSession>>('/auth/phone/change/', {
     method: 'POST',
     data: { current_code: currentCode, new_phone: newPhone, new_code: newCode },
+  })
+  saveSession(response.data)
+  return response.data
+}
+
+export function sendInitialPasswordCode() {
+  return request<DataResponse<{ expires_in: number; retry_after: number; debug_code?: string }>>(
+    '/auth/password/initial/code/', { method: 'POST' },
+  )
+}
+
+export async function setInitialPassword(code: string, newPassword: string) {
+  const response = await request<DataResponse<AuthSession>>('/auth/password/initial/', {
+    method: 'POST', data: { code, new_password: newPassword },
   })
   saveSession(response.data)
   return response.data

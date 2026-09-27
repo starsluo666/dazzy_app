@@ -17,7 +17,9 @@
             "delay" : 0
         },
         /* 模块配置 */
-        "modules" : {},
+        "modules" : {
+            "OAuth" : {}
+        },
         /* 应用发布信息 */
         "distribute" : {
             /* android打包配置 */
@@ -44,6 +46,12 @@
             "ios" : {},
             /* SDK配置 */
             "sdkConfigs" : {
+                "oauth" : {
+                    "weixin" : {
+                        "appid" : "",
+                        "UniversalLinks" : ""
+                    }
+                },
                 "maps": {
                     "tencent": {
                         "key": "EJZBZ-TNEC3-TD237-RFIBL-XB4B3-Y5FID"

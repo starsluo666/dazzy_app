@@ -50,10 +50,10 @@
 
         <text class="section-title">安全设置</text>
         <section class="card panel">
-          <button class="row dz-tappable" aria-label="修改登录密码" hover-class="dz-pressed" @tap="openPanel('password')">
+          <button class="row dz-tappable" :aria-label="needsInitialPassword ? '设置登录密码' : '修改登录密码'" hover-class="dz-pressed" @tap="openPanel('password')">
             <view class="row-icon password-tone"><image src="/static/security/password.svg" mode="aspectFit" /></view>
-            <view class="copy"><strong class="row-title">登录密码</strong><text>定期更换密码可降低账号风险</text></view>
-            <view class="value action-value"><strong class="value-label">修改</strong><b class="row-chevron">›</b></view>
+            <view class="copy"><strong class="row-title">登录密码</strong><text>{{ needsInitialPassword ? '验证手机号后设置，保护账号安全' : '定期更换密码可降低账号风险' }}</text></view>
+            <view class="value action-value"><strong class="value-label">{{ needsInitialPassword ? '设置' : '修改' }}</strong><b class="row-chevron">›</b></view>
           </button>
           <button class="row dz-tappable" aria-label="退出其他设备" hover-class="dz-pressed" @tap="openPanel('sessions')">
             <view class="row-icon device-tone"><image src="/static/security/devices.svg" mode="aspectFit" /></view>
@@ -82,7 +82,14 @@
       <view class="sheet-content" role="dialog" :aria-label="panelTitle">
         <text class="sheet-description">{{ panelDescription }}</text>
         <view class="form">
-          <label>
+          <label v-if="needsInitialPassword && panel === 'password'">
+            验证手机号 {{ security?.phone_masked }}
+            <view class="password-field code-field">
+              <input v-model="initialCode" type="number" maxlength="6" placeholder="输入 6 位验证码" />
+              <button :disabled="sendingCode || codeSeconds > 0 || saving" @tap="sendInitialCode">{{ codeSeconds > 0 ? `${codeSeconds}s` : sendingCode ? '发送中…' : '获取验证码' }}</button>
+            </view>
+          </label>
+          <label v-else>
             当前登录密码
             <view class="password-field"><input v-model="currentPassword" password placeholder="请输入当前密码" maxlength="20" /></view>
           </label>
@@ -116,12 +123,12 @@
 </template>
 
 <script setup lang="ts">
-import { onShow } from '@dcloudio/uni-app'
+import { onShow, onUnload } from '@dcloudio/uni-app'
 import { computed, ref } from 'vue'
 
 import DzBottomSheet from '@/components/DzBottomSheet.vue'
 import NetworkState from '@/components/NetworkState.vue'
-import { changePassword, closeAccount, getAccountSecurity, logout, logoutOtherSessions } from '@/services/auth'
+import { changePassword, closeAccount, getAccountSecurity, logout, logoutOtherSessions, sendInitialPasswordCode, setInitialPassword } from '@/services/auth'
 import { guardCurrentPage } from '@/services/session'
 import type { AccountSecurity } from '@/types/api'
 
@@ -135,17 +142,23 @@ const currentPassword = ref('')
 const newPassword = ref('')
 const confirmation = ref('')
 const saving = ref(false)
+const initialCode = ref('')
+const sendingCode = ref(false)
+const codeSeconds = ref(0)
+let codeTimer: ReturnType<typeof setInterval> | undefined
+let disposed = false
+const needsInitialPassword = computed(() => security.value?.password_set === false)
 
-const panelTitle = computed(() => panel.value === 'password' ? '修改登录密码' : panel.value === 'close' ? '注销账号' : '退出其他设备')
+const panelTitle = computed(() => panel.value === 'password' ? (needsInitialPassword.value ? '设置登录密码' : '修改登录密码') : panel.value === 'close' ? '注销账号' : '退出其他设备')
 const panelDescription = computed(() => panel.value === 'password'
-  ? '修改后，其他设备上的旧登录状态将失效。'
+  ? (needsInitialPassword.value ? '验证绑定手机号后设置密码，无需旧密码。设置后其他设备需重新登录。' : '修改后，其他设备上的旧登录状态将失效。')
   : panel.value === 'close'
     ? '验证当前密码后注销账号，此操作无法撤销。'
     : '验证当前密码，保护账号不被继续使用。')
 const submitLabel = computed(() => saving.value
   ? '正在处理…'
   : panel.value === 'password'
-    ? '确认修改'
+    ? (needsInitialPassword.value ? '确认设置' : '确认修改')
     : panel.value === 'close'
       ? '确认注销'
       : '退出其他设备')
@@ -166,15 +179,26 @@ function clearForm() {
   currentPassword.value = ''
   newPassword.value = ''
   confirmation.value = ''
+  initialCode.value = ''
 }
 
 function openPanel(value: Exclude<Panel, ''>) {
+  if (saving.value || !security.value) return
+  if (value !== 'password' && needsInitialPassword.value) {
+    uni.showModal({
+      title: '请先设置登录密码',
+      content: '你的账号尚未设置密码。请先验证绑定手机号并设置密码，再进行安全操作。',
+      confirmText: '去设置',
+      success: ({ confirm }) => { if (confirm) openPanel('password') },
+    })
+    return
+  }
   clearForm()
   panel.value = value
 }
 
 function closePanel(force = false) {
-  if (!saving.value || force) {
+  if ((!saving.value && !sendingCode.value) || force) {
     panel.value = ''
     clearForm()
   }
@@ -205,7 +229,11 @@ function confirmClose() {
 }
 
 async function submit() {
-  if (currentPassword.value.length < 8) return warn('请输入正确的当前密码')
+  if (saving.value || sendingCode.value) return
+  const settingInitial = needsInitialPassword.value && panel.value === 'password'
+  if (settingInitial) {
+    if (!/^\d{6}$/.test(initialCode.value)) return warn('请输入 6 位短信验证码')
+  } else if (currentPassword.value.length < 8) return warn('请输入正确的当前密码')
   if (panel.value === 'password') {
     if (newPassword.value.length < 8 || newPassword.value.length > 20) return warn('新密码长度须为 8–20 位')
     if (newPassword.value === currentPassword.value) return warn('新密码不能与当前密码相同')
@@ -222,8 +250,10 @@ async function submit() {
       return
     }
     if (panel.value === 'password') {
-      await changePassword(currentPassword.value, newPassword.value)
-      uni.showToast({ title: '密码修改成功', icon: 'success' })
+      if (settingInitial) await setInitialPassword(initialCode.value, newPassword.value)
+      else await changePassword(currentPassword.value, newPassword.value)
+      if (security.value) security.value.password_set = true
+      uni.showToast({ title: settingInitial ? '密码设置成功' : '密码修改成功', icon: 'success' })
     } else {
       await logoutOtherSessions(currentPassword.value)
       uni.showToast({ title: '其他设备已退出', icon: 'success' })
@@ -237,6 +267,26 @@ async function submit() {
   }
 }
 
+async function sendInitialCode() {
+  if (sendingCode.value || codeSeconds.value > 0 || saving.value) return
+  sendingCode.value = true
+  try {
+    const { data } = await sendInitialPasswordCode()
+    if (disposed) return
+    if (import.meta.env.DEV && data.debug_code) initialCode.value = data.debug_code
+    codeSeconds.value = data.retry_after
+    if (codeTimer) clearInterval(codeTimer)
+    codeTimer = setInterval(() => {
+      codeSeconds.value = Math.max(0, codeSeconds.value - 1)
+      if (!codeSeconds.value && codeTimer) clearInterval(codeTimer)
+    }, 1000)
+    uni.showToast({ title: '验证码已发送至绑定手机号', icon: 'none' })
+  } catch (reason) { warn(reason instanceof Error ? reason.message : '验证码发送失败') }
+  finally { sendingCode.value = false }
+}
+
+onUnload(() => { disposed = true; if (codeTimer) clearInterval(codeTimer) })
+
 onShow(() => {
   if (guardCurrentPage()) load()
 })
@@ -246,6 +296,10 @@ onShow(() => {
 @use '../../styles/tokens.scss' as *;
 
 .security-page { background: $dz-surface-page; }
+.code-field { display: flex; align-items: center; }
+.code-field input { min-width: 0; flex: 1; }
+.code-field button { flex-shrink: 0; margin: 0 12rpx; padding: 0 18rpx; border: 0; border-radius: 12rpx; color: $dz-brand-deep; background: transparent; font-size: 24rpx; line-height: 64rpx; }
+.code-field button[disabled] { color: $dz-text-secondary; }
 .security-hero {
   position: sticky;
   z-index: 20;
