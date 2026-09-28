@@ -17,6 +17,17 @@ type RefreshResult =
 
 let refreshPromise: Promise<RefreshResult> | null = null
 
+export class ApiError extends Error {
+  readonly code: string
+
+  constructor(body: unknown, fallback: string) {
+    super(errorMessage(body, fallback))
+    this.name = 'ApiError'
+    const code = body && typeof body === 'object' ? (body as Record<string, unknown>).code : ''
+    this.code = typeof code === 'string' ? code : ''
+  }
+}
+
 function refreshAccessToken(): Promise<RefreshResult> {
   if (refreshPromise) return refreshPromise
   const refresh = getRefreshToken()
@@ -62,7 +73,9 @@ async function retryAfterUnauthorized<T>(retry: () => Promise<T>): Promise<T> {
 
 function errorMessage(body: unknown, fallback: string): string {
   if (!body || typeof body !== 'object') return fallback
-  const values = Object.values(body as Record<string, unknown>)
+  const record = body as Record<string, unknown>
+  if (typeof record.detail === 'string') return record.detail
+  const values = Object.entries(record).filter(([key]) => key !== 'code').map(([, value]) => value)
   for (const value of values) {
     if (typeof value === 'string') return value
     if (Array.isArray(value) && typeof value[0] === 'string') return value[0]
@@ -109,7 +122,7 @@ export function request<T>(path: string, options: RequestOptions = {}, retried =
             .catch(reject)
           return
         }
-        reject(new Error(errorMessage(response.data, `请求失败（${response.statusCode}）`)))
+        reject(new ApiError(response.data, `请求失败（${response.statusCode}）`))
       },
       fail: (error) => reject(new Error(error.errMsg || '网络连接失败')),
     })

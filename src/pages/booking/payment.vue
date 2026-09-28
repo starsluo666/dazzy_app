@@ -18,6 +18,7 @@
 </template>
 
 <script setup lang="ts">
+import { handlePaymentRecovery } from '@/services/wechatPay'
 import { computed, onUnmounted, ref } from 'vue'; import { onLoad } from '@dcloudio/uni-app'; import { createProviderOrderPaymentSession, getProviderOrder, getProviderOrderPaymentAuthorization, simulateProviderOrderPayment } from '@/services/orders'; import { getMyWallet } from '@/services/wallet'; import { requireProviderOrderPaymentCapability } from '@/services/payments'; import type { ProviderOrderPaymentMode } from '@/services/payments'; import type { ProviderOrder, UserWallet } from '@/types/api'; import { formatAmount, formatOrderTimeRange, getErrorMessage } from '@/utils/formatters'
 type WechatBridgeResult={err_msg?:string}
 type WechatBridge={invoke:(method:string,params:Record<string,string|number>,callback:(result:WechatBridgeResult)=>void)=>void}
@@ -41,7 +42,12 @@ if(!isWechatBrowser())throw new Error('请在微信服务号内打开页面完�
 // #ifndef H5
 throw new Error('当前版本暂未开放 App 支付，请在 H5 完成支付')
 // #endif
-}catch(reason){uni.showToast({title:getErrorMessage(reason,'支付失败'),icon:'none'})}finally{paying.value=false}}
+} catch (reason) {
+  if (await handlePaymentRecovery(reason, async () => {
+    uni.redirectTo({ url: `/pages/booking/payment-result?orderNo=${encodeURIComponent(orderNo.value)}` })
+  })) return
+  uni.showToast({ title: getErrorMessage(reason, '支付失败'), icon: 'none' })
+} finally { paying.value = false } }
 onLoad(query=>{orderNo.value=typeof query?.orderNo==='string'?query.orderNo:'';autoPayAfterAuthorization.value=query?.wechatAuthorized==='1';if(orderNo.value)load();else{loading.value=false;error.value='缺少订单号'}});onUnmounted(()=>{if(timer)clearInterval(timer)})
 </script>
 

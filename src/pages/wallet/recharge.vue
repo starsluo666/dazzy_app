@@ -34,7 +34,7 @@ import { onLoad } from '@dcloudio/uni-app'
 import NetworkState from '@/components/NetworkState.vue'
 import { confirmRechargePayment, createRechargeOrder, createRechargePaymentSession, getRechargeCampaign, getRechargePaymentAuthorization } from '@/services/wallet'
 import type { RechargeCampaign, WalletRechargeOrder } from '@/types/api'
-import { invokeWechatPay, isWechatBrowser } from '@/services/wechatPay'
+import { handlePaymentRecovery, invokeWechatPay, isWechatBrowser } from '@/services/wechatPay'
 import { formatAmount, getErrorMessage } from '@/utils/formatters'
 
 const campaign = ref<RechargeCampaign | null>(null), quantity = ref(1), loading = ref(true), error = ref(''), paying = ref(false), pendingOrderNo = ref(''), autoPay = ref(false)
@@ -85,7 +85,10 @@ async function pay() { if (!campaign.value?.is_enabled || paying.value) return; 
   // #ifndef H5
   throw new Error('当前版本请在微信服务号内完成充值')
   // #endif
-} catch (reason) { uni.showToast({ title: getErrorMessage(reason, '充值失败'), icon: 'none' }) } finally { paying.value = false } }
+} catch (reason) {
+  if (await handlePaymentRecovery(reason, restoreOrder)) return
+  uni.showToast({ title: getErrorMessage(reason, '充值失败'), icon: 'none' })
+} finally { paying.value = false } }
 onLoad((query) => { pendingOrderNo.value = typeof query?.orderNo === 'string' ? query.orderNo : String(uni.getStorageSync('pendingRechargeOrderNo') || ''); autoPay.value = query?.wechatAuthorized === '1'; void load().then(() => { if (campaign.value && autoPay.value && pendingOrderNo.value) setTimeout(() => void pay(), 0) }) })
 </script>
 

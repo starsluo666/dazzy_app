@@ -45,7 +45,7 @@ import { confirmActivityParticipationPaymentStatus, createActivityParticipationO
 import { getActivityDetail } from '@/services/discovery'
 import { requireActivityPaymentCapability } from '@/services/payments'
 import type { ActivityPaymentMode } from '@/services/payments'
-import { invokeWechatPay, isWechatBrowser } from '@/services/wechatPay'
+import { handlePaymentRecovery, invokeWechatPay, isWechatBrowser } from '@/services/wechatPay'
 import type { ActivityDetail, ActivityParticipationCheckout } from '@/types/api'
 import { formatActivityRange, formatAmount, getErrorMessage } from '@/utils/formatters'
 
@@ -105,7 +105,10 @@ async function pay() {
       // #endif
     }
     showSuccess()
-  } catch (reason) { uni.showToast({ title: getErrorMessage(reason, '支付失败'), icon: 'none' }) } finally { paying.value = false }
+  } catch (reason) {
+    if (await handlePaymentRecovery(reason, async () => { await confirmPayment(); showSuccess() })) return
+    uni.showToast({ title: getErrorMessage(reason, '支付失败'), icon: 'none' })
+  } finally { paying.value = false }
 }
 onLoad((query) => { activityId.value = Number(query?.id) || 0; autoPayAfterAuthorization.value=query?.wechatAuthorized==='1';if (activityId.value) loadCheckout(); else { loading.value = false; error.value = '缺少活动编号' } })
 onBeforeUnmount(() => { if (ticker) clearInterval(ticker) })

@@ -1,3 +1,29 @@
+import { ApiError } from './http'
+
+/** A recovered order is confirmed by the backend, never by a client payment callback. */
+export async function handlePaymentRecovery(
+  reason: unknown,
+  refreshStatus: () => Promise<void>,
+): Promise<boolean> {
+  if (!(reason instanceof ApiError)) return false
+  if (reason.code === 'huifu_payment_status_updated') {
+    try { await refreshStatus() } catch (error) {
+      uni.showToast({ title: error instanceof Error ? error.message : '请重新进入订单查看支付结果', icon: 'none' })
+    }
+    return true
+  }
+  if (reason.code === 'huifu_payment_pending_confirmation' || reason.code === 'huifu_payment_closed') {
+    uni.showModal({
+      title: reason.code === 'huifu_payment_closed' ? '原支付已结束' : '支付结果核对中',
+      content: reason.message,
+      showCancel: false,
+      confirmText: '知道了',
+    })
+    return true
+  }
+  return false
+}
+
 type WechatBridgeResult = { err_msg?: string }
 type WechatBridge = {
   invoke: (
