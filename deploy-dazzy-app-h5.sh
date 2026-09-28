@@ -3,8 +3,7 @@
 set -Eeuo pipefail
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd -- "${SCRIPT_DIR}/.." && pwd)"
-APP_DIR="${REPO_ROOT}/dazzy_app"
+APP_DIR="${DAZZY_APP_DIR:-$SCRIPT_DIR}"
 BUILD_DIR="${APP_DIR}/dist/build/h5"
 DEPLOY_DIR="/opt/1panel/www/sites/h5.ledaban.cn/index"
 BACKUP_DIR="/opt/1panel/www/sites/h5.ledaban.cn/deploy-backups"
@@ -25,7 +24,7 @@ command -v npm >/dev/null 2>&1 || fail "未安装 npm。"
 command -v rsync >/dev/null 2>&1 || fail "未安装 rsync，请先执行 apt/yum 安装 rsync。"
 command -v tar >/dev/null 2>&1 || fail "未安装 tar。"
 
-[[ -f "${APP_DIR}/package.json" ]] || fail "未找到 ${APP_DIR}/package.json，请在 DAZZY 根仓库中运行本脚本。"
+[[ -f "${APP_DIR}/package.json" ]] || fail "未找到 ${APP_DIR}/package.json，请将脚本放在 dazzy_app 项目根目录，或设置 DAZZY_APP_DIR。"
 [[ "${DEPLOY_DIR}" == "/opt/1panel/www/sites/h5.ledaban.cn/index" ]] || fail "部署目录校验失败。"
 [[ "${DEPLOY_DIR}" != "/" ]] || fail "拒绝部署到系统根目录。"
 
@@ -79,4 +78,3 @@ fi
 
 log "部署完成：https://h5.ledaban.cn/"
 log "如果 Nginx 尚未配置，请将站点根目录设为 ${DEPLOY_DIR}，并把 /api/ 反向代理到 API 服务。"
-
