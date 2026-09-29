@@ -13,6 +13,7 @@ onShow(() => setTimeout(guardCurrentPage, 0))
 @use './styles/tokens.scss' as *;
 @use './styles/layout.scss';
 @use './styles/motion.scss';
+@use './styles/lists.scss';
 
 page {
   min-height: 100%;

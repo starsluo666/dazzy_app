@@ -1,23 +1,11 @@
 <template>
-  <view class="dz-page coupon-page">
+  <view class="dz-page dz-list-page coupon-page">
     <DzNavBar title="我的优惠券" :back-action="goBack" />
 
-    <main class="coupon-content dz-container">
-      <view class="tabs" role="tablist" aria-label="优惠券状态">
-        <button
-          v-for="tab in tabs"
-          :key="tab.key"
-          class="dz-tappable"
-          :class="{ active: activeTab === tab.key }"
-          :aria-selected="activeTab === tab.key"
-          hover-class="tab-pressed"
-          role="tab"
-          @tap="switchTab(tab.key)"
-        >
-          <text>{{ tab.label }}</text>
-          <i>{{ tab.key === 'available' ? availableCount : historyCount }}</i>
-        </button>
-      </view>
+    <view class="dz-list-toolbar dz-list-container">
+      <DzListFilters :value="activeTab" :options="filterOptions" label="优惠券状态" mode="tabs" @change="switchTab" />
+    </view>
+    <main class="coupon-content dz-list-content dz-list-container" :class="{ 'dz-list-content--empty': !loading && !error && !visibleCoupons.length }">
 
       <view v-if="loading" class="coupon-list" aria-label="正在加载优惠券">
         <view v-for="index in 2" :key="index" class="coupon-skeleton">
@@ -28,11 +16,7 @@
 
       <NetworkState v-else-if="error" :message="error" error @retry="load" />
 
-      <view v-else-if="!visibleCoupons.length" class="empty-state">
-        <view class="empty-ticket" aria-hidden="true"><text>¥</text></view>
-        <text class="empty-title">{{ activeTab === 'available' ? '暂无可用优惠券' : '暂无历史记录' }}</text>
-        <text>{{ activeTab === 'available' ? '获得优惠券后会在这里展示' : '已使用、已过期或撤回的优惠券会保留在这里' }}</text>
-      </view>
+      <DzListEmpty v-else-if="!visibleCoupons.length" icon="coupon" :title="activeTab === 'available' ? '暂无可用优惠券' : '暂无历史记录'" :description="activeTab === 'available' ? '获得优惠券后会在这里展示' : '已使用、已过期或撤回的优惠券会保留在这里'" />
 
       <template v-else>
         <view class="coupon-list">
@@ -74,6 +58,8 @@
 <script setup lang="ts">
 import { navigateBackOr } from '@/utils/navigation'
 import DzNavBar from '@/components/DzNavBar.vue'
+import DzListFilters from '@/components/DzListFilters.vue'
+import DzListEmpty from '@/components/DzListEmpty.vue'
 import { computed, ref } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 
@@ -96,6 +82,7 @@ const tabs = [
 
 const availableCount = computed(() => coupons.value.filter((coupon) => coupon.status === 'available').length)
 const historyCount = computed(() => coupons.value.length - availableCount.value)
+const filterOptions = computed(() => tabs.map(tab => ({ value: tab.key, label: tab.label, count: tab.key === 'available' ? availableCount.value : historyCount.value })))
 const visibleCoupons = computed(() => coupons.value.filter((coupon) => (
   activeTab.value === 'available' ? coupon.status === 'available' : coupon.status !== 'available'
 )))
@@ -127,8 +114,8 @@ function statusDetail(coupon: UserCoupon) {
   return `有效期至 ${expiresAt}`
 }
 
-function switchTab(tab: CouponTab) {
-  activeTab.value = tab
+function switchTab(tab: string) {
+  if (tab === 'available' || tab === 'history') activeTab.value = tab
 }
 
 function goBack() {
@@ -155,116 +142,11 @@ onShow(() => {
 <style lang="scss" scoped>
 @use '../../styles/tokens.scss' as *;
 
-.coupon-page {
-  background: $dz-surface-page;
-}
-
-.coupon-hero {
-  position: sticky;
-  z-index: 20;
-  top: 0;
-  background: $dz-surface-glass-strong;
-}
-
-.coupon-hero::after {
-  position: absolute;
-  right: 0;
-  bottom: -16rpx;
-  left: 0;
-  height: 16rpx;
-  background: linear-gradient(180deg, $dz-border-subtle, transparent);
-  content: '';
-  pointer-events: none;
-}
-
-.head-space {
-  width: 72rpx;
-  height: 72rpx;
-}
-
-.page-title {
-  color: $dz-text-primary;
-  font-size: $dz-fs-title;
-  font-weight: $dz-fw-bold;
-  line-height: $dz-lh-title;
-}
-
-.coupon-content {
-  padding-top: $dz-space-4;
-  padding-bottom: calc(#{$dz-space-6} + env(safe-area-inset-bottom));
-}
-
-.tabs {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: $dz-space-2;
-  padding: $dz-space-1;
-  border: 1rpx solid $dz-border-material;
-  border-radius: $dz-radius-full;
-  background: $dz-surface-highlight;
-  box-shadow: $dz-shadow-card;
-}
-
-.tabs button {
-  display: flex;
-  min-height: $dz-touch-min;
-  align-items: center;
-  justify-content: center;
-  gap: $dz-space-2;
-  margin: 0;
-  padding: 0 $dz-space-3;
-  border: 0;
-  border-radius: $dz-radius-full;
-  color: $dz-text-secondary;
-  background: transparent;
-  font-size: $dz-fs-body;
-  font-weight: $dz-fw-semibold;
-  line-height: $dz-lh-body;
-  transition:
-    color $dz-duration-fast $dz-ease-standard,
-    background-color $dz-duration-fast $dz-ease-standard,
-    transform $dz-duration-fast $dz-ease-out;
-}
-
-.tabs button::after {
-  display: none;
-}
-
-.tabs button.active {
-  color: $dz-text-inverse;
-  background: $dz-text-primary;
-}
-
-.tabs button i {
-  display: flex;
-  min-width: 40rpx;
-  height: 40rpx;
-  align-items: center;
-  justify-content: center;
-  padding: 0 $dz-space-1;
-  border-radius: $dz-radius-full;
-  color: $dz-text-secondary;
-  background: $dz-surface-page;
-  font-size: $dz-fs-micro;
-  font-style: normal;
-  line-height: $dz-lh-micro;
-  box-sizing: border-box;
-}
-
-.tabs button.active i {
-  color: $dz-text-inverse;
-  background: $dz-text-secondary;
-}
-
-.tab-pressed {
-  transform: scale(.98);
-}
-
 .coupon-list {
   display: flex;
   flex-direction: column;
   gap: $dz-space-3;
-  margin-top: $dz-space-4;
+  margin-top: 0;
 }
 
 .coupon-card,
@@ -372,7 +254,7 @@ onShow(() => {
   width: 36rpx;
   height: 36rpx;
   border-radius: 50%;
-  background: $dz-surface-page;
+  background: $dz-surface-card;
   content: '';
 }
 
@@ -529,56 +411,4 @@ onShow(() => {
 
 .skeleton-status { width: 120rpx; height: 42rpx; }
 .skeleton-date { width: 220rpx; height: 32rpx; }
-
-.empty-state {
-  display: flex;
-  min-height: 560rpx;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: $dz-space-5;
-  color: $dz-text-secondary;
-  text-align: center;
-  box-sizing: border-box;
-}
-
-.empty-ticket {
-  position: relative;
-  display: flex;
-  width: 150rpx;
-  height: 104rpx;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: $dz-space-4;
-  border: 2rpx dashed $dz-border-subtle;
-  border-radius: $dz-radius-md;
-  color: $dz-brand-deep;
-  background: $dz-brand-soft;
-  font-size: $dz-fs-price-lg;
-  font-weight: $dz-fw-bold;
-}
-
-.empty-title {
-  color: $dz-text-primary;
-  font-size: $dz-fs-body-strong;
-  line-height: $dz-lh-body-strong;
-}
-
-.empty-state > text {
-  max-width: 480rpx;
-  margin-top: $dz-space-2;
-  font-size: $dz-fs-caption;
-  line-height: $dz-lh-body;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .tabs button {
-    transition: color $dz-duration-fast $dz-ease-standard, background-color $dz-duration-fast $dz-ease-standard;
-  }
-
-  .tab-pressed {
-    transform: none;
-    opacity: .86;
-  }
-}
 </style>

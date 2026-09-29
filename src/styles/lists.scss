@@ -1,0 +1,44 @@
+@use './tokens.scss' as *;
+
+/* 只应用到个人列表页，不改变大厅、详情、支付页面或导航组件。 */
+.dz-page.dz-list-page {
+  display: flex;
+  min-height: 100vh;
+  min-height: 100dvh;
+  flex-direction: column;
+  background: $dz-surface-card;
+}
+
+.dz-list-container {
+  width: 100%;
+  max-width: 720px;
+  margin-right: auto;
+  margin-left: auto;
+  padding-right: max(16px, #{$dz-list-gutter});
+  padding-left: max(16px, #{$dz-list-gutter});
+  box-sizing: border-box;
+}
+
+.dz-list-toolbar {
+  position: sticky;
+  z-index: 70;
+  top: var(--dz-navbar-total-height);
+  flex: none;
+  padding-top: $dz-space-3;
+  background: $dz-surface-card;
+}
+
+.dz-list-secondary { margin-top: $dz-space-2; }
+
+.dz-list-content {
+  flex: 1;
+  padding-top: $dz-space-4;
+  padding-bottom: calc(#{$dz-space-5} + env(safe-area-inset-bottom));
+}
+
+.dz-list-content--empty {
+  display: flex;
+  flex-direction: column;
+  padding-top: 0;
+  padding-bottom: env(safe-area-inset-bottom);
+}

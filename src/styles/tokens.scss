@@ -115,3 +115,8 @@ $dz-ease-standard: ease; // 颜色/透明度过渡
 $dz-navbar-height: 88rpx; // 自绘导航栏高度
 $dz-tabbar-height: 152rpx; // 悬浮 Dock + 外边距，与 .dz-page--with-tabbar 保持一致
 $dz-touch-min: 88rpx; // 最小触控区 44px
+
+/* 个人列表页：已确认的 Apple 轻量列表方案，强调色保证白字/浅底对比度。 */
+$dz-list-accent: #08787e;
+$dz-list-text: #5e6b72;
+$dz-list-gutter: 40rpx;
