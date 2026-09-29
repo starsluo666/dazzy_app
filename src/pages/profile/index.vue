@@ -1,7 +1,7 @@
 <template>
   <view class="dz-page dz-page--with-tabbar profile-page">
-    <DzNavBar title="我的" :back="false" />
     <header class="profile-header">
+      <view class="dz-safe-top" />
       <view class="identity dz-container" @tap="openLoginIfNeeded">
         <view class="avatar">
           <image
@@ -19,13 +19,13 @@
         </view>
 
         <view class="header-actions">
-          <view class="header-action notification-icon" hover-class="header-action--pressed" role="button" :aria-label="unreadCount ? `通知中心，${unreadCount}条未读` : '通知中心'" @tap.stop="openNotifications">
+          <button class="header-action notification-icon" role="button" tabindex="0" hover-class="header-action--pressed" :aria-label="unreadCount ? `通知中心，${unreadCount}条未读` : '通知中心'" @tap.stop="openNotifications" @keydown.enter.stop.prevent="openNotifications" @keydown.space.stop.prevent="openNotifications">
             <image src="/static/notifications/system.svg" mode="aspectFit" aria-hidden="true" />
             <i v-if="unreadCount"><b>{{ unreadCount > 99 ? '99+' : unreadCount }}</b></i>
-          </view>
-          <view class="header-action settings-icon" hover-class="header-action--pressed" role="button" aria-label="设置" @tap.stop="openSettings">
+          </button>
+          <button class="header-action settings-icon" role="button" tabindex="0" hover-class="header-action--pressed" aria-label="设置" @tap.stop="openSettings" @keydown.enter.stop.prevent="openSettings" @keydown.space.stop.prevent="openSettings">
             <text>⚙</text>
-          </view>
+          </button>
         </view>
       </view>
     </header>
@@ -101,7 +101,6 @@
 </template>
 
 <script setup lang="ts">
-import DzNavBar from '@/components/DzNavBar.vue'
 import { onShow } from '@dcloudio/uni-app'
 import { computed, ref } from 'vue'
 
@@ -279,7 +278,7 @@ onShow(loadProfile)
   padding-bottom: 64rpx;
   background:
     radial-gradient(circle at 18% 86%, rgba(82, 220, 218, .12), transparent 31%),
-    linear-gradient(146deg, #fff 8%,$dz-brand-soft 56%, #e9fafc 100%);
+    linear-gradient(146deg, $dz-surface-card 8%, $dz-brand-soft 56%, $dz-surface-page 100%);
 }
 
 .profile-header::after {
@@ -322,16 +321,17 @@ onShow(loadProfile)
 .identity-copy {
   display: flex;
   min-width: 0;
+  flex: 1;
   flex-direction: column;
   align-items: flex-start;
   margin-left: 24rpx;
 }
 
-.name { font-size: 37rpx; font-weight:$dz-fw-bold; line-height: 1.15; }
+.name { overflow:hidden; max-width:100%; font-size:37rpx; font-weight:$dz-fw-bold; line-height:1.25; text-overflow:ellipsis; white-space:nowrap; }
 
 .slogan {
   overflow: hidden;
-  max-width: 380rpx;
+  max-width: 100%;
   margin-top: 14rpx;
   color: #536064;
   font-size:$dz-fs-caption;
@@ -342,28 +342,35 @@ onShow(loadProfile)
 .header-actions {
   display: flex;
   align-self: flex-start;
-  gap: 17rpx;
-  margin: 25rpx 0 0 auto;
+  flex: none;
+  gap: $dz-space-1;
+  margin: 16rpx 0 0 8rpx;
 }
 
 .header-action {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 56rpx;
-  height: 56rpx;
-  border: 1rpx solid $dz-border-material;
+  width: $dz-touch-min;
+  height: $dz-touch-min;
+  min-width: 44px;
+  min-height: 44px;
+  flex: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
   border-radius: 50%;
-  color: #111;
-  background: $dz-surface-glass;
-  box-shadow: $dz-shadow-raised, inset 0 1rpx 0 $dz-surface-highlight;
+  color: $dz-text-primary;
+  background: $dz-surface-highlight;
+  line-height: 1;
   transition: transform $dz-duration-fast $dz-ease-out, opacity $dz-duration-fast $dz-ease-standard;
 }
 
-.header-action--pressed { transform: scale(.92); opacity: .8; }
+.header-action::after { border:0; }
+.header-action--pressed { transform:scale(.97); opacity:.75; }
 
 /* #ifdef H5 */
-.header-action { -webkit-backdrop-filter:saturate(180%) blur(16px); backdrop-filter:saturate(180%) blur(16px); }
+.header-action:focus-visible { outline:2px solid $dz-brand-primary; outline-offset:2px; }
 /* #endif */
 
 .settings-icon text { font-size: 43rpx; line-height: 1; }

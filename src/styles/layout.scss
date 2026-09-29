@@ -1,6 +1,8 @@
 @use './tokens.scss' as *;
 
 .dz-page {
+  --dz-safe-top-height: max(var(--status-bar-height, 0px), env(safe-area-inset-top, 0px));
+  --dz-navbar-total-height: calc(max(44px, #{$dz-navbar-height}) + var(--dz-safe-top-height));
   width: 100%;
   min-height: 100vh;
   min-height: 100dvh;
@@ -17,7 +19,7 @@
 }
 
 .dz-safe-top {
-  height: var(--status-bar-height);
+  height: var(--dz-safe-top-height, var(--status-bar-height, 0px));
   min-height: env(safe-area-inset-top);
   box-sizing: border-box;
 }
@@ -75,12 +77,15 @@
 }
 
 /* #ifdef H5 */
+.dz-page {
+  --dz-safe-top-height: max(8px, var(--status-bar-height, 0px), env(safe-area-inset-top, 0px));
+}
 .dz-safe-top {
   min-height: max(8px, env(safe-area-inset-top));
 }
 
 /* 玻璃只属于悬浮功能层；内容卡片保持实体，避免连续叠加透明材质。 */
-.dz-navbar,
+.dz-navbar--raised,
 .tabbar,
 .dz-page .page-head,
 .dz-page .booking-footer,
@@ -215,7 +220,6 @@
     backdrop-filter: none !important;
   }
 
-  .dz-navbar,
   .tabbar,
   .dz-page .page-head,
   .dz-page .booking-footer,
@@ -251,7 +255,6 @@
     background-color: rgba(255, 255, 255, 0.96) !important;
   }
 
-  .dz-navbar,
   .tabbar,
   .dz-page .page-head,
   .dz-page .booking-footer,

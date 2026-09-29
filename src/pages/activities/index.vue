@@ -1,11 +1,9 @@
 <template>
   <view class="dz-page dz-page--with-tabbar activity-channel">
-    <view class="dz-sticky-head">
-      <DzNavBar mode="toolbar" :sticky="false">
-        <button class="city" hover-class="control--pressed" @tap="chooseCity"><text>{{ discovery.cityName }}</text><text>⌄</text></button>
-        <button class="search" aria-label="搜索活动" hover-class="control--pressed" @tap="openPage('/pages/discovery/search?type=activity')">⌕</button>
-      </DzNavBar>
-    </view>
+    <DzNavBar mode="toolbar">
+      <button class="city" hover-class="control--pressed" @tap="chooseCity"><text>{{ discovery.cityName }}</text><text>⌄</text></button>
+      <button class="search" aria-label="搜索活动" hover-class="control--pressed" @tap="openPage('/pages/discovery/search?type=activity')">⌕</button>
+    </DzNavBar>
 
     <main class="content dz-container">
       <button class="location-note" @tap="chooseCity">{{ discoveryLocationLabel(discovery) }} ›</button>

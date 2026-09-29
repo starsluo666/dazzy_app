@@ -1,18 +1,16 @@
 <template>
   <view class="dz-page dz-page--with-tabbar">
-    <view class="dz-sticky-head">
-      <DzNavBar mode="toolbar" :sticky="false">
-        <text class="brand">DAZZY<text>搭子</text><i>◆</i></text>
-        <label class="search">
-          <text>⌕</text>
-          <input v-model="keyword" type="text" maxlength="50" confirm-type="search" placeholder="搜索达人或服务" @confirm="loadProviders" />
-          <button v-if="keyword" aria-label="清空搜索" @tap.stop="clearKeyword">×</button>
-        </label>
-        <button class="filter-button" :class="{ active: activeFilterCount }" :aria-label="activeFilterCount ? `筛选，已选${activeFilterCount}项` : '筛选'" @tap="openFilter">
-          <i /><i /><i /><b v-if="activeFilterCount">{{ activeFilterCount }}</b>
-        </button>
-      </DzNavBar>
-    </view>
+    <DzNavBar mode="toolbar">
+      <text class="brand">DAZZY<text>搭子</text><i>◆</i></text>
+      <label class="search">
+        <text>⌕</text>
+        <input v-model="keyword" type="text" maxlength="50" confirm-type="search" placeholder="搜索达人或服务" @confirm="loadProviders" />
+        <button v-if="keyword" aria-label="清空搜索" @tap.stop="clearKeyword">×</button>
+      </label>
+      <button class="filter-button" :class="{ active: activeFilterCount }" :aria-label="activeFilterCount ? `筛选，已选${activeFilterCount}项` : '筛选'" @tap="openFilter">
+        <i /><i /><i /><b v-if="activeFilterCount">{{ activeFilterCount }}</b>
+      </button>
+    </DzNavBar>
 
     <scroll-view scroll-x class="category-rail" :show-scrollbar="false">
       <view class="categories dz-container">

@@ -1,8 +1,7 @@
 <template>
   <view class="dz-page apply-page">
     <view class="hero">
-
-      <DzNavBar title="成为达人" :back-action="goBack" />
+      <DzNavBar title="成为达人" :back-action="goBack" surface="integrated" :sticky="false" />
       <section class="hero-poster dz-container">
         <view class="poster-frame">
           <image

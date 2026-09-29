@@ -1,14 +1,15 @@
 <template>
   <view class="dz-page wallet-page">
     <view class="wallet-hero">
-
-      <DzNavBar title="我的余额" :back-action="goBack" />
-      <section class="balance-card dz-container">
-        <view class="balance-label"><text>可用余额</text><i>收支明细实时可查</i></view>
-        <view class="balance-value"><text>¥</text><strong>{{ money(wallet?.available_balance || 0) }}</strong></view>
-        <view v-if="wallet?.frozen_balance" class="frozen">支付冻结 ¥{{ money(wallet.frozen_balance) }}</view>
-        <button class="recharge-button dz-tappable" hover-class="recharge-button--pressed" @tap="openRecharge">立即充值</button>
-      </section>
+      <DzNavBar title="我的余额" :back-action="goBack" surface="integrated" :sticky="false" />
+      <view class="dz-container">
+        <section class="balance-card">
+          <view class="balance-label"><text>可用余额</text><i>收支明细实时可查</i></view>
+          <view class="balance-value"><text>¥</text><strong>{{ money(wallet?.available_balance || 0) }}</strong></view>
+          <view v-if="wallet?.frozen_balance" class="frozen">支付冻结 ¥{{ money(wallet.frozen_balance) }}</view>
+          <button class="recharge-button dz-tappable" hover-class="recharge-button--pressed" @tap="openRecharge">立即充值</button>
+        </section>
+      </view>
     </view>
 
     <main class="wallet-content dz-container">
