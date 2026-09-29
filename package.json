@@ -13,6 +13,7 @@
     "test:notifications": "node tests/notifications.test.cjs",
     "test:payment-recovery": "node tests/paymentRecovery.test.cjs",
     "test:wallet-presentation": "node tests/walletPresentation.test.cjs",
+    "test:settings": "node tests/settings.test.cjs",
     "test:discovery": "node --test tests/discovery.test.cjs",
     "test:navigation": "node tests/navigation.test.cjs",
     "test:lists": "node --test tests/lists.test.cjs",

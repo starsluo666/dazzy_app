@@ -43,7 +43,7 @@
         </view>
       </section>
 
-      <button class="save-button" :class="{ blocked: saveAttempted && !canSave }" :disabled="saving" @tap="save">
+      <button class="save-button" :class="{ blocked: saveAttempted && !canSave }" :disabled="saving" role="button" :tabindex="saving ? -1 : 0" @tap="save" @keydown.enter.prevent="save" @keydown.space.prevent="save">
         {{ saving ? '保存中…' : '保存修改' }}
       </button>
     </main>
@@ -186,7 +186,9 @@ onShow(async () => {
 .chevron { margin-left: 12rpx; color:$dz-text-tertiary; font-size:$dz-fs-title; font-weight: 300; }
 .phone-row .field-value { color: $dz-text-secondary; }
 .phone-action { width: auto!important; margin-left: 14rpx; color: $dz-brand-deep; font-size: $dz-fs-caption!important; font-weight: $dz-fw-semibold!important; }
-.save-button { height: 92rpx; margin-top: 34rpx; border-radius:$dz-radius-full; color: #fff; background: $dz-gradient-brand; font-size:$dz-fs-body-strong; font-weight: 750; box-shadow: 0 12rpx 28rpx rgba(8, 181, 194, .18); }
+.save-button { display: flex; align-items: center; justify-content: center; width: 100%; min-height: max(44px, 92rpx); margin-top: 34rpx; padding: $dz-space-2 $dz-space-4; border: 0; border-radius:$dz-radius-full; color: $dz-text-inverse; background: $dz-gradient-brand; font-size: max(14px, #{$dz-fs-body-strong}); font-weight: $dz-fw-bold; line-height: 1.4; box-sizing: border-box; box-shadow: $dz-shadow-brand; }
+.save-button::after { border: 0; }
+.save-button:focus-visible { outline: 2px solid $dz-list-accent; outline-offset: 2px; }
 .save-button[disabled] { opacity: .5; }
 .sheet-mask { position: fixed; z-index: 80; inset: 0; background: rgba(18, 31, 35, .5); }
 .bottom-sheet { position: absolute; right: 0; bottom: 0; left: 0; max-width: 750px; margin: auto; padding: 16rpx 28rpx calc(30rpx + env(safe-area-inset-bottom)); border-radius:$dz-radius-lg 34rpx 0 0; background: #fff; }

@@ -99,11 +99,11 @@ async function main() {
       })
       assert(textGap.x < 1 && textGap.y < 1,'search text centered at '+width)
       await metrics('search-'+width); await shot('search-'+width)
-      for (const route of ['pages/security/index','pages/messages/index','pages/report/index']) { await go(route); await metrics(route+'-'+width) }
+      for (const route of ['pages/settings/index','pages/messages/index','pages/report/index']) { await go(route); await metrics(route+'-'+width) }
       await shot('report-'+width)
-      for (const route of ['pages/profile/index','pages/wallet/index','pages/security/index','pages/providers/apply']) {
+      for (const route of ['pages/profile/index','pages/wallet/index','pages/settings/index','pages/providers/apply']) {
         await go(route)
-        await page.locator(route.includes('profile') ? '.identity .name' : route.includes('wallet') ? '.balance-value' : route.includes('security') ? '.summary' : '.hero-poster').waitFor()
+        await page.locator(route.includes('profile') ? '.identity .name' : route.includes('wallet') ? '.balance-value' : route.includes('settings') ? '.account-card' : '.hero-poster').waitFor()
         if (route.includes('profile')) await page.getByText('小周',{ exact:true }).waitFor()
         assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth),false,'no overflow at '+route+'-'+width)
         if (route.includes('profile')) {
@@ -140,7 +140,7 @@ async function main() {
     await shot('profile-long-name-320')
     user.nickname = '小周'
     await page.setViewportSize({ width:390,height:600 })
-    for (const route of ['pages/security/index','pages/messages/index','pages/activities/mine','pages/orders/list','pages/index/index']) {
+    for (const route of ['pages/settings/index','pages/messages/index','pages/activities/mine','pages/orders/list','pages/index/index']) {
       await go(route)
       assert.equal(await page.locator('.dz-navbar--raised').count(),0,'initial header is integrated: '+route)
       // Extend empty mocked lists to exercise the same sticky boundary as a populated list.
@@ -160,7 +160,7 @@ async function main() {
       await page.waitForFunction(() => !document.querySelector('.dz-navbar--raised'))
     }
     await page.emulateMedia({reducedMotion:'reduce',contrast:'more'})
-    await go('pages/security/index')
+    await go('pages/settings/index')
     assert.equal(await page.locator('.dz-navbar--raised').count(),0,'contrast preference does not add an initial split bar')
     await page.evaluate(() => window.scrollTo(0,200)); await page.locator('.dz-navbar--raised').waitFor()
     const readable = await page.locator('.dz-navbar').evaluate(node => ({background:getComputedStyle(node).backgroundColor,border:getComputedStyle(node).borderBottomWidth,shadow:getComputedStyle(node).boxShadow}))
@@ -170,7 +170,7 @@ async function main() {
     await page.emulateMedia({reducedMotion:'no-preference',contrast:'no-preference'})
     const session = await context.newCDPSession(page)
     await session.send('Emulation.setEmulatedMedia',{features:[{name:'prefers-reduced-transparency',value:'reduce'}]})
-    await go('pages/security/index')
+    await go('pages/settings/index')
     assert.equal(await page.locator('.dz-navbar--raised').count(),0,'reduced transparency keeps the initial header integrated')
     await page.evaluate(() => window.scrollTo(0,200)); await page.locator('.dz-navbar--raised').waitFor()
     assert.equal(await page.locator('.dz-navbar').evaluate(node => getComputedStyle(node).backgroundColor),'rgb(255, 255, 255)','reduced-transparency sticky header is opaque')

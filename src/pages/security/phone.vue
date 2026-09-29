@@ -44,7 +44,7 @@ let newTimer: ReturnType<typeof setInterval> | undefined
 
 const canSubmit = computed(() => /^1[3-9]\d{9}$/.test(newPhone.value) && currentCode.value.length === 6 && newCode.value.length === 6)
 function warn(title: string) { uni.showToast({ title, icon: 'none' }) }
-function goBack() { navigateBackOr(() => uni.reLaunch({ url: '/pages/security/index' })) }
+function goBack() { navigateBackOr(() => uni.redirectTo({ url: '/pages/profile/edit' })) }
 function countdown(target: 'current' | 'new', seconds: number) {
   const value = target === 'current' ? currentSeconds : newSeconds
   const oldTimer = target === 'current' ? currentTimer : newTimer
