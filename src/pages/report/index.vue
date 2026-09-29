@@ -1,10 +1,6 @@
 <template>
   <view class="dz-page report-page">
-    <header class="page-head">
-      <button class="dz-tappable" hover-class="dz-pressed" aria-label="返回" @tap="goBack">‹</button>
-      <strong class="page-title">举报有奖</strong>
-      <view aria-hidden="true" />
-    </header>
+    <DzNavBar title="举报有奖" :back-action="goBack" />
     <scroll-view scroll-y class="report-content">
       <main class="report-main dz-container">
         <section class="reward-card">
@@ -110,6 +106,8 @@
 </template>
 
 <script setup lang="ts">
+import { navigateBackOr } from '@/utils/navigation'
+import DzNavBar from '@/components/DzNavBar.vue'
 import { onLoad } from '@dcloudio/uni-app'
 import { ref } from 'vue'
 import { createSupportCase, getRewardReportRules, uploadSupportAttachment } from '@/services/support'
@@ -134,7 +132,7 @@ const loading = ref(true)
 const uploading = ref(false)
 const submitting = ref(false)
 const attempted = ref(false)
-function goBack() { uni.navigateBack() }
+function goBack() { navigateBackOr(() => uni.reLaunch({ url: '/pages/profile/index' })) }
 
 function chooseImages() {
   if (uploading.value || uploads.value.length >= 3) return
@@ -185,10 +183,13 @@ onLoad(async (query) => {
 @use '../../styles/tokens.scss' as *;
 
 .report-page {
+  display: flex;
+  flex-direction: column;
   height: 100vh;
   height: 100dvh;
   min-height: 0;
   overflow: hidden;
+  padding-bottom: calc(112rpx + env(safe-area-inset-bottom));
   background: $dz-surface-page;
 }
 
@@ -254,8 +255,9 @@ onLoad(async (query) => {
 }
 
 .report-content {
-  height: calc(100vh - 208rpx - env(safe-area-inset-top) - env(safe-area-inset-bottom));
-  height: calc(100dvh - 208rpx - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+  flex: 1;
+  height: 0;
+  min-height: 0;
 }
 
 .report-main {

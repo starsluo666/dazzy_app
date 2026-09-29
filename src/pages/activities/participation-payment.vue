@@ -1,6 +1,6 @@
 <template>
   <view class="dz-page checkout-page">
-    <header class="page-head"><button aria-label="返回" @tap="goBack">‹</button><text>活动收银台</text></header>
+    <DzNavBar title="活动收银台" :back-action="goBack" />
     <view v-if="loading" class="state">正在锁定活动名额…</view>
     <view v-else-if="error" class="state"><text>{{ error }}</text><button @tap="loadCheckout">重新加载</button></view>
     <main v-else-if="activity && checkout" class="checkout-content">
@@ -38,6 +38,8 @@
 </template>
 
 <script setup lang="ts">
+import { navigateBackOr } from '@/utils/navigation'
+import DzNavBar from '@/components/DzNavBar.vue'
 import { computed, onBeforeUnmount, ref } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 
@@ -65,7 +67,7 @@ const formatRange = formatActivityRange
 const secondsLeft = computed(() => checkout.value ? Math.max(0, Math.ceil((new Date(checkout.value.payment_order.expires_at).getTime() - now.value) / 1000)) : 0)
 const countdown = computed(() => `${String(Math.floor(secondsLeft.value / 60)).padStart(2, '0')}:${String(secondsLeft.value % 60).padStart(2, '0')}`)
 
-function goBack() { uni.navigateBack() }
+function goBack() { navigateBackOr(() => uni.reLaunch({ url: '/pages/activities/index' })) }
 function startTicker() { if (ticker) clearInterval(ticker); ticker = setInterval(() => { now.value = Date.now() }, 1000) }
 function showSuccess() {
   if (completionHandled.value) return

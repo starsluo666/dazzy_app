@@ -1,5 +1,8 @@
 <template>
   <view class="dz-page detail-page">
+    <DzNavBar title="达人详情" fixed :overlay="!loading && Boolean(provider)" :transparent="!loading && Boolean(provider)" :back-action="goBack">
+      <template #right><template v-if="provider"><button class="dz-navbar-action dz-navbar-icon-action" aria-label="分享" hover-class="dz-pressed" @tap="showPending('分享')">↥</button><button class="dz-navbar-action dz-navbar-icon-action" aria-label="更多操作" hover-class="dz-pressed" @tap="showMoreActions">•••</button></template></template>
+    </DzNavBar>
     <NetworkState v-if="loading" class="dz-container detail-state" message="正在加载达人资料…" />
     <NetworkState v-else-if="error" class="dz-container detail-state" :message="error" error @retry="loadDetail" />
     <template v-else-if="provider">
@@ -13,11 +16,6 @@
         </swiper>
         <view v-else class="hero-fallback">{{ provider.nickname.slice(0, 1) }}</view>
         <view class="hero-shade" />
-        <button class="round back" aria-label="返回" hover-class="round--pressed" @tap="goBack"><text>‹</text></button>
-        <view class="hero-actions">
-          <button class="round share" aria-label="分享" hover-class="round--pressed" @tap="showPending('分享')"><text>↥</text></button>
-          <button class="round" aria-label="更多操作" hover-class="round--pressed" @tap="showMoreActions"><text class="dots">•••</text></button>
-        </view>
         <text v-if="gallery.length" class="photo-count" :class="{ 'video-count': gallery[mediaIndex]?.type === 'video' }">{{ mediaIndex + 1 }}/{{ gallery.length }}</text>
       </view>
 
@@ -97,6 +95,8 @@
 </template>
 
 <script setup lang="ts">
+import { navigateBackOr } from '@/utils/navigation'
+import DzNavBar from '@/components/DzNavBar.vue'
 import { onHide, onLoad, onUnload } from '@dcloudio/uni-app'
 import { computed, ref, watch } from 'vue'
 
@@ -161,7 +161,7 @@ onHide(pauseVideo)
 onUnload(pauseVideo)
 function serviceDescription(name:string){return name.includes('摄影')?'拍照打卡，创意构图，记录美好时刻':'一起出行，陪伴游玩，景点打卡'}
 function durationHint(service:ProviderServiceSummary){return service.billing_type==='hourly'?'最低2小时':`预计${Math.max(1,Math.round((service.estimated_duration_minutes||180)/60))}小时`}
-function goBack() { uni.navigateBack() }
+function goBack() { navigateBackOr(() => uni.reLaunch({ url: '/pages/providers/list' })) }
 function reviewDate(value: string) {
   const date = businessTimeParts(value)
   return `${date.year}.${String(date.month).padStart(2, '0')}.${String(date.day).padStart(2, '0')}`

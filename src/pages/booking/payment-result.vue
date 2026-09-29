@@ -1,6 +1,6 @@
 <template>
   <view class="dz-page result-page">
-    <header class="booking-head"><text>支付结果</text></header>
+    <DzNavBar title="支付结果" :back-action="openOrder" />
     <main class="result-content">
       <view class="result-orb" :class="state"><text v-if="state==='confirmed'">✓</text><text v-else-if="state==='failed'">!</text><view v-else class="spinner" /></view>
       <strong>{{ title }}</strong>
@@ -15,6 +15,7 @@
 </template>
 
 <script setup lang="ts">
+import DzNavBar from '@/components/DzNavBar.vue'
 import { computed, ref } from 'vue'
 import { onLoad, onUnload } from '@dcloudio/uni-app'
 import { confirmProviderOrderPaymentStatus } from '@/services/orders'

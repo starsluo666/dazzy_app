@@ -1,13 +1,6 @@
 <template>
   <view class="dz-page security-page">
-    <view class="security-hero">
-      <view class="dz-safe-top" />
-      <header class="dz-page-head dz-container">
-        <button class="dz-tappable" aria-label="返回" hover-class="dz-pressed" @tap="goBack">‹</button>
-        <strong>账号与安全</strong>
-        <view class="head-space" />
-      </header>
-    </view>
+    <DzNavBar title="账号与安全" :back-action="goBack" />
 
     <main class="dz-container security-content">
       <NetworkState v-if="loading" message="正在检查账号安全状态…" />
@@ -123,6 +116,8 @@
 </template>
 
 <script setup lang="ts">
+import { navigateBackOr } from '@/utils/navigation'
+import DzNavBar from '@/components/DzNavBar.vue'
 import { onShow, onUnload } from '@dcloudio/uni-app'
 import { computed, ref } from 'vue'
 
@@ -164,7 +159,7 @@ const submitLabel = computed(() => saving.value
       : '退出其他设备')
 
 function goBack() {
-  uni.navigateBack({ fail: () => uni.reLaunch({ url: '/pages/settings/index' }) })
+  navigateBackOr(() => uni.reLaunch({ url: '/pages/settings/index' }))
 }
 
 function openPhoneChange() {

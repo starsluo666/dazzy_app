@@ -1,9 +1,6 @@
 <template>
   <view class="dz-page order-page">
-    <header class="page-head">
-      <button aria-label="返回" @tap="goBack">‹</button>
-      <text>确认订单</text>
-    </header>
+    <DzNavBar title="确认订单" :back-action="goBack" />
 
     <view v-if="draft" class="order-content">
       <section class="provider-card panel">
@@ -193,6 +190,8 @@
 </template>
 
 <script setup lang="ts">
+import { navigateBackOr } from '@/utils/navigation'
+import DzNavBar from '@/components/DzNavBar.vue'
 import { onShow } from '@dcloudio/uni-app'
 import { computed, ref } from 'vue'
 import DzBottomSheet from '@/components/DzBottomSheet.vue'
@@ -304,7 +303,7 @@ function hasCompleteContact(item: LocationItem | null) {
 }
 
 function goBack() {
-  uni.navigateBack()
+  navigateBackOr(() => uni.reLaunch({ url: '/pages/orders/list' }))
 }
 
 function closeSheet() {

@@ -1,6 +1,6 @@
 <template>
   <view class="dz-page order-list-page">
-    <header class="page-head"><button aria-label="返回" @tap="goBack">‹</button><text>我的订单</text></header>
+    <DzNavBar title="我的订单" :back-action="goBack" />
     <scroll-view scroll-x class="tabs" :show-scrollbar="false"><view class="tab-row"><button v-for="tab in orderTabs" :key="tab.key" :class="{active:activeTab===tab.key}" @tap="activeTab=tab.key">{{ tab.label }}</button></view></scroll-view>
     <main class="list-content">
       <view v-if="loading" class="state">正在加载订单…</view>
@@ -16,11 +16,13 @@
 </template>
 
 <script setup lang="ts">
+import { navigateBackOr } from '@/utils/navigation'
+import DzNavBar from '@/components/DzNavBar.vue'
 import { computed, ref } from 'vue'; import { onLoad, onShow } from '@dcloudio/uni-app'; import { cancelProviderOrder, getProviderOrders } from '@/services/orders'; import { inOrderBucket, orderStatusCopy, orderTabs } from '@/services/orderPresentation'; import type { OrderBucket } from '@/services/orderPresentation'; import { isAuthenticated } from '@/services/session'; import type { ProviderOrder } from '@/types/api'; import { formatAmount, formatOrderTimeRange, getErrorMessage } from '@/utils/formatters'
 const orders=ref<ProviderOrder[]>([]),activeTab=ref<OrderBucket>('all'),loading=ref(true),error=ref(''),hasLoaded=ref(false);const visibleOrders=computed(()=>orders.value.filter(item=>inOrderBucket(item.status,activeTab.value)));const money=formatAmount
 const formatRange=formatOrderTimeRange
 function addressLabel(order:ProviderOrder){return [order.meeting_location_name,order.meeting_address].filter((value,index,values)=>value&&values.indexOf(value)===index).join('，')}
-function goBack(){uni.navigateBack()}function browseProviders(){uni.reLaunch({url:'/pages/providers/list'})}function openOrder(orderNo:string){uni.navigateTo({url:`/pages/orders/detail?orderNo=${orderNo}`})}function continuePay(order:ProviderOrder){uni.navigateTo({url:`/pages/booking/payment?orderNo=${order.order_no}`})}
+function goBack(){navigateBackOr(() => uni.reLaunch({ url: '/pages/profile/index' }))}function browseProviders(){uni.reLaunch({url:'/pages/providers/list'})}function openOrder(orderNo:string){uni.navigateTo({url:`/pages/orders/detail?orderNo=${orderNo}`})}function continuePay(order:ProviderOrder){uni.navigateTo({url:`/pages/booking/payment?orderNo=${order.order_no}`})}
 function cancel(order:ProviderOrder){uni.showModal({title:'取消订单',content:'订单尚未支付，取消后将立即释放达人档期。',success:async result=>{if(!result.confirm)return;try{await cancelProviderOrder(order.order_no);await loadOrders()}catch(reason){uni.showToast({title:getErrorMessage(reason,'取消失败'),icon:'none'})}}})}
 async function loadOrders(){loading.value=true;error.value='';try{orders.value=(await getProviderOrders()).data.items;hasLoaded.value=true}catch(reason){error.value=getErrorMessage(reason)}finally{loading.value=false}}
 onLoad(query=>{const value=typeof query?.status==='string'?query.status:'all';if(orderTabs.some(item=>item.key===value))activeTab.value=value as OrderBucket});onShow(()=>{if(isAuthenticated())loadOrders()})

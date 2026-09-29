@@ -1,6 +1,6 @@
 <template>
   <view class="dz-page address-page">
-    <view class="page-hero"><view class="dz-safe-top" /><header class="page-nav dz-container"><view class="back" @tap="goBack">‹</view><text>常用地址</text><view class="nav-spacer" /></header></view>
+    <DzNavBar title="常用地址" :back-action="goBack" />
     <main class="address-content dz-container">
       <NetworkState v-if="loading" message="正在加载常用地址…" />
       <NetworkState v-else-if="error" :message="error" action-text="重新加载" @action="loadAddresses" />
@@ -30,6 +30,8 @@
 </template>
 
 <script setup lang="ts">
+import { navigateBackOr } from '@/utils/navigation'
+import DzNavBar from '@/components/DzNavBar.vue'
 import { onShow } from '@dcloudio/uni-app'
 import { ref } from 'vue'
 import NetworkState from '@/components/NetworkState.vue'
@@ -39,7 +41,7 @@ import type { LocationItem } from '@/types/api'
 import { getErrorMessage } from '@/utils/formatters'
 
 const addresses = ref<LocationItem[]>([]), loading = ref(true), error = ref('')
-function goBack(){uni.navigateBack({fail:()=>uni.reLaunch({url:'/pages/profile/index'})})}
+function goBack(){navigateBackOr(()=>uni.reLaunch({url:'/pages/profile/index'}))}
 function addAddress(){uni.navigateTo({url:'/pages/addresses/edit'})}
 function editAddress(item:LocationItem){uni.navigateTo({url:`/pages/addresses/edit?id=${item.id}`})}
 function genderLabel(item:LocationItem){return item.contact_gender_label||(item.contact_gender==='mr'?'先生':item.contact_gender==='ms'?'女士':'')}

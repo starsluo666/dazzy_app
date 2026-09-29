@@ -1,12 +1,10 @@
 <template>
   <view class="dz-page dz-page--with-tabbar">
-    <view class="dz-safe-top" />
-
-    <header class="header dz-container">
+    <DzNavBar mode="toolbar">
       <text class="brand"><strong>DAZZY</strong><text>搭子</text></text>
       <label class="search"><text>⌕</text><input v-model="keyword" maxlength="80" placeholder="搜索活动、地点或标签" confirm-type="search" @confirm="loadActivities" /></label>
       <view class="filter" role="button" @tap="clearFilters"><text>▽</text><text>{{ selectedTags.length ? `已选${selectedTags.length}` : '标签' }}</text></view>
-    </header>
+    </DzNavBar>
 
     <scroll-view scroll-x class="category-rail" :show-scrollbar="false">
       <view class="categories dz-container">
@@ -57,6 +55,7 @@
 </template>
 
 <script setup lang="ts">
+import DzNavBar from '@/components/DzNavBar.vue'
 import { onLoad, onShow, onReachBottom, onUnload } from '@dcloudio/uni-app'
 import DiscoveryPagination from '@/components/DiscoveryPagination.vue'
 import { useDiscoveryPager } from '@/composables/useDiscoveryPager'

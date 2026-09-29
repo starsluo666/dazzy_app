@@ -1,9 +1,6 @@
 <template>
   <view class="dz-page invitation-page">
-    <view class="topbar">
-      <view class="dz-safe-top" />
-      <view class="dz-page-head dz-container"><button aria-label="返回" hover-class="dz-pressed" @tap="goBack">‹</button><text class="page-title">邀请有奖</text><view class="head-space" /></view>
-    </view>
+    <DzNavBar title="邀请有奖" :back-action="goBack" />
 
     <main class="dz-container page-content">
       <view v-if="loading" class="loading-stack"><view class="dz-skeleton hero-skeleton" /><view class="dz-skeleton section-skeleton" /></view>
@@ -60,6 +57,8 @@
 </template>
 
 <script setup lang="ts">
+import { navigateBackOr } from '@/utils/navigation'
+import DzNavBar from '@/components/DzNavBar.vue'
 import { computed, ref } from 'vue'
 import { onShareAppMessage, onShareTimeline, onShow } from '@dcloudio/uni-app'
 
@@ -78,7 +77,7 @@ const giftDescription = computed(() => {
 })
 const amount = (value?: number) => value == null ? '--' : String(value / 100).replace(/\.00$/, '')
 const dateText = (value: string) => value.slice(0, 10)
-function goBack() { uni.navigateBack({ fail: () => uni.switchTab({ url: '/pages/profile/index' }) }) }
+function goBack() { navigateBackOr(() => uni.reLaunch({ url: '/pages/profile/index' })) }
 function openNewcomerGift() { uni.navigateTo({ url: `/pages/invitations/newcomer?invite_code=${encodeURIComponent(data.value?.invite_code || '')}` }) }
 function sharePath() { return `/pages/invitations/newcomer?invite_code=${encodeURIComponent(data.value?.invite_code || '')}` }
 function copyInvitation() {

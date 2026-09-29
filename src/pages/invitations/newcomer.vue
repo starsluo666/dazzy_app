@@ -1,6 +1,6 @@
 <template>
   <view class="dz-page newcomer-page">
-    <view class="topbar"><view class="dz-safe-top" /><view class="dz-page-head dz-container"><button aria-label="返回" hover-class="dz-pressed" @tap="goBack">‹</button><text class="page-title">新人礼包</text><view class="head-space" /></view></view>
+    <DzNavBar title="新人礼包" :back-action="goBack" />
     <main class="dz-container page-content">
       <view v-if="loading" class="dz-skeleton page-skeleton" />
       <NetworkState v-else-if="error" :message="error" error @retry="load" />
@@ -30,6 +30,8 @@
 </template>
 
 <script setup lang="ts">
+import { navigateBackOr } from '@/utils/navigation'
+import DzNavBar from '@/components/DzNavBar.vue'
 import { computed, ref } from 'vue'
 import { onLoad, onShow } from '@dcloudio/uni-app'
 
@@ -54,7 +56,7 @@ const actionLabel = computed(() => {
 const actionDisabled = computed(() => !campaign.value?.newcomer_gift_enabled || (
   !isAuthenticated() && !campaign.value.invitation_valid
 ))
-function goBack() { uni.navigateBack({ fail: () => uni.reLaunch({ url: '/pages/index/index' }) }) }
+function goBack() { navigateBackOr(() => uni.reLaunch({ url: '/pages/index/index' })) }
 function primaryAction() {
   if (!campaign.value?.newcomer_gift_enabled || actionDisabled.value) return
   if (isAuthenticated()) { uni.navigateTo({ url: '/pages/providers/list' }); return }

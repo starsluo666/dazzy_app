@@ -1,14 +1,16 @@
 <template>
   <view class="dz-page success-page">
+    <DzNavBar title="支付成功" :back-action="viewOrder" />
     <view v-if="order" class="success-content"><view class="success-orb">✓</view><strong class="success-title">支付成功</strong><text class="success-subtitle">订单已提交，等待达人接单</text><section class="order-card booking-card"><view class="booking-avatar"><image v-if="order.provider_avatar_url" :src="order.provider_avatar_url" mode="aspectFill" /><view v-else>{{ order.provider_name.slice(0,1) }}</view></view><view><strong>{{ order.provider_name }} · {{ order.service_name }}</strong><text>▣ {{ timeLabel }}</text><text>● {{ addressLabel }}</text></view><view class="paid">实付<strong>¥{{ money(order.payable_amount) }}</strong></view></section><view class="steps"><view class="done"><i>✓</i><text>已支付</text></view><b/><view class="active"><i/><text>待接单</text></view><b/><view><i/><text>待服务</text></view></view><text class="tip">达人将在30分钟内确认接单</text><button class="primary" @tap="viewOrder">查看订单</button><button class="secondary" @tap="goHome">返回首页</button></view>
     <view v-else class="booking-empty">{{ error || '正在加载订单…' }}</view>
   </view>
 </template>
 
 <script setup lang="ts">
+import DzNavBar from '@/components/DzNavBar.vue'
 import { computed, ref } from 'vue'; import { onLoad } from '@dcloudio/uni-app'; import { getProviderOrder } from '@/services/orders'; import type { ProviderOrder } from '@/types/api'; import { formatAmount, formatOrderTimeRange, getErrorMessage } from '@/utils/formatters'
 const order=ref<ProviderOrder|null>(null),error=ref(''),orderNo=ref('');const money=formatAmount;const timeLabel=computed(()=>order.value?formatOrderTimeRange(order.value.starts_at,order.value.ends_at):'');const addressLabel=computed(()=>order.value?[order.value.meeting_location_name,order.value.meeting_address].filter((value,index,values)=>value&&values.indexOf(value)===index).join('，'):'')
-function goHome(){uni.reLaunch({url:'/pages/index/index'})}function viewOrder(){uni.redirectTo({url:`/pages/orders/detail?orderNo=${orderNo.value}`})}
+function goHome(){uni.reLaunch({url:'/pages/index/index'})}function viewOrder(){uni.redirectTo({url:orderNo.value?`/pages/orders/detail?orderNo=${orderNo.value}`:'/pages/orders/list'})}
 onLoad(async query=>{orderNo.value=typeof query?.orderNo==='string'?query.orderNo:'';try{order.value=(await getProviderOrder(orderNo.value)).data}catch(reason){error.value=getErrorMessage(reason)}})
 </script>
 

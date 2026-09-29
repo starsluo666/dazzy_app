@@ -1,7 +1,7 @@
 <template>
   <view class="dz-page dz-page--with-tabbar profile-page">
+    <DzNavBar title="我的" :back="false" />
     <header class="profile-header">
-      <view class="dz-safe-top" />
       <view class="identity dz-container" @tap="openLoginIfNeeded">
         <view class="avatar">
           <image
@@ -101,6 +101,7 @@
 </template>
 
 <script setup lang="ts">
+import DzNavBar from '@/components/DzNavBar.vue'
 import { onShow } from '@dcloudio/uni-app'
 import { computed, ref } from 'vue'
 

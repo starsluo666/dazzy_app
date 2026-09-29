@@ -1,9 +1,7 @@
 <template>
   <view class="dz-page dz-page--with-tabbar">
     <view class="dz-sticky-head">
-      <view class="dz-safe-top" />
-
-      <header class="header dz-container">
+      <DzNavBar mode="toolbar" :sticky="false">
         <text class="brand">DAZZY<text>搭子</text><i>◆</i></text>
         <label class="search">
           <text>⌕</text>
@@ -13,7 +11,7 @@
         <button class="filter-button" :class="{ active: activeFilterCount }" :aria-label="activeFilterCount ? `筛选，已选${activeFilterCount}项` : '筛选'" @tap="openFilter">
           <i /><i /><i /><b v-if="activeFilterCount">{{ activeFilterCount }}</b>
         </button>
-      </header>
+      </DzNavBar>
     </view>
 
     <scroll-view scroll-x class="category-rail" :show-scrollbar="false">
@@ -142,6 +140,7 @@
 </template>
 
 <script setup lang="ts">
+import DzNavBar from '@/components/DzNavBar.vue'
 import { onLoad, onShow, onReachBottom, onUnload } from '@dcloudio/uni-app'
 import DiscoveryPagination from '@/components/DiscoveryPagination.vue'
 import { useDiscoveryPager } from '@/composables/useDiscoveryPager'

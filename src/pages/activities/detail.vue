@@ -1,5 +1,8 @@
 <template>
   <view class="dz-page detail-page">
+    <DzNavBar title="活动详情" fixed :overlay="!loading && Boolean(activity)" :transparent="!loading && Boolean(activity)" :back-action="goBack">
+      <template #right><template v-if="activity"><button class="dz-navbar-action dz-navbar-icon-action" aria-label="分享" hover-class="dz-pressed" @tap="showPending('分享')">↥</button><button class="dz-navbar-action dz-navbar-icon-action" aria-label="更多操作" hover-class="dz-pressed" @tap="showMoreActions">•••</button></template></template>
+    </DzNavBar>
     <NetworkState v-if="loading" class="dz-container detail-state" message="正在加载活动详情…" />
     <NetworkState v-else-if="error" class="dz-container detail-state" :message="error" error @retry="loadDetail" />
     <template v-else-if="activity">
@@ -7,11 +10,6 @@
         <image v-if="activity.cover_url" :src="activity.cover_url" mode="aspectFill" />
         <view v-else class="cover-fallback">{{ activity.category }}</view>
         <view class="hero-shade" />
-        <button class="round back" aria-label="返回" hover-class="round--pressed" @tap="goBack"><text>‹</text></button>
-        <view class="hero-actions">
-          <button class="round" aria-label="分享" hover-class="round--pressed" @tap="showPending('分享')"><text>↥</text></button>
-          <button class="round" aria-label="更多操作" hover-class="round--pressed" @tap="showMoreActions"><text class="dots">•••</text></button>
-        </view>
         <text class="photo-count">1/1</text>
       </view>
 
@@ -87,6 +85,8 @@
 </template>
 
 <script setup lang="ts">
+import { navigateBackOr } from '@/utils/navigation'
+import DzNavBar from '@/components/DzNavBar.vue'
 import { onLoad } from '@dcloudio/uni-app'
 import { computed, ref } from 'vue'
 
@@ -159,7 +159,7 @@ function formatDeadline(value: string) {
 }
 
 function goBack() {
-  uni.navigateBack()
+  navigateBackOr(() => uni.reLaunch({ url: '/pages/activities/index' }))
 }
 
 function showPending(feature: string) {

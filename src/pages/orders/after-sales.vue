@@ -1,9 +1,6 @@
 <template>
   <view class="dz-page after-sales-page">
-    <header class="page-head">
-      <button aria-label="返回订单详情" @tap="goBack">‹</button>
-      <text>退款 / 售后</text>
-    </header>
+    <DzNavBar title="退款 / 售后" :back-action="goBack" />
 
     <view v-if="loading" class="state">正在加载售后信息…</view>
     <view v-else-if="error" class="state error-state">
@@ -103,6 +100,8 @@
 </template>
 
 <script setup lang="ts">
+import { navigateBackOr } from '@/utils/navigation'
+import DzNavBar from '@/components/DzNavBar.vue'
 import { computed, ref } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 
@@ -163,7 +162,7 @@ const canReapply = computed(() => Boolean(
   && order.value?.settlement?.status !== 'settled',
 ))
 
-function goBack() { uni.navigateBack() }
+function goBack() { navigateBackOr(() => uni.reLaunch({ url: '/pages/orders/list' })) }
 function formatDateTime(value: string) {
   return formatBusinessDateTime(value)
 }

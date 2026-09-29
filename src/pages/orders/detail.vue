@@ -1,10 +1,6 @@
 <template>
   <view class="dz-page order-detail-page">
-    <header class="page-head">
-      <button aria-label="返回" @tap="goBack">‹</button>
-      <text>订单详情</text>
-      <view role="button" aria-label="联系平台客服" @tap="openSupport()">♧ 客服</view>
-    </header>
+    <DzNavBar title="订单详情" :back-action="goBack"><template #right><button class="dz-navbar-action" aria-label="联系平台客服" hover-class="dz-pressed" @tap="openSupport()">客服</button></template></DzNavBar>
 
     <view v-if="loading" class="booking-empty">正在加载订单…</view>
     <view v-else-if="order" class="detail-content">
@@ -164,6 +160,8 @@
 </template>
 
 <script setup lang="ts">
+import { navigateBackOr } from '@/utils/navigation'
+import DzNavBar from '@/components/DzNavBar.vue'
 import { computed, ref } from 'vue'
 import { onLoad, onShow } from '@dcloudio/uni-app'
 
@@ -245,7 +243,7 @@ const pendingEvidenceCopy = computed(() => {
 function formatDateTime(value: string) {
   return formatActivityTime(value)
 }
-function goBack() { uni.navigateBack() }
+function goBack() { navigateBackOr(() => uni.reLaunch({ url: '/pages/orders/list' })) }
 function showPending(name: string) { uni.showToast({ title: `${name}功能即将接入`, icon: 'none' }) }
 function openSupport(reason = 'service_quality') {
   if (!order.value) return

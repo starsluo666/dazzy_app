@@ -1,7 +1,7 @@
 <template>
   <view class="dz-page recharge-page">
-    <view class="dz-safe-top" />
-    <header class="dz-page-head dz-container"><button class="dz-tappable" aria-label="返回" hover-class="dz-pressed" @tap="goBack">‹</button><text>余额充值</text><view class="head-space" /></header>
+
+    <DzNavBar title="余额充值" :back-action="goBack" />
     <main v-if="campaign" class="recharge-content dz-container">
       <section class="recharge-hero">
         <view class="hero-copy"><text>固定面值充值</text><strong><i>¥</i>{{ money(campaign.unit_face_amount) }}<small>/ 张</small></strong><p>购买多张可享阶梯折扣，余额按面值全额到账</p></view>
@@ -29,6 +29,8 @@
 </template>
 
 <script setup lang="ts">
+import { navigateBackOr } from '@/utils/navigation'
+import DzNavBar from '@/components/DzNavBar.vue'
 import { computed, ref } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 import NetworkState from '@/components/NetworkState.vue'
@@ -47,7 +49,7 @@ const payableAmount = computed(() => pendingOrder.value?.payable_amount ?? Math.
 const discountAmount = computed(() => creditedAmount.value - payableAmount.value)
 const discountLabel = computed(() => { const rate = pendingOrder.value?.discount_rate_bps ?? rateFor(quantity.value); return rate === 10000 ? '原价' : `${(rate / 1000).toFixed(rate % 1000 ? 2 : 1)} 折` })
 function tierLabel(count: number) { const rate = rateFor(count); return rate === 10000 ? '原价' : `${(rate / 1000).toFixed(rate % 1000 ? 2 : 1)}折` }
-function goBack() { uni.navigateBack({ fail: () => uni.redirectTo({ url: '/pages/wallet/index' }) }) }
+function goBack() { navigateBackOr(() => uni.redirectTo({ url: '/pages/wallet/index' })) }
 function clearPendingOrder() { pendingOrder.value = null; pendingOrderNo.value = ''; uni.removeStorageSync('pendingRechargeOrderNo') }
 function setQuantity(count: number) { if (paying.value || count === quantity.value) return; clearPendingOrder(); quantity.value = count }
 function rememberOrder(order: WalletRechargeOrder) { pendingOrder.value = order; pendingOrderNo.value = order.order_no; quantity.value = order.quantity; uni.setStorageSync('pendingRechargeOrderNo', order.order_no) }

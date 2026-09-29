@@ -1,6 +1,6 @@
 <template>
   <view class="auth-page">
-    <view class="dz-safe-top" />
+    <DzNavBar title="登录" :back-action="bindingWechat ? cancelWechatBind : undefined" />
     <main class="auth-shell">
       <AuthBrand />
       <view class="auth-heading"><h1>欢迎回来</h1><p>发现同城好搭子</p></view>
@@ -66,6 +66,7 @@
 </template>
 
 <script setup lang="ts">
+import DzNavBar from '@/components/DzNavBar.vue'
 import { onLoad } from '@dcloudio/uni-app'
 import { onUnmounted, ref } from 'vue'
 

@@ -1,8 +1,7 @@
 <template>
   <view class="auth-page">
-    <view class="dz-safe-top" />
+    <DzNavBar title="注册账号" :back-action="back" />
     <main class="auth-shell">
-      <view class="auth-back" @tap="back">‹</view>
       <AuthBrand />
       <view class="auth-heading"><h1>注册乐搭伴</h1><p>认识新朋友，发现新玩法</p></view>
       <view class="auth-form">
@@ -22,6 +21,8 @@
 </template>
 
 <script setup lang="ts">
+import { navigateBackOr } from '@/utils/navigation'
+import DzNavBar from '@/components/DzNavBar.vue'
 import { onLoad } from '@dcloudio/uni-app'
 import { ref } from 'vue'
 import AuthBrand from '@/components/AuthBrand.vue'
@@ -62,9 +63,7 @@ async function submit() {
   finally { submitting.value = false }
 }
 function back() {
-  uni.navigateBack({
-    fail: () => uni.reLaunch({ url: `/pages/auth/login${redirect.value ? `?redirect=${encodeURIComponent(redirect.value)}` : ''}` }),
-  })
+  navigateBackOr(() => uni.reLaunch({ url: `/pages/auth/login${redirect.value ? `?redirect=${encodeURIComponent(redirect.value)}` : ''}` }))
 }
 </script>
 

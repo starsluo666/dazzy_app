@@ -1,13 +1,6 @@
 <template>
   <view class="dz-page edit-profile-page">
-    <view class="edit-hero">
-      <view class="dz-safe-top" />
-      <header class="page-nav dz-container">
-        <view class="back" role="button" aria-label="返回" @tap="goBack">‹</view>
-        <text>编辑个人资料</text>
-        <view class="nav-spacer" />
-      </header>
-    </view>
+    <DzNavBar title="编辑个人资料" :back-action="goBack" />
 
     <main class="edit-content dz-container">
       <section class="avatar-section">
@@ -70,6 +63,8 @@
 </template>
 
 <script setup lang="ts">
+import { navigateBackOr } from '@/utils/navigation'
+import DzNavBar from '@/components/DzNavBar.vue'
 import { onLoad, onShow } from '@dcloudio/uni-app'
 import { computed, ref, shallowRef } from 'vue'
 
@@ -101,7 +96,7 @@ const genderLabel = computed(() => genderOptions.find(item => item.value === gen
 const maskedPhone = computed(() => phone.value.replace(/(\d{3})\d{4}(\d{4})/, '$1****$2'))
 const canSave = computed(() => nickname.value.trim().length > 0 && nickname.value.trim().length <= 30)
 
-function goBack() { uni.navigateBack({ fail: () => uni.redirectTo({ url: '/pages/settings/index' }) }) }
+function goBack() { navigateBackOr(() => uni.redirectTo({ url: '/pages/settings/index' })) }
 function openPhoneChange() { uni.navigateTo({ url: '/pages/security/phone' }) }
 function returnToSettings() {
   if (getCurrentPages().length > 1) { uni.navigateBack(); return }

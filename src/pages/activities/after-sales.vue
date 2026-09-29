@@ -1,6 +1,6 @@
 <template>
   <view class="dz-page after-sales-page">
-    <header class="page-head"><button aria-label="返回" @tap="goBack">‹</button><text>活动退款 / 售后</text></header>
+    <DzNavBar title="活动退款 / 售后" :back-action="goBack" />
     <view v-if="loading" class="state">正在加载售后信息…</view>
     <view v-else-if="error" class="state"><text>{{ error }}</text><button @tap="load">重新加载</button></view>
     <main v-else-if="activity" class="content">
@@ -25,6 +25,8 @@
 </template>
 
 <script setup lang="ts">
+import { navigateBackOr } from '@/utils/navigation'
+import DzNavBar from '@/components/DzNavBar.vue'
 import { ref } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 
@@ -53,7 +55,7 @@ const submitAttempted = ref(false)
 const error = ref('')
 const money = formatAmount
 const formatRange = formatActivityRange
-function goBack() { uni.navigateBack() }
+function goBack() { navigateBackOr(() => uni.reLaunch({ url: '/pages/activities/index' })) }
 async function load() { loading.value = true; error.value = ''; try { const [detail, cases] = await Promise.all([getActivityDetail(activityId.value), getActivityAfterSales(activityId.value)]); activity.value = detail.data; latestCase.value = cases.data.items[0] || null } catch (reasonValue) { error.value = getErrorMessage(reasonValue, '售后信息加载失败') } finally { loading.value = false } }
 async function submit() { submitAttempted.value = true; if (submitting.value) return; if (description.value.trim().length < 5) { uni.showToast({ title: `问题说明至少填写5个字，还差${5 - description.value.trim().length}字`, icon: 'none' }); return } submitting.value = true; try { latestCase.value = (await createActivityAfterSales(activityId.value, reason.value, description.value.trim())).data; uni.showToast({ title: '售后申请已提交', icon: 'success' }) } catch (reasonValue) { uni.showToast({ title: getErrorMessage(reasonValue, '提交失败'), icon: 'none' }) } finally { submitting.value = false } }
 onLoad((query) => { activityId.value = Number(query?.id) || 0; if (activityId.value) load(); else { loading.value = false; error.value = '缺少活动编号' } })

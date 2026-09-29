@@ -1,13 +1,6 @@
 <template>
   <view class="dz-page settings-page">
-    <view class="settings-hero">
-      <view class="dz-safe-top" />
-      <header class="settings-nav dz-container">
-        <view class="back" role="button" aria-label="返回" @tap="goBack">‹</view>
-        <text>设置</text>
-        <view class="nav-spacer" />
-      </header>
-    </view>
+    <DzNavBar title="设置" :back-action="goBack" />
 
     <main class="settings-content dz-container">
       <section class="account-card" role="button" @tap="openProfileEditor">
@@ -38,6 +31,8 @@
 </template>
 
 <script setup lang="ts">
+import { navigateBackOr } from '@/utils/navigation'
+import DzNavBar from '@/components/DzNavBar.vue'
 import { onLoad, onShow } from '@dcloudio/uni-app'
 import { computed, ref } from 'vue'
 
@@ -68,7 +63,7 @@ const settingGroups: SettingItem[][] = [
   ],
 ]
 
-function goBack() { uni.navigateBack({ fail: () => uni.reLaunch({ url: '/pages/profile/index' }) }) }
+function goBack() { navigateBackOr(() => uni.reLaunch({ url: '/pages/profile/index' })) }
 function openProfileEditor() { uni.navigateTo({ url: '/pages/profile/edit' }) }
 function openSetting(item: SettingItem) {
   if (item.action === 'profile') return openProfileEditor()

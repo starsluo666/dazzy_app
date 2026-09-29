@@ -1,13 +1,6 @@
 <template>
   <view class="dz-page coupon-page">
-    <view class="coupon-hero">
-      <view class="dz-safe-top" />
-      <header class="dz-page-head dz-container">
-        <button class="dz-tappable" aria-label="返回" hover-class="dz-pressed" @tap="goBack">‹</button>
-        <text class="page-title">我的优惠券</text>
-        <view class="head-space" />
-      </header>
-    </view>
+    <DzNavBar title="我的优惠券" :back-action="goBack" />
 
     <main class="coupon-content dz-container">
       <view class="tabs" role="tablist" aria-label="优惠券状态">
@@ -79,6 +72,8 @@
 </template>
 
 <script setup lang="ts">
+import { navigateBackOr } from '@/utils/navigation'
+import DzNavBar from '@/components/DzNavBar.vue'
 import { computed, ref } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 
@@ -137,7 +132,7 @@ function switchTab(tab: CouponTab) {
 }
 
 function goBack() {
-  uni.navigateBack({ fail: () => uni.redirectTo({ url: '/pages/profile/index' }) })
+  navigateBackOr(() => uni.redirectTo({ url: '/pages/profile/index' }))
 }
 
 async function load() {

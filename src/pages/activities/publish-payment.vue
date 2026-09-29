@@ -1,6 +1,6 @@
 <template>
   <view class="dz-page payment-page">
-    <header class="page-head"><button aria-label="返回" @tap="goBack">‹</button><text>活动发布收银台</text></header>
+    <DzNavBar title="活动发布收银台" :back-action="goBack" />
     <view v-if="loading" class="state">正在创建支付单…</view>
     <view v-else-if="error" class="state"><text>{{ error }}</text><button @tap="loadOrder">重新加载</button></view>
     <main v-else-if="order" class="payment-content">
@@ -17,6 +17,8 @@
   </view>
 </template>
 <script setup lang="ts">
+import { navigateBackOr } from '@/utils/navigation'
+import DzNavBar from '@/components/DzNavBar.vue'
 import { ref } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 import { confirmActivityPublishPaymentStatus, createActivityPublishOrder, createActivityPublishPaymentSession, getActivityPublishPaymentAuthorization, simulateActivityPublishPayment } from '@/services/activities'
@@ -26,7 +28,7 @@ import { handlePaymentRecovery, invokeWechatPay, isWechatBrowser } from '@/servi
 import type { ActivityPublishOrder } from '@/types/api'
 import { formatAmount, getErrorMessage } from '@/utils/formatters'
 const activityId=ref(0),order=ref<ActivityPublishOrder|null>(null),loading=ref(true),error=ref(''),paying=ref(false),paymentMode=ref<ActivityPaymentMode|null>(null),autoPayAfterAuthorization=ref(false),completionHandled=ref(false),money=formatAmount
-function goBack(){uni.navigateBack()}
+function goBack(){navigateBackOr(() => uni.reLaunch({ url: '/pages/activities/index' }))}
 async function loadOrder(){loading.value=true;error.value='';try{order.value=(await createActivityPublishOrder(activityId.value)).data;if(order.value.status==='paid'){showSuccess();return}if(['partially_refunded','refunded'].includes(order.value.status)){showRefundStatus();return}paymentMode.value=order.value.external_amount===0?'official_account':await requireActivityPaymentCapability('activity_publish');if(autoPayAfterAuthorization.value){autoPayAfterAuthorization.value=false;setTimeout(()=>void pay(),0)}}catch(reason){error.value=getErrorMessage(reason,'支付单创建失败')}finally{loading.value=false}}
 async function confirmPayment(){for(let attempt=0;attempt<5;attempt+=1){const result=(await confirmActivityPublishPaymentStatus(activityId.value)).data;order.value=result.publish_order;if(result.state==='paid')return;if(result.state==='refund_pending')throw new Error('支付已超时，系统正在原路退款');if(result.state==='refunded')throw new Error('该笔支付已原路退款');if(result.state==='refund_failed')throw new Error('自动退款失败，请联系客服核对');if(result.state==='failed')throw new Error('支付未成功，请重新支付');await new Promise(resolve=>setTimeout(resolve,1200))}throw new Error('支付结果确认中，请稍后重新进入本页查看')}
 function showSuccess(){if(completionHandled.value)return;completionHandled.value=true;const goToMine=()=>uni.redirectTo({url:'/pages/activities/mine?role=organized'});uni.showModal({title:'活动提交成功',content:'支付已确认，平台正在审核中。你可以在“我的活动”中查看进展，审核结果也会通过消息通知。',showCancel:false,confirmText:'查看活动',success:goToMine,fail:()=>{uni.showToast({title:'活动已提交审核',icon:'success'});setTimeout(goToMine,1200)}})}

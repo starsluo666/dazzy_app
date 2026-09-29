@@ -1,12 +1,6 @@
 <template>
   <view class="dz-page notification-page">
-    <header class="page-head">
-      <button class="back" aria-label="返回" @tap="goBack"><i /></button>
-      <text>通知中心</text>
-      <button class="read-all" :disabled="markingAll || !currentUnread" @tap="markAll">
-        {{ markingAll ? '处理中' : '全部已读' }}
-      </button>
-    </header>
+    <DzNavBar title="通知中心" :back-action="goBack"><template #right><button class="dz-navbar-action" :disabled="markingAll || !currentUnread" hover-class="dz-pressed" @tap="markAll">{{ markingAll ? '处理中' : '全部已读' }}</button></template></DzNavBar>
 
     <nav class="category-tabs" aria-label="通知分类">
       <button
@@ -98,6 +92,8 @@
 </template>
 
 <script setup lang="ts">
+import { navigateBackOr } from '@/utils/navigation'
+import DzNavBar from '@/components/DzNavBar.vue'
 import { computed, ref } from 'vue'
 import { onReachBottom, onShow } from '@dcloudio/uni-app'
 
@@ -170,7 +166,7 @@ function formatTime(value: string) {
   return `${pad(date.month)}-${pad(date.day)} ${businessClock(value)}`
 }
 function goBack() {
-  uni.navigateBack({ fail: () => uni.reLaunch({ url: '/pages/index/index' }) })
+  navigateBackOr(() => uni.reLaunch({ url: '/pages/index/index' }))
 }
 async function load(reset = false) {
   if (reset) {

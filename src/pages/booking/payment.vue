@@ -1,6 +1,6 @@
 <template>
   <view class="dz-page payment-page">
-    <header class="booking-head"><button aria-label="返回" @tap="goBack">‹</button><text>收银台</text></header>
+    <DzNavBar title="收银台" :back-action="goBack" />
     <view v-if="loading" class="booking-empty">正在加载订单…</view>
     <view v-else-if="order" class="payment-content">
       <section class="countdown booking-card"><view><text>支付剩余</text><strong>{{ countdown }}</strong><small>超时后将释放达人档期</small></view></section>
@@ -18,6 +18,8 @@
 </template>
 
 <script setup lang="ts">
+import { navigateBackOr } from '@/utils/navigation'
+import DzNavBar from '@/components/DzNavBar.vue'
 import { handlePaymentRecovery } from '@/services/wechatPay'
 import { computed, onUnmounted, ref } from 'vue'; import { onLoad } from '@dcloudio/uni-app'; import { createProviderOrderPaymentSession, getProviderOrder, getProviderOrderPaymentAuthorization, simulateProviderOrderPayment } from '@/services/orders'; import { getMyWallet } from '@/services/wallet'; import { requireProviderOrderPaymentCapability } from '@/services/payments'; import type { ProviderOrderPaymentMode } from '@/services/payments'; import type { ProviderOrder, UserWallet } from '@/types/api'; import { formatAmount, formatOrderTimeRange, getErrorMessage } from '@/utils/formatters'
 type WechatBridgeResult={err_msg?:string}
@@ -27,7 +29,7 @@ const mockPaymentEnabled=computed(()=>paymentMode.value==='mock')
 const walletAmount=computed(()=>order.value?.payment_order?.wallet_amount??Math.min(wallet.value?.available_balance||0,order.value?.payable_amount||0)),externalAmount=computed(()=>Math.max((order.value?.payable_amount||0)-walletAmount.value,0)),fullBalancePayment=computed(()=>Boolean(order.value)&&externalAmount.value===0)
 const expired=computed(()=>secondsLeft.value<=0),countdown=computed(()=>`${String(Math.floor(secondsLeft.value/60)).padStart(2,'0')}:${String(secondsLeft.value%60).padStart(2,'0')}`),timeLabel=computed(()=>order.value?formatOrderTimeRange(order.value.starts_at,order.value.ends_at):'')
 const money=formatAmount
-function goBack(){uni.navigateBack()}
+function goBack(){navigateBackOr(() => uni.reLaunch({ url: '/pages/orders/list' }))}
 function startTimer(){if(timer)clearInterval(timer);if(!order.value)return;const tick=()=>{secondsLeft.value=Math.max(0,Math.floor((new Date(order.value!.payment_expires_at).getTime()-Date.now())/1000))};tick();timer=setInterval(tick,1000) as unknown as number}
 function isWechatBrowser(){return typeof navigator!=='undefined'&&/MicroMessenger/i.test(navigator.userAgent)}
 function currentWechatBridge(){return typeof window==='undefined'?undefined:(window as typeof window&{WeixinJSBridge?:WechatBridge}).WeixinJSBridge}

@@ -18,6 +18,7 @@
   </view>
 </template>
 <script setup lang="ts">
+import { navigateBackOr } from '@/utils/navigation'
 import { computed, ref } from 'vue'
 import { onLoad, onUnload } from '@dcloudio/uni-app'
 import DzNavBar from '@/components/DzNavBar.vue'
@@ -40,7 +41,7 @@ async function load() {
   catch (reason) { error.value = getErrorMessage(reason) }
   finally { loading.value = false }
 }
-function back() { uni.navigateBack({ fail: () => uni.reLaunch({ url: '/pages/index/index' }) }) }
+function back() { navigateBackOr(() => uni.reLaunch({ url: '/pages/index/index' })) }
 function choose(city: DiscoveryCity) { selectDiscoveryCity(city); back() }
 async function locate() {
   if (locating.value) return

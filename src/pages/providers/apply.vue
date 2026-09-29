@@ -1,12 +1,8 @@
 <template>
   <view class="dz-page apply-page">
     <view class="hero">
-      <view class="dz-safe-top" />
-      <header class="nav dz-container">
-        <button aria-label="返回" @tap="goBack">‹</button>
-        <strong>成为达人</strong>
-        <view />
-      </header>
+
+      <DzNavBar title="成为达人" :back-action="goBack" />
       <section class="hero-poster dz-container">
         <view class="poster-frame">
           <image
@@ -139,6 +135,8 @@
 </template>
 
 <script setup lang="ts">
+import { navigateBackOr } from '@/utils/navigation'
+import DzNavBar from '@/components/DzNavBar.vue'
 import { onLoad } from '@dcloudio/uni-app'
 import { computed, reactive, ref, shallowRef } from 'vue'
 
@@ -239,7 +237,7 @@ const statusText = computed(() =>
 )
 
 function warn(title: string) { uni.showToast({ title, icon: 'none' }) }
-function goBack() { uni.navigateBack({ fail: () => uni.switchTab({ url: '/pages/profile/index' }) }) }
+function goBack() { navigateBackOr(() => uni.reLaunch({ url: '/pages/profile/index' })) }
 function chooseCity(event: { detail: { value: string } }) {
   const city = cities[Number(event.detail.value)]
   if (city) {

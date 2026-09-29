@@ -1,10 +1,6 @@
 <template>
   <view class="dz-page support-page">
-    <header class="page-head">
-      <button aria-label="返回" @tap="goBack">‹</button>
-      <text>{{ selected ? '反馈详情' : '问题反馈' }}</text>
-      <view />
-    </header>
+    <DzNavBar :title="selected ? '反馈详情' : '问题反馈'" :back-action="goBack" />
 
     <main v-if="!selected" class="support-content dz-container">
       <section class="support-hero">
@@ -119,6 +115,8 @@
 </template>
 
 <script setup lang="ts">
+import { navigateBackOr } from '@/utils/navigation'
+import DzNavBar from '@/components/DzNavBar.vue'
 import { computed, reactive, ref } from 'vue'
 import { onLoad, onShow } from '@dcloudio/uni-app'
 
@@ -220,7 +218,7 @@ function latestRecord(item: SupportCase) { return item.records[item.records.leng
 function displayRecordTypeLabel(value?: string) { return (value || '').replace(/工单/g, '反馈') }
 function goBack() {
   if (selected.value) { selected.value = null; return }
-  uni.navigateBack()
+  navigateBackOr(() => uni.reLaunch({ url: '/pages/profile/index' }))
 }
 function openCreate() {
   form.caseType = 'complaint'

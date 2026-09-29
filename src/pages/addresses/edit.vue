@@ -1,13 +1,6 @@
 <template>
   <view class="dz-page edit-address-page">
-    <view class="page-hero">
-      <view class="dz-safe-top" />
-      <header class="page-nav dz-container">
-        <view class="back" @tap="goBack">‹</view>
-        <text>{{ addressId ? '编辑地址' : '新增地址' }}</text>
-        <view class="nav-spacer" />
-      </header>
-    </view>
+    <DzNavBar :title="addressId ? '编辑地址' : '新增地址'" :back-action="goBack" />
 
     <main class="edit-content dz-container">
       <NetworkState v-if="loading" message="正在加载地址…" />
@@ -79,6 +72,8 @@
 </template>
 
 <script setup lang="ts">
+import { navigateBackOr } from '@/utils/navigation'
+import DzNavBar from '@/components/DzNavBar.vue'
 import { onLoad } from '@dcloudio/uni-app'
 import { computed, reactive, ref } from 'vue'
 import NetworkState from '@/components/NetworkState.vue'
@@ -121,7 +116,7 @@ const canSave = computed(() => (
 ))
 
 function goBack() {
-  uni.navigateBack({ fail: () => uni.redirectTo({ url: '/pages/addresses/index' }) })
+  navigateBackOr(() => uni.redirectTo({ url: '/pages/addresses/index' }))
 }
 
 function returnToPreviousPage() {

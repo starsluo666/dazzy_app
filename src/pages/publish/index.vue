@@ -1,9 +1,6 @@
 <template>
   <view class="dz-page publish-page">
-    <view class="dz-sticky-head">
-      <view class="dz-safe-top" />
-      <header class="page-head dz-container"><button aria-label="返回" hover-class="back--pressed" @tap="goBack">‹</button><text>发布活动</text><text class="draft-mark">{{ copyFrom ? '修改副本' : '草稿' }}</text></header>
-    </view>
+    <DzNavBar title="发布活动" :back-action="goBack"><template #right><text class="dz-navbar-label">{{ copyFrom ? '修改副本' : '草稿' }}</text></template></DzNavBar>
     <main class="form-content dz-container">
       <section class="cover-card" hover-class="cover--pressed" @tap="chooseCover">
         <image v-if="coverPath" :src="coverPath" mode="aspectFill" />
@@ -162,6 +159,8 @@
 </template>
 
 <script setup lang="ts">
+import { navigateBackOr } from '@/utils/navigation'
+import DzNavBar from '@/components/DzNavBar.vue'
 import { computed, nextTick, reactive, ref } from 'vue'
 import { onLoad, onUnload } from '@dcloudio/uni-app'
 import DzBottomSheet from '@/components/DzBottomSheet.vue'
@@ -457,7 +456,7 @@ function normalizeSchedule() {
   normalizeDeadline()
 }
 
-function goBack() { uni.navigateBack() }
+function goBack() { navigateBackOr(() => uni.reLaunch({ url: '/pages/activities/index' })) }
 
 function refreshTimeBoundary() {
   nowReference.value = Date.now()

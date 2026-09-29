@@ -1,7 +1,7 @@
 <template>
-  <view class="phone-page">
-    <view class="dz-safe-top" />
-    <header class="page-head"><button aria-label="返回" @tap="goBack">‹</button><strong>修改登录手机号</strong><view /></header>
+  <view class="dz-page phone-page">
+
+    <DzNavBar title="修改登录手机号" :back-action="goBack" />
     <main>
       <section class="notice">
         <strong>当前手机号 {{ security?.phone_masked || '—' }}</strong>
@@ -20,6 +20,8 @@
 </template>
 
 <script setup lang="ts">
+import { navigateBackOr } from '@/utils/navigation'
+import DzNavBar from '@/components/DzNavBar.vue'
 import { onShow, onUnload } from '@dcloudio/uni-app'
 import { computed, ref } from 'vue'
 
@@ -42,7 +44,7 @@ let newTimer: ReturnType<typeof setInterval> | undefined
 
 const canSubmit = computed(() => /^1[3-9]\d{9}$/.test(newPhone.value) && currentCode.value.length === 6 && newCode.value.length === 6)
 function warn(title: string) { uni.showToast({ title, icon: 'none' }) }
-function goBack() { uni.navigateBack() }
+function goBack() { navigateBackOr(() => uni.reLaunch({ url: '/pages/security/index' })) }
 function countdown(target: 'current' | 'new', seconds: number) {
   const value = target === 'current' ? currentSeconds : newSeconds
   const oldTimer = target === 'current' ? currentTimer : newTimer

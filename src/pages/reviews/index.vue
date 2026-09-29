@@ -1,13 +1,6 @@
 <template>
   <view class="dz-page reviews-page">
-    <view class="hero">
-      <view class="dz-safe-top" />
-      <header class="nav dz-container">
-        <button aria-label="返回" @tap="goBack">‹</button>
-        <strong>我的评价</strong>
-        <text>{{ reviews.length || '' }}</text>
-      </header>
-    </view>
+    <DzNavBar title="我的评价" :back-action="goBack"><template #right><text class="dz-navbar-label">{{ reviews.length || '' }}</text></template></DzNavBar>
 
     <main class="dz-container content">
       <NetworkState v-if="loading" message="正在加载评价…" />
@@ -42,6 +35,8 @@
 </template>
 
 <script setup lang="ts">
+import { navigateBackOr } from '@/utils/navigation'
+import DzNavBar from '@/components/DzNavBar.vue'
 import { onReachBottom, onShow } from '@dcloudio/uni-app'
 import { ref } from 'vue'
 
@@ -58,7 +53,7 @@ const total = ref(0)
 const loadingMore = ref(false)
 const hasMore = ref(false)
 
-function goBack() { uni.navigateBack({ fail: () => uni.reLaunch({ url: '/pages/profile/index' }) }) }
+function goBack() { navigateBackOr(() => uni.reLaunch({ url: '/pages/profile/index' })) }
 function openOrders() { uni.navigateTo({ url: '/pages/orders/list?status=all' }) }
 function openProvider(id: string) { uni.navigateTo({ url: `/pages/providers/detail?id=${id}` }) }
 function preview(urls: string[], index: number) { uni.previewImage({ current: urls[index], urls }) }

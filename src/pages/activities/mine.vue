@@ -1,9 +1,6 @@
 <template>
   <view class="dz-page my-activities-page">
-    <header class="page-head">
-      <button aria-label="返回" @tap="goBack">‹</button>
-      <text>我的活动</text>
-    </header>
+    <DzNavBar title="我的活动" :back-action="goBack" />
 
     <view class="role-tabs">
       <button v-for="item in roles" :key="item.value" :class="{ active: role === item.value }" @tap="setRole(item.value)">
@@ -58,6 +55,8 @@
 </template>
 
 <script setup lang="ts">
+import { navigateBackOr } from '@/utils/navigation'
+import DzNavBar from '@/components/DzNavBar.vue'
 import { onLoad, onShow } from '@dcloudio/uni-app'
 import { ref } from 'vue'
 
@@ -80,7 +79,7 @@ const loading = ref(true)
 const error = ref('')
 const money = formatAmount
 
-function goBack() { uni.navigateBack() }
+function goBack() { navigateBackOr(() => uni.reLaunch({ url: '/pages/activities/index' })) }
 function openActivity(id: number) { uni.navigateTo({ url: `/pages/activities/detail?id=${id}` }) }
 function copyActivity(id: number) { uni.navigateTo({ url: `/pages/publish/index?copyFrom=${id}` }) }
 function browseActivities() { uni.navigateTo({ url: role.value === 'joined' ? '/pages/activities/list' : '/pages/publish/index' }) }

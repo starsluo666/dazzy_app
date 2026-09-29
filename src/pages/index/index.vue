@@ -1,11 +1,10 @@
 <template>
   <view class="dz-page dz-page--with-tabbar">
     <view class="dz-sticky-head">
-      <view class="dz-safe-top" />
-      <view class="topbar dz-container">
-        <button class="city" @tap="chooseCity">{{ discovery.cityName }} <text class="city-arrow">▾</text></button>
+      <DzNavBar mode="toolbar" :sticky="false">
+        <button class="city" hover-class="control--pressed" @tap="chooseCity"><text>{{ discovery.cityName }}</text><text class="city-arrow">▾</text></button>
         <button class="search" hover-class="control--pressed" @tap="openPage('/pages/discovery/search')"><text class="search-icon">⌕</text><text>搜索达人、活动</text></button>
-      </view>
+      </DzNavBar>
     </view>
 
     <main class="content dz-container">
@@ -74,6 +73,7 @@
 </template>
 
 <script setup lang="ts">
+import DzNavBar from '@/components/DzNavBar.vue'
 import { onShow, onUnload } from '@dcloudio/uni-app'
 import { ref } from 'vue'
 
@@ -174,9 +174,9 @@ onUnload(() => { loadVersion++ })
 button { margin:0; padding:0; line-height:1; background:transparent; }
 .city { border:0; outline:0; box-shadow:none; }
 .city::after { display:none; }
-.city { flex:0 0 auto; height:70rpx; color:$dz-text-primary; font-size:$dz-fs-body; font-weight:$dz-fw-semibold; }
+.city { display:flex; align-items:center; justify-content:center; gap:8rpx; flex:0 0 auto; height:88rpx; min-height:44px; color:$dz-text-primary; font-size:$dz-fs-body; font-weight:$dz-fw-semibold; line-height:1; }
 .city-arrow { font-size:$dz-fs-caption; }
-.search { display:flex; align-items:center; flex:1; min-width:0; gap:12rpx; height:68rpx; padding:0 24rpx; border:1rpx solid $dz-border-material; border-radius:$dz-radius-full; color:$dz-text-secondary; background:$dz-surface-glass; box-shadow:inset 0 1rpx 0 $dz-surface-highlight, 0 8rpx 24rpx rgba(31,65,72,.06); font-size:$dz-fs-caption; box-sizing:border-box; white-space:nowrap; }
+.search { display:flex; align-items:center; flex:1; min-width:0; gap:12rpx; height:76rpx; min-height:44px; padding:0 24rpx; border:1rpx solid $dz-border-material; border-radius:$dz-radius-full; color:$dz-text-secondary; background:$dz-surface-glass; box-shadow:inset 0 1rpx 0 $dz-surface-highlight, 0 8rpx 24rpx rgba(31,65,72,.06); font-size:$dz-fs-caption; line-height:1; box-sizing:border-box; white-space:nowrap; }
 .search-icon { color:$dz-text-secondary; font-size:$dz-fs-body; }
 .content { display:block; padding-right:22rpx; padding-left:22rpx; }
 .hero { position:relative; overflow:hidden; display:flex; flex-direction:column; justify-content:center; height:240rpx; padding:0 32rpx; border:1rpx solid $dz-border-material; border-radius:$dz-radius-lg; color:#075b67; box-shadow:$dz-shadow-card; box-sizing:border-box; }

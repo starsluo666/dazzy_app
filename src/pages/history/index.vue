@@ -1,5 +1,7 @@
-<template><view class="dz-page history-page"><view class="hero"><view class="dz-safe-top"/><header class="nav dz-container"><view @tap="goBack">‹</view><strong>浏览记录</strong><text @tap="confirmClear">清空</text></header><view class="tabs dz-container"><text v-for="item in tabs" :key="item.value" :class="{active:type===item.value}" @tap="changeType(item.value)">{{item.label}}</text></view></view><main class="dz-container content"><NetworkState v-if="loading" message="正在加载浏览记录…"/><NetworkState v-else-if="error" :message="error" action-text="重新加载" @action="load"/><view v-else-if="!items.length" class="empty"><text>◷</text><strong>暂无浏览记录</strong><small>看过的达人和活动会保存在这里</small></view><article v-for="item in items" v-else :key="item.id" class="row" @tap="open(item)"><image v-if="imageUrl(item)" :src="imageUrl(item)!" mode="aspectFill"/><view v-else class="fallback">{{title(item).slice(0,1)}}</view><view class="copy"><strong>{{title(item)}}</strong><text>{{item.target_type==='provider'?'达人':'活动'}} · {{subtitle(item)}}</text><small>{{formatTime(item.viewed_at)}} · 浏览{{item.view_count}}次</small></view><button @tap.stop="remove(item)">×</button></article></main></view></template>
+<template><view class="dz-page history-page"><view class="hero"><DzNavBar title="浏览记录" :back-action="goBack"><template #right><button class="dz-navbar-action" hover-class="dz-pressed" @tap="confirmClear">清空</button></template></DzNavBar><view class="tabs dz-container"><text v-for="item in tabs" :key="item.value" :class="{active:type===item.value}" @tap="changeType(item.value)">{{item.label}}</text></view></view><main class="dz-container content"><NetworkState v-if="loading" message="正在加载浏览记录…"/><NetworkState v-else-if="error" :message="error" action-text="重新加载" @action="load"/><view v-else-if="!items.length" class="empty"><text>◷</text><strong>暂无浏览记录</strong><small>看过的达人和活动会保存在这里</small></view><article v-for="item in items" v-else :key="item.id" class="row" @tap="open(item)"><image v-if="imageUrl(item)" :src="imageUrl(item)!" mode="aspectFill"/><view v-else class="fallback">{{title(item).slice(0,1)}}</view><view class="copy"><strong>{{title(item)}}</strong><text>{{item.target_type==='provider'?'达人':'活动'}} · {{subtitle(item)}}</text><small>{{formatTime(item.viewed_at)}} · 浏览{{item.view_count}}次</small></view><button @tap.stop="remove(item)">×</button></article></main></view></template>
 <script setup lang="ts">
+import { navigateBackOr } from '@/utils/navigation'
+import DzNavBar from '@/components/DzNavBar.vue'
 import { onShow } from '@dcloudio/uni-app'
 import { ref } from 'vue'
 import NetworkState from '@/components/NetworkState.vue'
@@ -14,7 +16,7 @@ const items = ref<BrowsingHistoryItem[]>([])
 const loading = ref(true)
 const error = ref('')
 
-function goBack() { uni.navigateBack({ fail: () => uni.reLaunch({ url: '/pages/profile/index' }) }) }
+function goBack() { navigateBackOr(() => uni.reLaunch({ url: '/pages/profile/index' })) }
 function provider(item: BrowsingHistoryItem) { return item.target as ProviderListItem }
 function activity(item: BrowsingHistoryItem) { return item.target as ActivityListItem }
 function title(item: BrowsingHistoryItem) { return item.target_type === 'provider' ? provider(item).nickname : activity(item).title }

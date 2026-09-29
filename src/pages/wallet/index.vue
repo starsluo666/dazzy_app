@@ -1,11 +1,8 @@
 <template>
   <view class="dz-page wallet-page">
     <view class="wallet-hero">
-      <view class="dz-safe-top" />
-      <header class="dz-page-head dz-container">
-        <button class="dz-tappable" aria-label="返回" hover-class="dz-pressed" @tap="goBack">‹</button>
-        <text>我的余额</text><view class="head-space" />
-      </header>
+
+      <DzNavBar title="我的余额" :back-action="goBack" />
       <section class="balance-card dz-container">
         <view class="balance-label"><text>可用余额</text><i>收支明细实时可查</i></view>
         <view class="balance-value"><text>¥</text><strong>{{ money(wallet?.available_balance || 0) }}</strong></view>
@@ -32,6 +29,8 @@
 </template>
 
 <script setup lang="ts">
+import { navigateBackOr } from '@/utils/navigation'
+import DzNavBar from '@/components/DzNavBar.vue'
 import { ref } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import NetworkState from '@/components/NetworkState.vue'
@@ -44,7 +43,7 @@ const wallet = ref<UserWallet | null>(null)
 const loading = ref(true)
 const error = ref('')
 const money = formatAmount
-function goBack() { uni.navigateBack({ fail: () => uni.redirectTo({ url: '/pages/profile/index' }) }) }
+function goBack() { navigateBackOr(() => uni.redirectTo({ url: '/pages/profile/index' })) }
 function openRecharge() { uni.navigateTo({ url: '/pages/wallet/recharge' }) }
 function signedMoney(value: number) { return `${value >= 0 ? '+' : '-'}¥${money(Math.abs(value))}` }
 function dateTime(value: string) { return new Date(value).toLocaleString('zh-CN', { hour12: false }).replace(/\//g, '-') }

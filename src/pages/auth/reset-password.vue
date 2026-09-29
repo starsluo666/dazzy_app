@@ -1,8 +1,7 @@
 <template>
   <view class="auth-page">
-    <view class="dz-safe-top" />
+    <DzNavBar title="重置密码" :back-action="back" />
     <main class="auth-shell">
-      <view class="auth-back" @tap="back">‹</view>
       <AuthBrand />
       <view class="auth-heading"><h1>重置密码</h1><p>验证手机号后设置新密码</p></view>
       <view class="auth-form">
@@ -19,6 +18,8 @@
 </template>
 
 <script setup lang="ts">
+import { navigateBackOr } from '@/utils/navigation'
+import DzNavBar from '@/components/DzNavBar.vue'
 import { onLoad } from '@dcloudio/uni-app'
 import { ref } from 'vue'
 import AuthBrand from '@/components/AuthBrand.vue'
@@ -54,7 +55,7 @@ async function submit() {
   finally { submitting.value = false }
 }
 function loginUrl() { return `/pages/auth/login${redirect.value ? `?redirect=${encodeURIComponent(redirect.value)}` : ''}` }
-function back() { uni.navigateBack({ fail: () => uni.reLaunch({ url: loginUrl() }) }) }
+function back() { navigateBackOr(() => uni.reLaunch({ url: loginUrl() })) }
 </script>
 
 <style lang="scss" scoped>

@@ -1,12 +1,10 @@
 <template>
   <view class="dz-page dz-page--with-tabbar activity-channel">
     <view class="dz-sticky-head">
-      <view class="dz-safe-top" />
-
-      <header class="topbar dz-container">
-        <view class="city" role="button" @tap="chooseCity">{{ discovery.cityName }}⌄</view>
-        <view class="search" role="button" aria-label="搜索活动" @tap="openPage('/pages/discovery/search?type=activity')">⌕</view>
-      </header>
+      <DzNavBar mode="toolbar" :sticky="false">
+        <button class="city" hover-class="control--pressed" @tap="chooseCity"><text>{{ discovery.cityName }}</text><text>⌄</text></button>
+        <button class="search" aria-label="搜索活动" hover-class="control--pressed" @tap="openPage('/pages/discovery/search?type=activity')">⌕</button>
+      </DzNavBar>
     </view>
 
     <main class="content dz-container">
@@ -63,6 +61,7 @@
 </template>
 
 <script setup lang="ts">
+import DzNavBar from '@/components/DzNavBar.vue'
 import { onShow, onReachBottom, onUnload } from '@dcloudio/uni-app'
 import DiscoveryPagination from '@/components/DiscoveryPagination.vue'
 import { useDiscoveryPager } from '@/composables/useDiscoveryPager'
@@ -166,8 +165,9 @@ onUnload(() => { refreshVersion++; invalidate() })
 .activity-channel { background:$dz-surface-page; }
 .location-note { min-height:88rpx; padding:0; text-align:left; color:$dz-text-secondary; background:transparent; font-size:24rpx; line-height:1.5; }.location-note::after { border:0; }
 .topbar { display:flex; align-items:center; justify-content:space-between; height:94rpx; }
-.city { color:$dz-text-primary; font-size:$dz-fs-body-strong; font-weight:$dz-fw-semibold; }
-.search { color:$dz-text-primary; font-size:$dz-fs-price-lg; }
+.city { display:flex; align-items:center; gap:8rpx; height:88rpx; min-height:44px; margin:0 auto 0 0; padding:0; color:$dz-text-primary; background:transparent; font-size:$dz-fs-body-strong; font-weight:$dz-fw-semibold; line-height:1; }
+.search { display:flex; align-items:center; justify-content:center; width:88rpx; min-width:44px; height:88rpx; min-height:44px; margin:0; padding:0; color:$dz-text-primary; background:transparent; font-size:$dz-fs-price-lg; line-height:1; }
+.control--pressed { opacity:.65; }
 .hero { position:relative; overflow:hidden; height:242rpx; border:1rpx solid $dz-border-material; border-radius:$dz-radius-lg; color:$dz-text-inverse; box-shadow:$dz-shadow-card; }
 .hero image { position:absolute; width:100%; height:100%; inset:0; }
 .hero-title,.hero-subtitle { position:relative; z-index:1; display:block; margin-left:36rpx; text-shadow:0 3rpx 8rpx rgba(0,94,103,.2); }
