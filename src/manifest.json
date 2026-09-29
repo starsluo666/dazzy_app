@@ -18,13 +18,16 @@
         },
         /* 模块配置 */
         "modules" : {
-            "OAuth" : {}
+            "OAuth" : {},
+            "Geolocation" : {}
         },
         /* 应用发布信息 */
         "distribute" : {
             /* android打包配置 */
             "android" : {
                 "permissions" : [
+                    "<uses-permission android:name=\"android.permission.ACCESS_COARSE_LOCATION\"/>",
+                    "<uses-permission android:name=\"android.permission.ACCESS_FINE_LOCATION\"/>",
                     "<uses-permission android:name=\"android.permission.CHANGE_NETWORK_STATE\"/>",
                     "<uses-permission android:name=\"android.permission.MOUNT_UNMOUNT_FILESYSTEMS\"/>",
                     "<uses-permission android:name=\"android.permission.VIBRATE\"/>",
@@ -43,9 +46,16 @@
                 ]
             },
             /* ios打包配置 */
-            "ios" : {},
+            "ios" : {
+                "privacyDescription": {
+                    "NSLocationWhenInUseUsageDescription": "点击使用当前位置后，用于推荐同城内容、计算距离及判断达人服务范围。"
+                }
+            },
             /* SDK配置 */
             "sdkConfigs" : {
+                "geolocation": {
+                    "system": { "__platform__": ["ios", "android"] }
+                },
                 "oauth" : {
                     "weixin" : {
                         "appid" : "",

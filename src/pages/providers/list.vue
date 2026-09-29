@@ -7,7 +7,7 @@
         <text class="brand">DAZZY<text>搭子</text><i>◆</i></text>
         <label class="search">
           <text>⌕</text>
-          <input v-model="keyword" type="text" confirm-type="search" placeholder="搜索达人或服务" @confirm="loadProviders" />
+          <input v-model="keyword" type="text" maxlength="50" confirm-type="search" placeholder="搜索达人或服务" @confirm="loadProviders" />
           <button v-if="keyword" aria-label="清空搜索" @tap.stop="clearKeyword">×</button>
         </label>
         <button class="filter-button" :class="{ active: activeFilterCount }" :aria-label="activeFilterCount ? `筛选，已选${activeFilterCount}项` : '筛选'" @tap="openFilter">
@@ -74,7 +74,7 @@
           <view class="profile-row">
             <text>{{ age(item.birth_date) ? `${age(item.birth_date)}岁` : '年龄保密' }}</text>
             <text>{{ item.service_count }}次服务</text>
-            <text>⌖ {{ formatDistance(item.distance_km) }}</text>
+            <text>{{ item.distance_km == null ? '同城' : `⌖ ${formatDistance(item.distance_km)}` }}</text>
           </view>
           <view class="tags"><text>{{ serviceTag(item) }}</text><text>{{ personalityTag(item) }}</text></view>
           <view class="foot">
@@ -99,6 +99,7 @@
         @action="clearFilters"
       />
     </main>
+    <view class="dz-container"><DiscoveryPagination v-if="!loading && !error" :has-more="hasMore" :loading="loadingMore" :error="moreError" :count="providers.length" @more="loadPage(false)" /></view>
 
     <DzBottomSheet :visible="filterOpen" title="筛选达人" @close="closeFilter">
       <view class="filter-section">
@@ -141,7 +142,9 @@
 </template>
 
 <script setup lang="ts">
-import { onLoad } from '@dcloudio/uni-app'
+import { onLoad, onShow, onReachBottom, onUnload } from '@dcloudio/uni-app'
+import DiscoveryPagination from '@/components/DiscoveryPagination.vue'
+import { useDiscoveryPager } from '@/composables/useDiscoveryPager'
 import { computed, ref } from 'vue'
 
 import DazzyTabBar from '@/components/DazzyTabBar.vue'
@@ -154,6 +157,7 @@ import {
   discoveryQuery,
   getDiscoveryContext,
   resolveDiscoveryContext,
+  openDiscoveryCityPicker,
 } from '@/services/discoveryContext'
 import { openPage } from '@/services/navigation'
 import type { ProviderListItem, ProviderServiceSummary } from '@/types/api'
@@ -210,16 +214,25 @@ const emptyFilters = (): ProviderFilters => ({
   maxPriceAmount: 0,
 })
 
-const providers = ref<ProviderListItem[]>([])
 const ordering = ref<Ordering>('recommended')
 const category = ref('')
 const keyword = ref('')
+const committedKeyword = ref('')
 const filters = ref<ProviderFilters>(emptyFilters())
 const draftFilters = ref<ProviderFilters>(emptyFilters())
 const filterOpen = ref(false)
-const loading = ref(true)
-const error = ref('')
 const discovery = ref(getDiscoveryContext())
+let refreshVersion = 0
+const { items: providers, loading, loadingMore, error, moreError, hasMore, load: loadPage, invalidate } = useDiscoveryPager<ProviderListItem>(page => getRecommendedProviders({
+  keyword: committedKeyword.value || undefined,
+  category: category.value || undefined,
+  gender: filters.value.gender || undefined,
+  online_only: filters.value.onlineOnly ? 1 : undefined,
+  min_rating: filters.value.minRating || undefined,
+  max_price_amount: filters.value.maxPriceAmount || undefined,
+  ordering: ordering.value, page, page_size: 20,
+  ...discoveryQuery(discovery.value),
+}), item => item.public_id)
 const activeFilterCount = computed(() => [
   filters.value.onlineOnly,
   Boolean(filters.value.gender),
@@ -265,24 +278,20 @@ function personalityTag(item: ProviderListItem) {
 }
 
 async function loadProviders() {
+  committedKeyword.value = keyword.value.trim().slice(0, 50)
+  const ticket = ++refreshVersion
+  invalidate()
   loading.value = true
-  error.value = ''
   try {
-    providers.value = (await getRecommendedProviders({
-      keyword: keyword.value.trim() || undefined,
-      category: category.value || undefined,
-      gender: filters.value.gender || undefined,
-      online_only: filters.value.onlineOnly ? 1 : undefined,
-      min_rating: filters.value.minRating || undefined,
-      max_price_amount: filters.value.maxPriceAmount || undefined,
-      ordering: ordering.value,
-      page_size: 20,
-      ...discoveryQuery(discovery.value),
-    })).data.items
+    const context = await resolveDiscoveryContext()
+    if (ticket !== refreshVersion) return
+    discovery.value = context
+    if (ordering.value === 'distance' && !context.longitude) ordering.value = 'recommended'
+    await loadPage()
   } catch (reason) {
-    error.value = getErrorMessage(reason)
+    if (ticket === refreshVersion) error.value = getErrorMessage(reason)
   } finally {
-    loading.value = false
+    if (ticket === refreshVersion) loading.value = false
   }
 }
 
@@ -310,6 +319,11 @@ function changeCategory(value: string) {
 }
 
 function changeOrdering(value: Ordering) {
+  if (value === 'distance' && !discovery.value.longitude) {
+    uni.showToast({ title: '请先定位，再查看附近达人', icon: 'none' })
+    openDiscoveryCityPicker()
+    return
+  }
   ordering.value = value
   loadProviders()
 }
@@ -356,12 +370,14 @@ function clearFilters() {
   loadProviders()
 }
 
-onLoad(async (query) => {
+onLoad((query) => {
   category.value = typeof query?.category === 'string' ? query.category : ''
-  discovery.value = await resolveDiscoveryContext()
+  keyword.value = typeof query?.keyword === 'string' ? query.keyword : ''
   loadCategories()
-  await loadProviders()
 })
+onShow(loadProviders)
+onReachBottom(() => loadPage(false))
+onUnload(() => { refreshVersion++; invalidate() })
 </script>
 
 <style lang="scss" scoped>

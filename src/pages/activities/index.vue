@@ -5,11 +5,12 @@
 
       <header class="topbar dz-container">
         <view class="city" role="button" @tap="chooseCity">{{ discovery.cityName }}⌄</view>
-        <view class="search" role="button" aria-label="搜索" @tap="openActivityList()">⌕</view>
+        <view class="search" role="button" aria-label="搜索活动" @tap="openPage('/pages/discovery/search?type=activity')">⌕</view>
       </header>
     </view>
 
     <main class="content dz-container">
+      <button class="location-note" @tap="chooseCity">{{ discoveryLocationLabel(discovery) }} ›</button>
       <view class="hero">
         <image src="/static/activities/activity-channel-hero-v1.webp" mode="aspectFill" />
         <text class="hero-title">同城精彩活动</text>
@@ -51,7 +52,8 @@
           :activity="item"
           @open="openDetail"
         />
-        <NetworkState v-if="!loading && !error && !activities.length" message="附近暂时没有活动" />
+        <NetworkState v-if="!loading && !error && !activities.length" message="当前城市暂无符合条件的活动" />
+        <DiscoveryPagination v-if="!loading && !error" :has-more="hasMore" :loading="loadingMore" :error="moreError" :count="activities.length" @more="loadPage(false)" />
       </section>
     </main>
 
@@ -61,7 +63,9 @@
 </template>
 
 <script setup lang="ts">
-import { onLoad } from '@dcloudio/uni-app'
+import { onShow, onReachBottom, onUnload } from '@dcloudio/uni-app'
+import DiscoveryPagination from '@/components/DiscoveryPagination.vue'
+import { useDiscoveryPager } from '@/composables/useDiscoveryPager'
 import { ref } from 'vue'
 
 import ActivityListCard from '@/components/ActivityListCard.vue'
@@ -73,7 +77,8 @@ import {
   discoveryQuery,
   getDiscoveryContext,
   resolveDiscoveryContext,
-  showDiscoveryCityPicker,
+  openDiscoveryCityPicker,
+  discoveryLocationLabel,
 } from '@/services/discoveryContext'
 import { openPage } from '@/services/navigation'
 import type { ActivityListItem } from '@/types/api'
@@ -97,29 +102,42 @@ const sorts: Array<{ label: string; value: Ordering }> = [
   { label: '人气高', value: 'popular' },
 ]
 
-const activities = ref<ActivityListItem[]>([])
 const ordering = ref<Ordering>('recommended')
-const loading = ref(true)
-const error = ref('')
 const discovery = ref(getDiscoveryContext())
+let refreshVersion = 0
+const { items: activities, loading, loadingMore, error, moreError, hasMore, load: loadPage, invalidate } = useDiscoveryPager<ActivityListItem>(page => getNearbyActivities({
+  ordering: ordering.value, page, page_size: 20,
+  ...discoveryQuery(discovery.value),
+}), item => item.id)
 
 async function loadActivities() {
+  const ticket = ++refreshVersion
+  invalidate()
   loading.value = true
-  error.value = ''
   try {
-    activities.value = (await getNearbyActivities({
-      ordering: ordering.value,
-      page_size: 6,
-      ...discoveryQuery(discovery.value),
-    })).data.items
+    const context = await resolveDiscoveryContext()
+    if (ticket !== refreshVersion) return
+    discovery.value = context
+    if (ordering.value === 'distance' && !context.longitude) ordering.value = 'recommended'
+    const items = (await getActivityTags(context.cityCode)).data.items
+    if (ticket !== refreshVersion) return
+    categories.value = [fallbackCategories[0]!, ...items.slice(0, 5).map(item => ({
+      label: item.name, value: item.slug, icon: item.name.slice(0, 1),
+    }))]
+    await loadPage()
   } catch (reason) {
-    error.value = getErrorMessage(reason)
+    if (ticket === refreshVersion) error.value = getErrorMessage(reason)
   } finally {
-    loading.value = false
+    if (ticket === refreshVersion) loading.value = false
   }
 }
 
 function changeOrdering(value: Ordering) {
+  if (value === 'distance' && !discovery.value.longitude) {
+    uni.showToast({ title: '请先定位，再按距离排序', icon: 'none' })
+    chooseCity()
+    return
+  }
   ordering.value = value
   loadActivities()
 }
@@ -136,36 +154,17 @@ function openPublish() {
   openPage('/pages/publish/index')
 }
 
-async function chooseCity() {
-  const selected = await showDiscoveryCityPicker()
-  if (!selected) return
-  discovery.value = selected
-  await loadTags()
-  await loadActivities()
-}
-
-async function loadTags() {
-  try {
-    const items = (await getActivityTags(discovery.value.cityCode)).data.items
-    categories.value = [fallbackCategories[0]!, ...items.slice(0, 5).map(item => ({
-      label: item.name, value: item.slug, icon: item.name.slice(0, 1),
-    }))]
-  } catch {
-    categories.value = fallbackCategories
-  }
-}
-
-onLoad(async () => {
-  discovery.value = await resolveDiscoveryContext()
-  await loadTags()
-  await loadActivities()
-})
+function chooseCity() { openDiscoveryCityPicker() }
+onShow(loadActivities)
+onReachBottom(() => loadPage(false))
+onUnload(() => { refreshVersion++; invalidate() })
 </script>
 
 <style lang="scss" scoped>
 @use '../../styles/tokens.scss' as *;
 
 .activity-channel { background:$dz-surface-page; }
+.location-note { min-height:88rpx; padding:0; text-align:left; color:$dz-text-secondary; background:transparent; font-size:24rpx; line-height:1.5; }.location-note::after { border:0; }
 .topbar { display:flex; align-items:center; justify-content:space-between; height:94rpx; }
 .city { color:$dz-text-primary; font-size:$dz-fs-body-strong; font-weight:$dz-fw-semibold; }
 .search { color:$dz-text-primary; font-size:$dz-fs-price-lg; }

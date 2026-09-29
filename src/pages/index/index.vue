@@ -4,11 +4,12 @@
       <view class="dz-safe-top" />
       <view class="topbar dz-container">
         <button class="city" @tap="chooseCity">{{ discovery.cityName }} <text class="city-arrow">▾</text></button>
-        <view class="search"><text class="search-icon">⌕</text><text>搜索达人、活动、场馆</text></view>
+        <button class="search" hover-class="control--pressed" @tap="openPage('/pages/discovery/search')"><text class="search-icon">⌕</text><text>搜索达人、活动</text></button>
       </view>
     </view>
 
     <main class="content dz-container">
+      <button class="location-note" @tap="chooseCity">{{ discoveryLocationLabel(discovery) }} ›</button>
       <view class="hero">
         <image class="hero-art" src="/static/home/city-discovery-hero-v1.webp" mode="aspectFill" />
         <text class="hero-title">发现同城好搭子</text>
@@ -47,7 +48,7 @@
       </view>
 
       <view class="section-head provider-head"><text>推荐达人</text><text class="more" @tap="openProviders()">更多 <i>›</i></text></view>
-      <view v-if="loading" class="loading-block">正在发现附近的搭子…</view>
+      <view v-if="loading" class="loading-block">正在发现同城搭子…</view>
       <scroll-view v-if="providers.length" scroll-x class="provider-scroller" :show-scrollbar="false">
         <view class="provider-rail dz-anim-stagger">
           <HomeProviderCard
@@ -60,12 +61,12 @@
         </view>
       </scroll-view>
       <view v-else-if="providerError" class="error-block" @tap="loadDiscovery">{{ providerError }}，点击重试</view>
-      <view v-else-if="!loading" class="empty-block">附近暂时没有达人</view>
+      <view v-else-if="!loading" class="empty-block">暂无符合条件的达人，可切换城市或定位</view>
 
-      <view class="section-head activity-head"><text>附近活动</text><text class="more" @tap="openActivities()">更多 <i>›</i></text></view>
+      <view class="section-head activity-head"><text>{{ discovery.longitude ? '附近活动' : '同城活动' }}</text><text class="more" @tap="openActivities()">更多 <i>›</i></text></view>
       <view v-if="activityError" class="error-block" @tap="loadDiscovery">{{ activityError }}，点击重试</view>
       <HomeActivityCarousel v-if="activities.length" :items="activities.slice(0, 3)" @select="openActivityDetail" />
-      <view v-if="!loading && !activityError && !activities.length" class="empty-block">附近暂时没有活动</view>
+      <view v-if="!loading && !activityError && !activities.length" class="empty-block">当前城市暂无符合条件的活动</view>
     </main>
 
     <DazzyTabBar active="home" />
@@ -73,7 +74,7 @@
 </template>
 
 <script setup lang="ts">
-import { onLoad } from '@dcloudio/uni-app'
+import { onShow, onUnload } from '@dcloudio/uni-app'
 import { ref } from 'vue'
 
 import DazzyTabBar from '@/components/DazzyTabBar.vue'
@@ -84,7 +85,8 @@ import {
   discoveryQuery,
   getDiscoveryContext,
   resolveDiscoveryContext,
-  showDiscoveryCityPicker,
+  openDiscoveryCityPicker,
+  discoveryLocationLabel,
 } from '@/services/discoveryContext'
 import { openPage } from '@/services/navigation'
 import type { HomeActivityListItem, HomeCardAssets, HomeProviderListItem } from '@/types/api'
@@ -107,6 +109,7 @@ const activityError = ref('')
 const providerError = ref('')
 const homeCardAssets = ref<HomeCardAssets | null>(null)
 const discovery = ref(getDiscoveryContext())
+let loadVersion = 0
 
 function openProviders(category?: string) {
   openPage(`/pages/providers/list${category ? `?category=${category}` : ''}`)
@@ -125,43 +128,49 @@ function openActivityDetail(id: number) {
 }
 
 async function loadDiscovery() {
+  const version = ++loadVersion
   loading.value = true
+  providers.value = []
+  activities.value = []
   activityError.value = ''
   providerError.value = ''
 
   try {
-    discovery.value = await resolveDiscoveryContext()
+    const context = await resolveDiscoveryContext()
+    if (version !== loadVersion) return
+    discovery.value = context
     const response = await getHomeDiscovery(discoveryQuery(discovery.value))
+    if (version !== loadVersion) return
     providers.value = response.data.recommended_providers
     activities.value = response.data.recommended_activities
     homeCardAssets.value = response.data.card_assets
     providerError.value = response.data.errors.recommended_providers || ''
     activityError.value = response.data.errors.recommended_activities || ''
   } catch (error) {
+    if (version !== loadVersion) return
     providers.value = []
     activities.value = []
     homeCardAssets.value = null
     providerError.value = getErrorMessage(error)
     activityError.value = getErrorMessage(error)
   } finally {
-    loading.value = false
+    if (version === loadVersion) loading.value = false
   }
 }
 
-async function chooseCity() {
-  const selected = await showDiscoveryCityPicker()
-  if (!selected) return
-  discovery.value = selected
-  await loadDiscovery()
-}
+function chooseCity() { openDiscoveryCityPicker() }
 
-onLoad(loadDiscovery)
+onShow(loadDiscovery)
+onUnload(() => { loadVersion++ })
 </script>
 
 <style lang="scss" scoped>
 @use '../../styles/tokens.scss' as *;
 
 .topbar { display:flex; align-items:center; gap:24rpx; height:100rpx; }
+.location-note { display:flex; align-items:center; min-height:88rpx; text-align:left; color:$dz-text-secondary; font-size:24rpx; line-height:1.5; }
+.location-note::after,.search::after { border:0; }
+.control--pressed { opacity:.65; }
 button { margin:0; padding:0; line-height:1; background:transparent; }
 .city { border:0; outline:0; box-shadow:none; }
 .city::after { display:none; }

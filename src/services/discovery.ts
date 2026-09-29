@@ -21,6 +21,7 @@ interface DiscoveryLocationQuery {
 }
 
 interface ProviderQuery extends DiscoveryLocationQuery {
+  page?: number
   keyword?: string
   category?: string
   gender?: 'male' | 'female'
@@ -32,6 +33,7 @@ interface ProviderQuery extends DiscoveryLocationQuery {
 }
 
 interface ActivityQuery extends DiscoveryLocationQuery {
+  page?: number
   category?: string
   tags?: string
   keyword?: string
@@ -53,7 +55,7 @@ export function getServiceCategories() {
 
 export function getNearbyActivities(query: ActivityQuery = {}) {
   return request<ListResponse<ActivityListItem>>('/activities/', {
-    query: { ordering: 'distance', page_size: 3, ...query },
+    query: { ordering: query.longitude && query.latitude ? 'distance' : 'recommended', page_size: 3, ...query },
   })
 }
 

@@ -5,6 +5,14 @@
       "style": { "navigationStyle": "custom" }
     },
     {
+      "path": "pages/discovery/cities",
+      "style": { "navigationStyle": "custom" }
+    },
+    {
+      "path": "pages/discovery/search",
+      "style": { "navigationStyle": "custom" }
+    },
+    {
       "path": "pages/auth/login",
       "style": { "navigationStyle": "custom" }
     },

@@ -12,6 +12,7 @@
     "test:business-time": "node tests/businessTime.test.cjs",
     "test:notifications": "node tests/notifications.test.cjs",
     "test:payment-recovery": "node tests/paymentRecovery.test.cjs",
+    "test:discovery": "node --test tests/discovery.test.cjs",
     "type-check": "vue-tsc --noEmit"
   },
   "dependencies": {
