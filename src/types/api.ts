@@ -545,13 +545,22 @@ export interface CurrentUser {
   gender: 'unspecified' | 'male' | 'female'
   birth_date: string | null
   avatar_url: string | null
-  account_status: 'active' | 'restricted' | 'suspended' | 'closed'
+  account_status: 'active' | 'restricted' | 'suspended' | 'closure_pending' | 'closed'
 }
 
 export interface AuthSession {
   access: string
   refresh: string
   user: CurrentUser
+  closure_cancelled?: boolean
+}
+
+export interface AccountClosureSubmission {
+  closed: false
+  status: 'pending'
+  requested_at: string
+  execute_after: string
+  working_days: 5
 }
 
 export interface AccountSecurity {

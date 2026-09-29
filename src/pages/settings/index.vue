@@ -37,26 +37,29 @@ import DzNavBar from '@/components/DzNavBar.vue'
 import { onHide, onLoad, onShow } from '@dcloudio/uni-app'
 import { computed, ref } from 'vue'
 import AccountActionSheet from '@/components/AccountActionSheet.vue'
+import { openLegalDocument, type LegalDocumentKind } from '@/content/legal'
 
 import { getCurrentUser, logout } from '@/services/auth'
 import { guardCurrentPage, isAuthenticated } from '@/services/session'
 import type { CurrentUser } from '@/types/api'
 
-type SettingItem = { label: string; icon?: string; image?: string; tone?: string; value?: string; action?: 'password' | 'close' }
+type SettingItem = { label: string; icon?: string; image?: string; tone?: string; value?: string; action?: 'password' | 'close'; document?: LegalDocumentKind }
 
 const user = ref<CurrentUser | null>(null)
 const avatarFailed = ref(false)
 const loggingOut = ref(false)
-const accountActions = ref<{ open: (action: 'password' | 'close') => void; close: (force?: boolean) => void } | null>(null)
+const accountActions = ref<{ open: (action: 'password' | 'close') => void; close: (force?: boolean) => void; resume: () => void } | null>(null)
 const maskedPhone = computed(() => user.value?.phone.replace(/(\d{3})\d{4}(\d{4})/, '$1****$2') || '')
 const settingGroups: SettingItem[][] = [
   [
     { label: '修改密码', image: '/static/security/password.svg', tone: 'password-tone', action: 'password' },
+  ],
+  [
     { label: '注销账号', image: '/static/security/shield-danger.svg', tone: 'danger-tone', action: 'close' },
   ],
   [
-    { label: '用户协议', icon: '约' },
-    { label: '隐私政策', icon: '隐' },
+    { label: '用户协议', icon: '约', document: 'service' },
+    { label: '隐私政策', icon: '隐', document: 'privacy' },
     { label: '关于乐搭伴', icon: 'i' },
   ],
 ]
@@ -65,6 +68,7 @@ function goBack() { navigateBackOr(() => uni.reLaunch({ url: '/pages/profile/ind
 function openProfileEditor() { uni.navigateTo({ url: '/pages/profile/edit' }) }
 function openSetting(item: SettingItem) {
   if (item.action) return accountActions.value?.open(item.action)
+  if (item.document) return openLegalDocument(item.document)
   uni.showToast({ title: `${item.label}功能即将接入`, icon: 'none' })
 }
 function confirmLogout() {
@@ -94,7 +98,7 @@ async function loadUser() {
 }
 
 onLoad(() => { guardCurrentPage() })
-onShow(loadUser)
+onShow(() => { void loadUser(); accountActions.value?.resume() })
 onHide(() => accountActions.value?.close(true))
 </script>
 

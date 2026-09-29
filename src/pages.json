@@ -109,6 +109,10 @@
       "style": { "navigationStyle": "custom" }
     },
     {
+      "path": "pages/legal/document",
+      "style": { "navigationStyle": "custom" }
+    },
+    {
       "path": "pages/security/index",
       "style": { "navigationStyle": "custom" }
     },

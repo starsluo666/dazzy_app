@@ -4,6 +4,7 @@
     <main class="auth-shell">
       <AuthBrand />
       <view class="auth-heading"><h1>欢迎回来</h1><p>发现同城好搭子</p></view>
+      <view v-if="closurePending" class="closure-pending-notice">注销申请已提交。等待期内成功登录会撤销注销申请；如需继续注销，请勿重新登录。</view>
 
       <view v-if="bindingWechat" class="auth-form wechat-bind-form">
         <view class="wechat-bind-heading"><strong>绑定登录手机号</strong><text>首次使用微信登录，请验证手机号。已注册会绑定原账号，未注册会创建新账号。</text></view>
@@ -57,10 +58,7 @@
         <view class="auth-secondary-link">还没有账号？<text @tap="openRegister">立即注册</text></view>
       </view>
 
-      <view class="auth-agreement" @tap="agreed = !agreed">
-        <view class="agreement-check" :class="{ checked: agreed }">{{ agreed ? '✓' : '' }}</view>
-        <view class="agreement-copy">我已阅读并同意 <text>《用户协议》</text> 和 <text>《隐私政策》</text></view>
-      </view>
+      <LegalConsent class="auth-agreement" v-model="agreed" :disabled="submitting || wechatSubmitting" @read="openLegalDocument" />
     </main>
   </view>
 </template>
@@ -71,11 +69,14 @@ import { onLoad } from '@dcloudio/uni-app'
 import { onUnmounted, ref } from 'vue'
 
 import AuthBrand from '@/components/AuthBrand.vue'
+import LegalConsent from '@/components/LegalConsent.vue'
+import { openLegalDocument } from '@/content/legal'
 import { useSmsCode } from '@/composables/useSmsCode'
 import { bindWechatPhone, getWechatH5AuthorizeUrl, getWechatMobileLoginTicket, loginWithPassword, loginWithSms, loginWithWechatMiniProgram, resolveWechatLogin, sendWechatBindCode } from '@/services/auth'
 import { returnAfterAuthentication } from '@/services/session'
 import { clearPendingInviteCode, getPendingInviteCode, savePendingInviteCode } from '@/services/growth'
 import { isWechatBrowser } from '@/services/wechatPay'
+import type { AuthSession } from '@/types/api'
 
 const mode = ref<'password' | 'sms'>('password')
 const phone = ref('')
@@ -83,6 +84,7 @@ const password = ref('')
 const code = ref('')
 const passwordVisible = ref(false)
 const agreed = ref(false)
+const closurePending = ref(false)
 const submitting = ref(false)
 const wechatSubmitting = ref(false)
 const wechatAvailable = ref(false)
@@ -96,6 +98,7 @@ const redirect = ref('')
 const sms = useSmsCode('login')
 
 onLoad((query) => {
+  closurePending.value = query?.closurePending === '1'
   redirect.value = typeof query?.redirect === 'string'
     ? decodeURIComponent(query.redirect)
     : String(uni.getStorageSync('wechatLoginRedirect') || '')
@@ -142,10 +145,10 @@ function removeWechatTicketFromUrl() {
   // #endif
 }
 
-function finishWechatLogin() {
+function finishWechatLogin(session?: AuthSession) {
   uni.removeStorageSync('wechatLoginRedirect')
   clearPendingInviteCode()
-  uni.showToast({ title: '登录成功', icon: 'success' })
+  uni.showToast({ title: session?.closure_cancelled ? '登录成功，注销申请已撤销' : '登录成功', icon: 'success' })
   setTimeout(() => returnAfterAuthentication(redirect.value), 350)
 }
 
@@ -153,7 +156,7 @@ async function completeWechatLogin(ticket: string) {
   wechatSubmitting.value = true
   try {
     const result = await resolveWechatLogin(ticket)
-    if (result.status === 'authenticated') { finishWechatLogin(); return }
+    if (result.status === 'authenticated') { finishWechatLogin(result.session); return }
     wechatTicket.value = ticket
     bindingWechat.value = true
   } catch (error) { warn(error instanceof Error ? error.message : '微信登录失败') }
@@ -207,8 +210,8 @@ async function submitWechatBind() {
   if (!agreed.value) return warn('请先阅读并同意用户协议和隐私政策')
   wechatSubmitting.value = true
   try {
-    await bindWechatPhone(wechatTicket.value, wechatPhone.value, wechatCode.value, getPendingInviteCode())
-    finishWechatLogin()
+    const result = await bindWechatPhone(wechatTicket.value, wechatPhone.value, wechatCode.value, getPendingInviteCode())
+    finishWechatLogin(result.session)
   } catch (error) { warn(error instanceof Error ? error.message : '绑定失败，请重试') }
   finally { wechatSubmitting.value = false }
 }
@@ -239,9 +242,9 @@ async function wechatLogin(event: { detail?: { code?: string; errMsg?: string } 
   if (!phoneCode) return warn(event.detail?.errMsg?.includes('deny') ? '需要授权手机号才能首次登录' : '微信手机号授权失败')
   wechatSubmitting.value = true
   try {
-    await loginWithWechatMiniProgram(await getWechatLoginCode(), phoneCode, getPendingInviteCode())
+    const session = await loginWithWechatMiniProgram(await getWechatLoginCode(), phoneCode, getPendingInviteCode())
     clearPendingInviteCode()
-    uni.showToast({ title: '登录成功', icon: 'success' })
+    uni.showToast({ title: session.closure_cancelled ? '登录成功，注销申请已撤销' : '登录成功', icon: 'success' })
     setTimeout(() => returnAfterAuthentication(redirect.value), 350)
   } catch (error) { warn(error instanceof Error ? error.message : '微信登录失败') }
   finally { wechatSubmitting.value = false }
@@ -259,10 +262,11 @@ async function submit() {
   if (mode.value === 'sms' && code.value.length !== 6) return warn('请输入 6 位验证码')
   submitting.value = true
   try {
-    if (mode.value === 'password') await loginWithPassword(phone.value, password.value)
-    else await loginWithSms(phone.value, code.value)
+    const session = mode.value === 'password'
+      ? await loginWithPassword(phone.value, password.value)
+      : await loginWithSms(phone.value, code.value)
     clearPendingInviteCode()
-    uni.showToast({ title: '登录成功', icon: 'success' })
+    uni.showToast({ title: session.closure_cancelled ? '登录成功，注销申请已撤销' : '登录成功', icon: 'success' })
     setTimeout(() => returnAfterAuthentication(redirect.value), 350)
   } catch (error) { warn((error as Error).message) }
   finally { submitting.value = false }
@@ -278,6 +282,7 @@ function openReset() { uni.navigateTo({ url: `/pages/auth/reset-password?phone=$
 
 <style lang="scss" scoped>
 @use '../../styles/auth.scss';
+.closure-pending-notice { margin-bottom: 24rpx; padding: 24rpx; border-radius: 18rpx; color: #784d2b; background: #fff3e7; font-size: max(12px, 24rpx); line-height: 1.6; }
 .wechat-divider{display:flex;align-items:center;gap:18rpx;margin:28rpx 0 20rpx;color:#98a2b3;font-size:21rpx}.wechat-divider::before,.wechat-divider::after{height:1rpx;flex:1;background:#e1e9ea;content:''}.wechat-login{display:flex;width:100%;height:96rpx;align-items:center;justify-content:center;margin:0;border:1rpx solid #d8e7e7;border-radius:18rpx;color:#15875b;background:#f5fffa;font-size:28rpx;font-weight:650}.wechat-login[disabled]{opacity:.58}
 .wechat-bind-heading{display:flex;flex-direction:column;gap:10rpx;margin-bottom:24rpx}.wechat-bind-heading strong{font-size:32rpx;color:#172b35}.wechat-bind-heading text{font-size:24rpx;line-height:1.55;color:#667580}
 </style>

@@ -1,4 +1,4 @@
-import type { AccountSecurity, AuthSession, CurrentUser, CurrentUserOverview, DataResponse, SmsPurpose } from '@/types/api'
+import type { AccountClosureSubmission, AccountSecurity, AuthSession, CurrentUser, CurrentUserOverview, DataResponse, SmsPurpose } from '@/types/api'
 
 import { request, uploadFile } from './http'
 import { clearSession, getRefreshToken, saveSession } from './session'
@@ -142,7 +142,7 @@ export function logoutOtherSessions(currentPassword: string) {
 }
 
 export function closeAccount(currentPassword: string) {
-  return request<DataResponse<{ closed: boolean }>>('/auth/account/close/', {
+  return request<DataResponse<AccountClosureSubmission>>('/auth/account/close/', {
     method: 'POST', data: { current_password: currentPassword },
   })
 }

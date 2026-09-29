@@ -20,7 +20,12 @@ function mount(relative, names, auth = {}) {
       if (name === 'vue') return { ...vue, onBeforeUnmount: lifecycle('unmount') }
       if (name === '@dcloudio/uni-app') return { onLoad: lifecycle('load'), onShow: lifecycle('show'), onHide: lifecycle('hide') }
       if (name === '@/services/auth') return auth
-      if (name === '@/services/session') return { guardCurrentPage: () => true, isAuthenticated: () => true }
+      if (name === '@/services/session') return { guardCurrentPage: () => true, isAuthenticated: () => true, clearSession: () => calls.navigation.push({ clearSession: true }) }
+      if (name === '@/utils/formatters') return { formatBusinessDateTime: value => value }
+      if (name === '@/content/legal') return {
+        legalDocumentUrl: kind => `/pages/legal/document?type=${kind}`,
+        openLegalDocument: kind => calls.navigation.push({ url: `/pages/legal/document?type=${kind}` }),
+      }
       return {}
     },
     uni: {
@@ -44,6 +49,7 @@ function sheet(auth = {}) {
   return mount('components/AccountActionSheet.vue', [
     'open', 'panel', 'security', 'loading', 'error', 'saving', 'closePanel', 'loadSecurity',
     'currentPassword', 'newPassword', 'confirmation', 'initialCode', 'submit', 'sendInitialCode', 'codeSeconds',
+    'closureAgreed', 'readClosureAgreement', 'resume',
   ], { getAccountSecurity: async () => ({ data: security(true) }), ...auth })
 }
 function respond(modal, confirm) { modal.success({ confirm }); modal.complete?.() }
@@ -51,13 +57,17 @@ function respond(modal, confirm) { modal.success({ confirm }); modal.complete?.(
 async function settingsContainsOnlyRequestedEntries() {
   const { subject, calls } = mount('pages/settings/index.vue', ['settingGroups', 'accountActions', 'openSetting', 'openProfileEditor'])
   assert.deepEqual(Array.from(subject.settingGroups.flat(), item => item.label), ['修改密码', '注销账号', '用户协议', '隐私政策', '关于乐搭伴'])
+  assert.deepEqual(Array.from(subject.settingGroups, group => group.length), [1, 1, 3], 'destructive action has its own card')
   const actions = []
   subject.accountActions.value = { open: action => actions.push(action), close() {} }
   subject.openSetting(subject.settingGroups[0][0])
-  subject.openSetting(subject.settingGroups[0][1])
+  subject.openSetting(subject.settingGroups[1][0])
   assert.deepEqual(actions, ['password', 'close'])
   subject.openProfileEditor()
   assert.equal(calls.navigation[0].url, '/pages/profile/edit')
+  subject.openSetting(subject.settingGroups[2][0])
+  subject.openSetting(subject.settingGroups[2][1])
+  assert.deepEqual(Array.from(calls.navigation.slice(1), item => item.url), ['/pages/legal/document?type=service', '/pages/legal/document?type=privacy'])
 }
 async function passwordChangeValidatesAndPreservesTheAuthenticatedAPI() {
   const requests = []
@@ -104,7 +114,10 @@ async function initialPasswordUsesSMSInsteadOfTheChangePasswordAPI() {
 }
 async function closureNeedsExplicitConfirmationAndCurrentPassword() {
   const requests = []
-  const { subject: page, calls } = sheet({ closeAccount: async password => requests.push(password), logout: async () => requests.push('logout') })
+  const { subject: page, calls } = sheet({ closeAccount: async password => {
+    requests.push(password)
+    return { data: { closed: false, status: 'pending', working_days: 5, execute_after: '2026-10-12T14:20:00+08:00' } }
+  }, logout: () => assert.fail('server has already revoked tokens; never refresh them for a logout') })
   page.open('close')
   assert.equal(page.panel.value, '')
   respond(calls.modals[0], false)
@@ -116,10 +129,18 @@ async function closureNeedsExplicitConfirmationAndCurrentPassword() {
   assert.equal(requests.length, 0)
   page.currentPassword.value = 'current-test-password'
   await page.submit()
-  assert.deepEqual(requests, ['current-test-password', 'logout'])
+  assert.equal(requests.length, 0, 'valid password alone never authorizes closure')
+  assert.equal(calls.toasts.at(-1).title, '请先阅读并同意账号注销协议')
+  page.closureAgreed.value = true
+  await page.submit()
+  assert.deepEqual(requests, ['current-test-password'])
   assert.equal(page.panel.value, '')
-  calls.timers[0]()
-  assert.equal(calls.navigation[0].url, '/pages/auth/login')
+  assert.equal(calls.modals.at(-1).title, '注销申请已提交')
+  assert.ok(calls.modals.at(-1).content.includes('2026-10-12T14:20:00+08:00'))
+  assert.ok(calls.modals.at(-1).content.includes('成功登录将撤销申请'))
+  assert.equal(calls.navigation[0].clearSession, true)
+  respond(calls.modals.at(-1), true)
+  assert.equal(calls.navigation[1].url, '/pages/auth/login?closurePending=1')
 }
 async function closureWithoutPasswordRoutesToSMSSetup() {
   const { subject: page, calls } = sheet({ getAccountSecurity: async () => ({ data: security(false) }), closeAccount: () => assert.fail('must set password first') })
@@ -132,6 +153,48 @@ async function closureWithoutPasswordRoutesToSMSSetup() {
   await tick()
   assert.equal(page.panel.value, 'password')
   assert.equal(page.security.value.password_set, false)
+}
+async function unknownClosureResponsesNeverClaimWaitingPeriodStarted() {
+  for (const data of [undefined, { closed: true }, { closed: false, status: 'pending', working_days: 5, execute_after: 'invalid' }]) {
+    const { subject: page, calls } = sheet({ closeAccount: async () => ({ data }) })
+    page.open('close')
+    respond(calls.modals[0], true)
+    await tick()
+    page.currentPassword.value = 'current-test-password'
+    page.closureAgreed.value = true
+    await page.submit()
+    assert.equal(calls.modals.length, 1, 'no successful submission dialog for an unrecognized server response')
+    assert.equal(calls.navigation.length, 0)
+    assert.equal(calls.toasts.at(-1).icon, 'none')
+  }
+}
+async function readingClosureNeverCarriesPasswordsOrImplicitConsent() {
+  let securityChecks = 0
+  const { subject: page, calls } = sheet({
+    getAccountSecurity: async () => { securityChecks++; return { data: security(true) } },
+    closeAccount: () => assert.fail('reading is never a closure request'),
+  })
+  page.open('close')
+  respond(calls.modals[0], true)
+  await tick()
+  page.currentPassword.value = 'sensitive-test-password'
+  page.closureAgreed.value = true
+  page.readClosureAgreement()
+  assert.equal(calls.navigation[0].url, '/pages/legal/document?type=closure')
+  page.closePanel(true) // Settings onHide clears sensitive fields.
+  assert.equal(page.currentPassword.value, '')
+  assert.equal(page.closureAgreed.value, false)
+  page.resume()
+  await tick()
+  assert.equal(page.panel.value, 'close')
+  assert.equal(securityChecks, 2, 'account state is verified again after returning')
+  assert.equal(page.currentPassword.value, '')
+  assert.equal(page.closureAgreed.value, false)
+  await page.submit()
+  assert.equal(calls.toasts.at(-1).title, '请先阅读并同意账号注销协议')
+  page.closePanel()
+  page.resume()
+  assert.equal(page.panel.value, '')
 }
 async function unknownStateAndFailedRequestsNeverClaimSuccess() {
   const { subject: page, calls } = sheet({ getAccountSecurity: async () => { throw new Error('测试状态加载失败') }, changePassword: () => assert.fail('unknown account state') })
@@ -195,7 +258,7 @@ async function oldSecurityAddressRedirectsToSettings() {
   assert.equal(calls.navigation[0].url, '/pages/settings/index')
 }
 async function main() {
-  for (const test of [settingsContainsOnlyRequestedEntries, passwordChangeValidatesAndPreservesTheAuthenticatedAPI, initialPasswordUsesSMSInsteadOfTheChangePasswordAPI, closureNeedsExplicitConfirmationAndCurrentPassword, closureWithoutPasswordRoutesToSMSSetup, unknownStateAndFailedRequestsNeverClaimSuccess, lateResponsesCannotRestoreClosedFormsOrStartSMSTimers, duplicateSubmitsAndUnmountedFormsStaySafe, oldSecurityAddressRedirectsToSettings]) {
+  for (const test of [settingsContainsOnlyRequestedEntries, passwordChangeValidatesAndPreservesTheAuthenticatedAPI, initialPasswordUsesSMSInsteadOfTheChangePasswordAPI, closureNeedsExplicitConfirmationAndCurrentPassword, closureWithoutPasswordRoutesToSMSSetup, unknownClosureResponsesNeverClaimWaitingPeriodStarted, readingClosureNeverCarriesPasswordsOrImplicitConsent, unknownStateAndFailedRequestsNeverClaimSuccess, lateResponsesCannotRestoreClosedFormsOrStartSMSTimers, duplicateSubmitsAndUnmountedFormsStaySafe, oldSecurityAddressRedirectsToSettings]) {
     await test()
     console.log(`PASS ${test.name}`)
   }

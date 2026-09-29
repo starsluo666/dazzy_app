@@ -15,7 +15,7 @@
         <button class="auth-primary" :disabled="submitting" @tap="submit">{{ submitting ? '注册中…' : '注册并登录' }}</button>
         <view class="auth-secondary-link">已有账号？<text class="brand-link" @tap="back">去登录</text></view>
       </view>
-      <view class="auth-agreement" @tap="agreed = !agreed"><view class="agreement-check" :class="{ checked: agreed }">{{ agreed ? '✓' : '' }}</view><view class="agreement-copy">我已阅读并同意 <text>《用户协议》</text> 和 <text>《隐私政策》</text></view></view>
+      <LegalConsent class="auth-agreement" v-model="agreed" :disabled="submitting" @read="openLegalDocument" />
     </main>
   </view>
 </template>
@@ -26,6 +26,8 @@ import DzNavBar from '@/components/DzNavBar.vue'
 import { onLoad } from '@dcloudio/uni-app'
 import { ref } from 'vue'
 import AuthBrand from '@/components/AuthBrand.vue'
+import LegalConsent from '@/components/LegalConsent.vue'
+import { openLegalDocument } from '@/content/legal'
 import { useSmsCode } from '@/composables/useSmsCode'
 import { register } from '@/services/auth'
 import { clearPendingInviteCode, getPendingInviteCode, savePendingInviteCode } from '@/services/growth'

@@ -22,10 +22,11 @@
             <label><text>确认新密码</text><view class="password-field"><input v-model="confirmation" password placeholder="请再次输入新密码" maxlength="20" /></view></label>
           </template>
           <view v-else class="closure-note">
-            <strong>注销后无法恢复</strong>
-            <text>账号资料和登录状态将被停用，请确认仍要继续。</text>
+            <strong>5 个工作日后完成注销</strong>
+            <text>提交后将退出所有设备。等待期内成功登录会撤销申请；注销完成后无法恢复。若有待核实的交易或投诉，将暂停处理。</text>
           </view>
-          <button class="submit dz-tappable" :class="{ 'submit--danger': panel === 'close' }" :disabled="saving || sendingCode" role="button" :tabindex="saving || sendingCode ? -1 : 0" hover-class="dz-pressed" @tap="submit" @keydown.enter.prevent="submit" @keydown.space.prevent="submit">{{ submitLabel }}</button>
+          <LegalConsent v-if="panel === 'close'" v-model="closureAgreed" :documents="['closure']" :disabled="saving" @read="readClosureAgreement" />
+          <button class="submit dz-tappable" :class="{ 'submit--danger': panel === 'close' }" :disabled="saving || sendingCode || (panel === 'close' && !closureAgreed)" role="button" :tabindex="saving || sendingCode || (panel === 'close' && !closureAgreed) ? -1 : 0" hover-class="dz-pressed" @tap="submit" @keydown.enter.prevent="submit" @keydown.space.prevent="submit">{{ submitLabel }}</button>
         </view>
       </template>
     </view>
@@ -36,7 +37,11 @@
 import { computed, onBeforeUnmount, ref } from 'vue'
 import DzBottomSheet from '@/components/DzBottomSheet.vue'
 import NetworkState from '@/components/NetworkState.vue'
-import { changePassword, closeAccount, getAccountSecurity, logout, sendInitialPasswordCode, setInitialPassword } from '@/services/auth'
+import LegalConsent from '@/components/LegalConsent.vue'
+import { legalDocumentUrl } from '@/content/legal'
+import { changePassword, closeAccount, getAccountSecurity, sendInitialPasswordCode, setInitialPassword } from '@/services/auth'
+import { clearSession } from '@/services/session'
+import { formatBusinessDateTime } from '@/utils/formatters'
 import type { AccountSecurity } from '@/types/api'
 
 type Action = 'password' | 'close'
@@ -45,21 +50,24 @@ const security = ref<AccountSecurity | null>(null)
 const loading = ref(false), error = ref(''), saving = ref(false), confirmingClose = ref(false)
 const currentPassword = ref(''), newPassword = ref(''), confirmation = ref(''), initialCode = ref('')
 const sendingCode = ref(false), codeSeconds = ref(0)
+const closureAgreed = ref(false)
+let resumeClosureAfterReading = false
 let codeTimer: ReturnType<typeof setInterval> | undefined
 let disposed = false, loadVersion = 0
 const needsInitialPassword = computed(() => security.value?.password_set === false)
 const panelTitle = computed(() => panel.value === 'close' ? '注销账号' : needsInitialPassword.value ? '设置登录密码' : '修改登录密码')
 const panelDescription = computed(() => panel.value === 'close'
-  ? '验证当前密码后注销账号，此操作无法撤销。'
+  ? '验证当前密码后提交注销申请，等待期为 5 个工作日（按国内节假日和调休计算）。'
   : needsInitialPassword.value
     ? '验证绑定手机号后设置密码，无需旧密码。设置后其他设备需重新登录。'
     : '修改后，其他设备上的旧登录状态将失效。')
-const submitLabel = computed(() => saving.value ? '正在处理…' : panel.value === 'close' ? '确认注销' : needsInitialPassword.value ? '确认设置' : '确认修改')
+const submitLabel = computed(() => saving.value ? '正在处理…' : panel.value === 'close' ? '提交注销申请' : needsInitialPassword.value ? '确认设置' : '确认修改')
 
 function warn(title: string) { uni.showToast({ title, icon: 'none' }) }
-function clearForm() { currentPassword.value = ''; newPassword.value = ''; confirmation.value = ''; initialCode.value = '' }
+function clearForm() { currentPassword.value = ''; newPassword.value = ''; confirmation.value = ''; initialCode.value = ''; closureAgreed.value = false }
 function closePanel(force = false) {
   if ((saving.value || sendingCode.value) && !force) return
+  if (!force) resumeClosureAfterReading = false
   loadVersion += 1
   panel.value = ''
   loading.value = false
@@ -73,7 +81,7 @@ function open(action: Action) {
     confirmingClose.value = true
     uni.showModal({
       title: '注销账号',
-      content: '注销后将无法登录当前账号，资料也会被停用。确定继续吗？',
+      content: '申请后将进入 5 个工作日等待期并退出登录。期间成功登录可撤销申请，注销完成后无法恢复。确定继续吗？',
       confirmText: '继续注销',
       confirmColor: '#c9472a',
       success: ({ confirm }) => { if (confirm && !disposed) void openPanel('close') },
@@ -112,6 +120,7 @@ async function loadSecurity() {
 async function submit() {
   if (!panel.value || !security.value || loading.value || error.value || saving.value || sendingCode.value) return
   const action = panel.value
+  if (action === 'close' && !closureAgreed.value) return warn('请先阅读并同意账号注销协议')
   const settingInitial = needsInitialPassword.value && action === 'password'
   if (settingInitial) {
     if (!/^\d{6}$/.test(initialCode.value)) return warn('请输入 6 位短信验证码')
@@ -124,11 +133,21 @@ async function submit() {
   saving.value = true
   try {
     if (action === 'close') {
-      await closeAccount(currentPassword.value)
-      await logout()
+      const { data } = await closeAccount(currentPassword.value)
+      if (data?.status !== 'pending' || data.closed !== false || data.working_days !== 5 || !Number.isFinite(Date.parse(data.execute_after))) {
+        throw new Error('注销申请状态异常，请重新登录或联系客服确认')
+      }
+      // The server has already revoked every session. Do not refresh or issue
+      // a remote logout with invalid credentials (nor accidentally log in again).
+      clearSession()
       closePanel(true)
-      uni.showToast({ title: '账号已注销', icon: 'success' })
-      setTimeout(() => uni.reLaunch({ url: '/pages/auth/login' }), 350)
+      if (!disposed) uni.showModal({
+        title: '注销申请已提交',
+        content: `预计于 ${formatBusinessDateTime(data.execute_after)}（北京时间）完成注销。等待期内成功登录将撤销申请；如出现待核实业务，处理会暂停。`,
+        showCancel: false,
+        confirmText: '我知道了',
+        success: () => uni.reLaunch({ url: '/pages/auth/login?closurePending=1' }),
+      })
     } else {
       if (settingInitial) await setInitialPassword(initialCode.value, newPassword.value)
       else await changePassword(currentPassword.value, newPassword.value)
@@ -156,8 +175,21 @@ async function sendInitialCode() {
   } catch (reason) { warn(reason instanceof Error ? reason.message : '验证码发送失败') }
   finally { sendingCode.value = false }
 }
-onBeforeUnmount(() => { disposed = true; loadVersion += 1; clearForm(); if (codeTimer) clearInterval(codeTimer) })
-defineExpose({ open, close: closePanel })
+function readClosureAgreement() {
+  if (panel.value !== 'close' || saving.value || disposed) return
+  resumeClosureAfterReading = true
+  uni.navigateTo({
+    url: legalDocumentUrl('closure'),
+    fail: () => { resumeClosureAfterReading = false; warn('协议页面打开失败，请重试') },
+  })
+}
+function resume() {
+  if (!resumeClosureAfterReading || disposed || saving.value) return
+  resumeClosureAfterReading = false
+  void openPanel('close')
+}
+onBeforeUnmount(() => { disposed = true; loadVersion += 1; resumeClosureAfterReading = false; clearForm(); if (codeTimer) clearInterval(codeTimer) })
+defineExpose({ open, close: closePanel, resume })
 </script>
 
 <style lang="scss" scoped>
