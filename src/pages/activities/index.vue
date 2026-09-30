@@ -22,7 +22,10 @@
           role="button"
           @tap="openActivityList(item.value)"
         >
-          <view class="category-icon" :class="item.value || 'all'">{{ item.icon }}</view>
+          <view class="category-icon" :class="item.value || 'all'">
+            <image v-if="item.iconUrl" :src="item.iconUrl" mode="aspectFit" :aria-label="item.label" />
+            <text v-else>{{ item.icon }}</text>
+          </view>
           <text>{{ item.label }}</text>
         </view>
       </view>
@@ -83,15 +86,8 @@ import { getErrorMessage } from '@/utils/formatters'
 
 type Ordering = 'recommended' | 'latest' | 'distance' | 'popular'
 
-const fallbackCategories = [
-  { label: '全部', value: '', icon: '▦' },
-  { label: '台球', value: 'billiards', icon: '8' },
-  { label: '桌游', value: 'board-games', icon: '⚄' },
-  { label: '旅行', value: 'travel', icon: '▣' },
-  { label: '运动', value: 'sports', icon: '奔' },
-  { label: 'K歌', value: 'karaoke', icon: '♪' },
-]
-const categories = ref(fallbackCategories)
+const allCategory = { label: '全部', value: '', icon: '▦', iconUrl: null as string | null }
+const categories = ref([allCategory])
 const sorts: Array<{ label: string; value: Ordering }> = [
   { label: '推荐', value: 'recommended' },
   { label: '最新', value: 'latest' },
@@ -111,6 +107,7 @@ async function loadActivities() {
   const ticket = ++refreshVersion
   invalidate()
   loading.value = true
+  categories.value = [allCategory]
   try {
     const context = await resolveDiscoveryContext()
     if (ticket !== refreshVersion) return
@@ -118,8 +115,8 @@ async function loadActivities() {
     if (ordering.value === 'distance' && !context.longitude) ordering.value = 'recommended'
     const items = (await getActivityTags(context.cityCode)).data.items
     if (ticket !== refreshVersion) return
-    categories.value = [fallbackCategories[0]!, ...items.slice(0, 5).map(item => ({
-      label: item.name, value: item.slug, icon: item.name.slice(0, 1),
+    categories.value = [allCategory, ...items.slice(0, 5).map(item => ({
+      label: item.name, value: item.slug, icon: item.name.slice(0, 1), iconUrl: item.icon_url,
     }))]
     await loadPage()
   } catch (reason) {
@@ -175,6 +172,7 @@ onUnload(() => { refreshVersion++; invalidate() })
 .category { display:flex; flex-direction:column; align-items:center; gap:10rpx; color:$dz-text-primary; font-size:$dz-fs-caption; transition:transform $dz-duration-fast $dz-ease-out, opacity $dz-duration-fast $dz-ease-standard; }
 .category--pressed { transform:scale(.94); opacity:.82; }
 .category-icon { display:flex; align-items:center; justify-content:center; width:62rpx; height:62rpx; border:1rpx solid $dz-border-material; border-radius:22rpx; color:$dz-text-primary; background:#dff9f8; box-shadow:inset 0 1rpx 0 $dz-surface-highlight; font-size:$dz-fs-body; font-weight:$dz-fw-bold; }
+.category-icon image { width:100%; height:100%; border-radius:inherit; }
 .category-icon.all { color:$dz-text-inverse; background:$dz-gradient-brand; }
 .category-icon.billiards { color:$dz-text-inverse; background:#152127; }
 .sorts { display:flex; align-items:stretch; gap:66rpx; height:82rpx; margin:12rpx 22rpx 0; }
