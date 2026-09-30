@@ -41,9 +41,16 @@
           <text class="phone-action">修改</text>
           <text class="chevron">›</text>
         </view>
+
+        <button class="form-row wechat-row dz-tappable" :class="{ 'wechat-row--bound': wechat.currentBound.value }" :disabled="saving || wechat.busy.value || wechat.loading.value || wechat.currentBound.value" aria-label="微信绑定" hover-class="dz-pressed" @tap="wechat.bind" @keydown.enter.prevent="wechat.bind" @keydown.space.prevent="wechat.bind">
+          <text>微信</text>
+          <view class="field-value">{{ wechat.statusLabel.value }}</view>
+          <text v-if="wechat.actionLabel.value" class="phone-action">{{ wechat.actionLabel.value }}</text>
+          <text v-if="!wechat.currentBound.value" class="chevron" aria-hidden="true">›</text>
+        </button>
       </section>
 
-      <button class="save-button" :class="{ blocked: saveAttempted && !canSave }" :disabled="saving" role="button" :tabindex="saving ? -1 : 0" @tap="save" @keydown.enter.prevent="save" @keydown.space.prevent="save">
+      <button class="save-button" :class="{ blocked: saveAttempted && !canSave }" :disabled="saving || wechat.busy.value" role="button" :tabindex="saving || wechat.busy.value ? -1 : 0" @tap="save" @keydown.enter.prevent="save" @keydown.space.prevent="save">
         {{ saving ? '保存中…' : '保存修改' }}
       </button>
     </main>
@@ -72,6 +79,7 @@ import { getCurrentUser, updateCurrentUser, uploadAvatar } from '@/services/auth
 import { guardCurrentPage } from '@/services/session'
 import type { CurrentUser } from '@/types/api'
 import { businessDateKey } from '@/utils/businessTime'
+import { useWechatBinding } from '@/composables/useWechatBinding'
 
 type Gender = CurrentUser['gender']
 
@@ -86,6 +94,13 @@ const genderSheetVisible = ref(false)
 const saving = ref(false)
 const saveAttempted = ref(false)
 const profileLoaded = ref(false)
+const userId = ref('')
+const wechat = useWechatBinding({
+  userId: () => userId.value,
+  getDraft: () => ({ nickname: nickname.value, gender: gender.value, birthDate: birthDate.value }),
+  restoreDraft: draft => { nickname.value = draft.nickname; gender.value = draft.gender as Gender; birthDate.value = draft.birthDate },
+  hasTemporaryAvatar: () => Boolean(avatarFilePath.value),
+})
 const today = businessDateKey()
 const genderOptions: Array<{ label: string; value: Gender }> = [
   { label: '保密', value: 'unspecified' },
@@ -121,7 +136,7 @@ function chooseAvatar() {
 }
 async function save() {
   saveAttempted.value = true
-  if (saving.value) return
+  if (saving.value || wechat.busy.value) return
   if (!canSave.value) { warn('昵称至少填写1个字'); return }
   saving.value = true
   try {
@@ -141,22 +156,25 @@ async function save() {
   finally { saving.value = false }
 }
 
-onLoad(async () => {
+onLoad(async (query) => {
   if (!guardCurrentPage()) return
   try {
     const user = (await getCurrentUser()).data
+    userId.value = user.public_id
     nickname.value = user.nickname
     phone.value = user.phone
     gender.value = user.gender
     birthDate.value = user.birth_date || ''
     avatarPreview.value = user.avatar_url || ''
     profileLoaded.value = true
+    await wechat.initialize(query)
   } catch (error) { warn((error as Error).message || '资料加载失败') }
 })
 onShow(async () => {
   if (!profileLoaded.value) return
   try { phone.value = (await getCurrentUser()).data.phone }
   catch (error) { warn((error as Error).message || '手机号刷新失败') }
+  await wechat.refresh()
 })
 </script>
 
@@ -186,6 +204,12 @@ onShow(async () => {
 .chevron { margin-left: 12rpx; color:$dz-text-tertiary; font-size:$dz-fs-title; font-weight: 300; }
 .phone-row .field-value { color: $dz-text-secondary; }
 .phone-action { width: auto!important; margin-left: 14rpx; color: $dz-brand-deep; font-size: $dz-fs-caption!important; font-weight: $dz-fw-semibold!important; }
+.wechat-row { width:100%; min-height:max(44px, 102rpx); margin:0; padding:0; border:0; border-radius:0; background:transparent; line-height:1.4; text-align:left; }
+.wechat-row::after { border:0; }
+.wechat-row .field-value { color:$dz-text-secondary; }
+.wechat-row--bound .field-value { color:#147d58; }
+.wechat-row--bound[disabled] { opacity:1; color:$dz-text-primary; background:transparent; }
+.wechat-row:focus-visible { outline:2px solid $dz-list-accent; outline-offset:-2px; }
 .save-button { display: flex; align-items: center; justify-content: center; width: 100%; min-height: max(44px, 92rpx); margin-top: 34rpx; padding: $dz-space-2 $dz-space-4; border: 0; border-radius:$dz-radius-full; color: $dz-text-inverse; background: $dz-gradient-brand; font-size: max(14px, #{$dz-fs-body-strong}); font-weight: $dz-fw-bold; line-height: 1.4; box-sizing: border-box; box-shadow: $dz-shadow-brand; }
 .save-button::after { border: 0; }
 .save-button:focus-visible { outline: 2px solid $dz-list-accent; outline-offset: 2px; }
