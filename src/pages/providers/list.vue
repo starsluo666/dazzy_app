@@ -16,12 +16,12 @@
       <view class="categories dz-container">
         <view
           v-for="item in categories"
-          :key="item.value"
+          :key="item.slug"
           class="category"
-          :class="{ active: category === item.value }"
+          :class="{ active: category === item.slug }"
           hover-class="category--pressed"
           role="button"
-          @tap="changeCategory(item.value)"
+          @tap="changeCategory(item.slug)"
         >{{ item.label }}</view>
       </view>
     </scroll-view>
@@ -150,7 +150,9 @@ import DzEmptyState from '@/components/DzEmptyState.vue'
 import DzSkeleton from '@/components/DzSkeleton.vue'
 import NetworkState from '@/components/NetworkState.vue'
 import { getRecommendedProviders, getServiceCategories } from '@/services/discovery'
+import { allProviderCategory, configuredProviderCategories } from '@/services/providerCategories'
 import {
+  type DiscoveryContext,
   discoveryQuery,
   getDiscoveryContext,
   resolveDiscoveryContext,
@@ -171,17 +173,7 @@ interface ProviderFilters {
   maxPriceAmount: number
 }
 
-const fallbackCategories = [
-  { label: '全部', value: '' },
-  { label: '棋牌', value: 'mahjong' },
-  { label: '桌球', value: 'billiards' },
-  { label: '电竞', value: 'esports' },
-  { label: '密室', value: 'escape-room' },
-  { label: '桌游', value: 'board-games' },
-  { label: '爬山', value: 'travel' },
-  { label: '商务', value: 'business' },
-]
-const categories = ref([...fallbackCategories])
+const categories = ref([allProviderCategory])
 const sorts: Array<{ label: string; value: Ordering; icon: string }> = [
   { label: '综合', value: 'recommended', icon: '✦' },
   { label: '距离', value: 'distance', icon: '⌖' },
@@ -220,6 +212,8 @@ const draftFilters = ref<ProviderFilters>(emptyFilters())
 const filterOpen = ref(false)
 const discovery = ref(getDiscoveryContext())
 let refreshVersion = 0
+let categoryVersion = 0
+let pageVersion = 0
 const { items: providers, loading, loadingMore, error, moreError, hasMore, load: loadPage, invalidate } = useDiscoveryPager<ProviderListItem>(page => getRecommendedProviders({
   keyword: committedKeyword.value || undefined,
   category: category.value || undefined,
@@ -275,12 +269,16 @@ function personalityTag(item: ProviderListItem) {
 }
 
 async function loadProviders() {
+  return performLoadProviders()
+}
+
+async function performLoadProviders(resolvedContext?: DiscoveryContext) {
   committedKeyword.value = keyword.value.trim().slice(0, 50)
   const ticket = ++refreshVersion
   invalidate()
   loading.value = true
   try {
-    const context = await resolveDiscoveryContext()
+    const context = resolvedContext || await resolveDiscoveryContext()
     if (ticket !== refreshVersion) return
     discovery.value = context
     if (ordering.value === 'distance' && !context.longitude) ordering.value = 'recommended'
@@ -292,22 +290,18 @@ async function loadProviders() {
   }
 }
 
-async function loadCategories() {
+async function loadCategories(cityCode: string) {
+  const version = ++categoryVersion
   try {
-    const items = (await getServiceCategories()).data.items
-    if (items.length) {
-      const primaryValues = new Set(fallbackCategories.map(item => item.value))
-      const configuredExtras = items
-        .filter(item => !primaryValues.has(item.slug))
-        .map(item => ({
-          label: item.name.replace('陪玩', '').replace('陪伴', ''),
-          value: item.slug,
-        }))
-      categories.value = [...fallbackCategories, ...configuredExtras]
-    }
+    const items = (await getServiceCategories(cityCode)).data.items
+    if (version !== categoryVersion) return false
+    categories.value = [allProviderCategory, ...configuredProviderCategories(items)]
   } catch {
-    categories.value = [...fallbackCategories]
+    if (version !== categoryVersion) return false
+    categories.value = [allProviderCategory]
   }
+  if (category.value && !categories.value.some(item => item.slug === category.value)) category.value = ''
+  return true
 }
 
 function changeCategory(value: string) {
@@ -370,11 +364,29 @@ function clearFilters() {
 onLoad((query) => {
   category.value = typeof query?.category === 'string' ? query.category : ''
   keyword.value = typeof query?.keyword === 'string' ? query.keyword : ''
-  loadCategories()
 })
-onShow(loadProviders)
+onShow(async () => {
+  const version = ++pageVersion
+  let context: DiscoveryContext
+  try {
+    context = await resolveDiscoveryContext()
+  } catch (reason) {
+    if (version !== pageVersion) return
+    refreshVersion++
+    categoryVersion++
+    invalidate()
+    categories.value = [allProviderCategory]
+    error.value = getErrorMessage(reason)
+    return
+  }
+  if (version !== pageVersion) return
+  discovery.value = context
+  const categoriesReady = loadCategories(context.cityCode)
+  if (!category.value) performLoadProviders(context)
+  else if (await categoriesReady) await performLoadProviders(context)
+})
 onReachBottom(() => loadPage(false))
-onUnload(() => { refreshVersion++; invalidate() })
+onUnload(() => { refreshVersion++; categoryVersion++; pageVersion++; invalidate() })
 </script>
 
 <style lang="scss" scoped>

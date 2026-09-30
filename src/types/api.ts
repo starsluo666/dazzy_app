@@ -203,6 +203,7 @@ export interface ServiceCategory {
   id: number
   name: string
   slug: string
+  icon_url?: string | null
   hourly_min_price_amount: number
   hourly_max_price_amount: number
   per_session_min_price_amount: number

@@ -40,7 +40,9 @@
           :aria-label="item.label"
           @tap="openProviders(item.slug)"
         >
-          <image class="category-icon" :src="item.icon" mode="aspectFit" aria-hidden="true" /><text>{{ item.label }}</text>
+          <image v-if="item.icon" class="category-icon" :src="item.icon" mode="aspectFit" aria-hidden="true" />
+          <text v-else class="category-icon category-icon--fallback" aria-hidden="true">{{ item.label.slice(0, 1) }}</text>
+          <text class="category-label">{{ item.label }}</text>
         </view>
       </view>
 
@@ -78,7 +80,8 @@ import { ref } from 'vue'
 import DazzyTabBar from '@/components/DazzyTabBar.vue'
 import HomeActivityCarousel from '@/components/HomeActivityCarousel.vue'
 import HomeProviderCard from '@/components/HomeProviderCard.vue'
-import { getHomeDiscovery } from '@/services/discovery'
+import { getHomeDiscovery, getServiceCategories } from '@/services/discovery'
+import { allProviderCategory, configuredProviderCategories } from '@/services/providerCategories'
 import {
   discoveryQuery,
   getDiscoveryContext,
@@ -90,16 +93,7 @@ import { openPage } from '@/services/navigation'
 import type { HomeActivityListItem, HomeCardAssets, HomeProviderListItem } from '@/types/api'
 import { getErrorMessage } from '@/utils/formatters'
 
-const categories = [
-  { label: '棋牌', slug: 'mahjong', icon: '/static/home/categories/chess-cards.svg' },
-  { label: '桌球', slug: 'billiards', icon: '/static/home/categories/billiards.svg' },
-  { label: '电竞', slug: 'esports', icon: '/static/home/categories/esports.svg' },
-  { label: '密室', slug: 'escape-room', icon: '/static/home/categories/escape-room.svg' },
-  { label: '桌游', slug: 'board-games', icon: '/static/home/categories/board-games.svg' },
-  { label: '爬山', slug: 'travel', icon: '/static/home/categories/hiking.svg' },
-  { label: '商务', slug: 'business', icon: '/static/home/categories/business.svg' },
-  { label: '全部', slug: '', icon: '/static/home/categories/all.svg' },
-]
+const categories = ref([allProviderCategory])
 const providers = ref<HomeProviderListItem[]>([])
 const activities = ref<HomeActivityListItem[]>([])
 const loading = ref(true)
@@ -108,6 +102,7 @@ const providerError = ref('')
 const homeCardAssets = ref<HomeCardAssets | null>(null)
 const discovery = ref(getDiscoveryContext())
 let loadVersion = 0
+let categoryVersion = 0
 
 function openProviders(category?: string) {
   openPage(`/pages/providers/list${category ? `?category=${category}` : ''}`)
@@ -128,6 +123,7 @@ function openActivityDetail(id: number) {
 async function loadDiscovery() {
   const version = ++loadVersion
   loading.value = true
+  categories.value = [allProviderCategory]
   providers.value = []
   activities.value = []
   activityError.value = ''
@@ -137,6 +133,7 @@ async function loadDiscovery() {
     const context = await resolveDiscoveryContext()
     if (version !== loadVersion) return
     discovery.value = context
+    loadCategories(context.cityCode)
     const response = await getHomeDiscovery(discoveryQuery(discovery.value))
     if (version !== loadVersion) return
     providers.value = response.data.recommended_providers
@@ -158,8 +155,20 @@ async function loadDiscovery() {
 
 function chooseCity() { openDiscoveryCityPicker() }
 
+async function loadCategories(cityCode: string) {
+  const version = ++categoryVersion
+  try {
+    const items = (await getServiceCategories(cityCode)).data.items
+    if (version === categoryVersion) {
+      categories.value = [...configuredProviderCategories(items).slice(0, 7), allProviderCategory]
+    }
+  } catch {
+    if (version === categoryVersion) categories.value = [allProviderCategory]
+  }
+}
+
 onShow(loadDiscovery)
-onUnload(() => { loadVersion++ })
+onUnload(() => { loadVersion++; categoryVersion++ })
 </script>
 
 <style lang="scss" scoped>
@@ -199,9 +208,11 @@ button { margin:0; padding:0; line-height:1; background:transparent; }
 .group-art { right:-20rpx; width:210rpx; height:190rpx; }
 .scene b { display:none; }
 .scene--pressed,.category--pressed { transform:scale(0.98); opacity:0.94; }
-.categories { display:grid; grid-template-columns:repeat(4,1fr); grid-template-rows:repeat(2,1fr); height:248rpx; margin-top:$dz-space-3; padding:12rpx 8rpx; border:1rpx solid $dz-border-material; border-radius:$dz-radius-lg; background:$dz-surface-card; box-shadow:$dz-shadow-card,inset 0 1rpx 0 $dz-surface-highlight; box-sizing:border-box; }
+.categories { display:grid; grid-template-columns:repeat(4,1fr); grid-auto-rows:112rpx; margin-top:$dz-space-3; padding:12rpx 8rpx; border:1rpx solid $dz-border-material; border-radius:$dz-radius-lg; background:$dz-surface-card; box-shadow:$dz-shadow-card,inset 0 1rpx 0 $dz-surface-highlight; box-sizing:border-box; }
 .category { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:5rpx; border-radius:$dz-radius-md; color:$dz-text-primary; font-size:$dz-fs-caption; transition:transform $dz-duration-fast $dz-ease-out, opacity $dz-duration-fast $dz-ease-standard, background-color $dz-duration-base $dz-ease-standard; }
 .category-icon { display:block; width:54rpx; height:54rpx; padding:7rpx; border-radius:18rpx; background:$dz-surface-page; box-sizing:content-box; }
+.category-icon--fallback { display:flex; align-items:center; justify-content:center; color:$dz-brand-deep; font-size:$dz-fs-body; font-weight:$dz-fw-semibold; }
+.category-label { display:block; overflow:hidden; max-width:100%; white-space:nowrap; text-overflow:ellipsis; text-align:center; }
 .category--pressed { background:$dz-brand-soft; }
 /* #ifdef H5 */
 .search { -webkit-backdrop-filter:saturate(180%) blur(18px); backdrop-filter:saturate(180%) blur(18px); }

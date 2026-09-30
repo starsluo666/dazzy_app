@@ -47,8 +47,9 @@ export function getRecommendedProviders(query: ProviderQuery = {}) {
   })
 }
 
-export function getServiceCategories() {
+export function getServiceCategories(cityCode?: string) {
   return request<{ data: { items: ServiceCategory[] } }>('/service-categories/', {
+    query: { city_code: cityCode },
     skipAuth: true,
   })
 }
