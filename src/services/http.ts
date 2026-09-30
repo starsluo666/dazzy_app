@@ -21,11 +21,17 @@ export class ApiError extends Error {
   readonly code: string
 
   constructor(body: unknown, fallback: string) {
-    super(errorMessage(body, fallback))
+    const parsed = parseErrorBody(body)
+    super(errorMessage(parsed, fallback))
     this.name = 'ApiError'
-    const code = body && typeof body === 'object' ? (body as Record<string, unknown>).code : ''
+    const code = parsed && typeof parsed === 'object' ? (parsed as Record<string, unknown>).code : ''
     this.code = typeof code === 'string' ? code : ''
   }
+}
+
+function parseErrorBody(body: unknown): unknown {
+  if (typeof body !== 'string') return body
+  try { return JSON.parse(body) } catch { return null }
 }
 
 function refreshAccessToken(): Promise<RefreshResult> {
@@ -72,6 +78,16 @@ async function retryAfterUnauthorized<T>(retry: () => Promise<T>): Promise<T> {
 }
 
 function errorMessage(body: unknown, fallback: string): string {
+  if (Array.isArray(body)) {
+    for (const value of body) {
+      if (typeof value === 'string' && value.trim()) return value
+      if (value && typeof value === 'object') {
+        const nested = errorMessage(value, fallback)
+        if (nested !== fallback) return nested
+      }
+    }
+    return fallback
+  }
   if (!body || typeof body !== 'object') return fallback
   const record = body as Record<string, unknown>
   if (typeof record.detail === 'string') return record.detail
@@ -79,8 +95,15 @@ function errorMessage(body: unknown, fallback: string): string {
   for (const value of values) {
     if (typeof value === 'string') return value
     if (Array.isArray(value) && typeof value[0] === 'string') return value[0]
-    if (value && typeof value === 'object') return errorMessage(value, fallback)
+    if (value && typeof value === 'object') {
+      const nested = errorMessage(value, fallback)
+      if (nested !== fallback) return nested
+    }
   }
+  // DRF also uses "code" as a field name for SMS verification errors. Keep
+  // machine-readable error codes (e.g. huifu_payment_closed) out of the toast.
+  const codeMessage = Array.isArray(record.code) ? record.code[0] : record.code
+  if (typeof codeMessage === 'string' && codeMessage.trim() && !/^[A-Za-z0-9_.-]+$/.test(codeMessage)) return codeMessage
   return fallback
 }
 

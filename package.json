@@ -16,6 +16,7 @@
     "test:settings": "node tests/settings.test.cjs",
     "test:legal": "node tests/legal.test.cjs",
     "test:wechat-binding": "node tests/wechatBinding.test.cjs",
+    "test:http-errors": "node tests/httpErrors.test.cjs",
     "test:discovery": "node --test tests/discovery.test.cjs",
     "test:navigation": "node tests/navigation.test.cjs",
     "test:lists": "node --test tests/lists.test.cjs",
