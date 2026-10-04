@@ -193,7 +193,12 @@ const reviewAnonymous = ref(false)
 const reviewImages = ref<Array<{ id: string; url: string }>>([])
 const steps = ['已支付', '已接单', '待出发', '履约中', '待确认']
 const contactableStatuses = ['pending_acceptance', 'pending_service', 'departed', 'in_service']
-const statusCopy = computed(() => orderStatusCopy(order.value?.status || ''))
+const statusCopy = computed(() => {
+  const copy = orderStatusCopy(order.value?.status || '')
+  return order.value?.fulfillment_review_required
+    ? { ...copy, description: '履约时间待客服核实，自动确认和分账已暂停。' }
+    : copy
+})
 const showActions = computed(() => Boolean(
   order.value
   && (
