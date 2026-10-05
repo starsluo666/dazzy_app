@@ -7,7 +7,7 @@
         <view v-else><text>＋</text><strong>添加活动封面</strong><small>建议上传 4:3 横图</small></view>
         <text v-if="coverPath" class="replace">更换封面</text>
       </section>
-      <text class="cover-tip">{{ coverUploading ? '正在安全上传封面…' : coverAssetId ? '已使用自定义封面' : defaultCoverUrl ? '当前使用平台默认封面，点击可替换' : '封面仅支持 JPG、PNG 或 WebP，最大10MB。' }}</text>
+      <text class="cover-tip">{{ coverUploading ? '正在安全上传封面…' : coverAssetId ? '已使用自定义封面' : defaultCoverUrl ? '当前使用平台默认封面，点击可替换' : '支持 JPG、PNG、WebP、HEIC/HEIF，最大10MB。' }}</text>
 
       <section class="panel">
         <text class="section-title">基本信息</text>
@@ -529,14 +529,20 @@ function chooseCover() {
   uni.chooseImage({
     count: 1,
     sizeType: ['compressed'],
+    sourceType: ['album', 'camera'],
     success: async (result) => {
       const path = result.tempFilePaths[0] || ''
       if (!path) return
+      const selected = Array.isArray(result.tempFiles) ? result.tempFiles[0] : result.tempFiles
+      if (selected?.size && selected.size > 10 * 1024 * 1024) {
+        uni.showToast({ title: '封面不能超过10MB，请压缩后重试', icon: 'none' })
+        return
+      }
       coverPath.value = path
       coverAssetId.value = ''
       coverUploading.value = true
       try {
-        const uploaded = (await uploadActivityCover(path)).data
+        const uploaded = (await uploadActivityCover(path, selected)).data
         coverAssetId.value = uploaded.id
         coverPath.value = uploaded.url || path
       } catch (reason) {

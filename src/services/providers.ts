@@ -3,13 +3,11 @@ import type { DataResponse, ProviderApplication, ServiceCategory } from '@/types
 
 export type ProviderApplicationDraft = Pick<
   ProviderApplication,
-  | 'bio'
   | 'application_real_name'
   | 'application_birth_date'
   | 'lifestyle_photo_id'
   | 'service_city_code'
   | 'service_city_name'
-  | 'max_service_radius_km'
   | 'invitation_code'
 >
 

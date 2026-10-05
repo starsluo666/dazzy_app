@@ -158,7 +158,9 @@ export function uploadFile<T>(path: string, filePath: string, name = 'file', fil
       uni.uploadFile({
         url: `${API_BASE_URL}${path}`,
         filePath,
-        file,
+        // H5 pickers may wrap the native File; mini-programs use filePath.
+        // Do not filter phone uploads by filename extension or reported MIME.
+        file: file && typeof file === 'object' && 'file' in file ? (file as { file: unknown }).file : file,
         name,
         header: getAccessToken()
           ? { Authorization: `Bearer ${getAccessToken()}` }

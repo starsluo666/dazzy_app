@@ -76,36 +76,11 @@
             </button>
           </view>
 
-          <label>
-            <text>达人简介</text>
-            <textarea
-              v-model="form.bio"
-              :class="{ invalid: submitAttempted && bioShort }"
-              maxlength="500"
-              placeholder="介绍你的特长、性格和可提供的陪伴体验（至少10字）"
-            />
-            <small>{{ form.bio.length }}/500</small>
-            <small v-if="submitAttempted && bioShort" class="field-error">达人简介至少填写10个字，还差 {{ Math.max(0, 10 - form.bio.trim().length) }} 字</small>
-          </label>
-
           <view class="row">
             <text>服务城市</text>
             <picker :range="cities" range-key="name" @change="chooseCity">
               <view>{{ form.service_city_name || '请选择' }} <b>›</b></view>
             </picker>
-          </view>
-
-          <view class="radius">
-            <view><text>服务范围</text><strong>{{ form.max_service_radius_km }}km</strong></view>
-            <slider
-              :value="form.max_service_radius_km"
-              min="10"
-              max="70"
-              :activeColor="BRAND_PRIMARY"
-              backgroundColor="#dfe9ea"
-              block-size="20"
-              @change="changeRadius"
-            />
           </view>
 
           <label class="input-row">
@@ -118,7 +93,7 @@
           <strong>申请流程</strong>
           <text>• 客服先审核本次达人入驻意向</text>
           <text>• 初审通过后，在达人端完成实名认证和资料上传</text>
-          <text>• 实名及资料完成后，再配置服务并开启接单</text>
+          <text>• 完成资料和服务配置，开通审核通过并完成接单学习后即可接单</text>
         </section>
 
         <view class="agreement" role="checkbox" :aria-checked="agreed" @tap="agreed = !agreed">
@@ -140,7 +115,6 @@ import { onLoad } from '@dcloudio/uni-app'
 import { computed, reactive, ref, shallowRef } from 'vue'
 
 import NetworkState from '@/components/NetworkState.vue'
-import { BRAND_PRIMARY } from '@/utils/brand'
 import { getCurrentUser, updateCurrentUser } from '@/services/auth'
 import {
   getProviderApplication,
@@ -186,10 +160,8 @@ const form = reactive({
   application_real_name: '',
   application_birth_date: '' as string | null,
   lifestyle_photo_id: null as string | null,
-  bio: '',
   service_city_code: '130400',
   service_city_name: '邯郸市',
-  max_service_radius_km: 10,
   invitation_code: '',
 })
 
@@ -202,12 +174,10 @@ const canSubmit = computed(() =>
   form.application_real_name.trim().length >= 2
   && Boolean(form.application_birth_date)
   && Boolean(form.lifestyle_photo_id || photoPath.value)
-  && form.bio.trim().length >= 10
   && Boolean(form.service_city_code)
   && agreed.value,
 )
 const nameShort = computed(() => form.application_real_name.trim().length < 2)
-const bioShort = computed(() => form.bio.trim().length < 10)
 const genderLabel = computed(() =>
   genderOptions.find(item => item.value === gender.value)?.label || '保密',
 )
@@ -265,9 +235,6 @@ function choosePhoto() {
     },
   })
 }
-function changeRadius(event: { detail: { value: number } }) {
-  form.max_service_radius_km = Number(event.detail.value)
-}
 async function load() {
   loading.value = true
   error.value = ''
@@ -284,10 +251,8 @@ async function load() {
         application_real_name: application.value.application_real_name,
         application_birth_date: application.value.application_birth_date,
         lifestyle_photo_id: application.value.lifestyle_photo_id,
-        bio: application.value.bio,
         service_city_code: application.value.service_city_code || '130400',
         service_city_name: application.value.service_city_name || '邯郸市',
-        max_service_radius_km: application.value.max_service_radius_km,
         invitation_code: application.value.invitation_code,
       })
       photoPreview.value = application.value.lifestyle_photo_url || ''
@@ -305,9 +270,7 @@ async function submit() {
   if (!canSubmit.value) {
     warn(nameShort.value
       ? '真实姓名至少填写2个字'
-      : bioShort.value
-        ? `达人简介至少填写10个字，还差${Math.max(0, 10 - form.bio.trim().length)}字`
-        : '请补齐出生日期、生活照、服务城市并同意协议')
+      : '请补齐出生日期、生活照、服务城市并同意协议')
     return
   }
   saving.value = true
@@ -325,7 +288,6 @@ async function submit() {
     await saveProviderApplication({
       ...form,
       application_real_name: form.application_real_name.trim(),
-      bio: form.bio.trim(),
       invitation_code: form.invitation_code.trim(),
     })
     application.value = (await submitProviderApplication()).data
@@ -364,9 +326,9 @@ onLoad(() => { if (guardCurrentPage()) load() })
 .section-heading text { color: $dz-text-tertiary; font-size:$dz-fs-micro; }
 .form-card, .tips, .status-card, .reject { border-radius:$dz-radius-md; background: #fff; box-shadow: $dz-shadow-card; }
 .form-card { padding: 0 25rpx; }
-.form-card label, .row, .radius, .photo-field { display: block; padding: 24rpx 0; border-bottom: 1rpx solid $dz-border-subtle; }
+.form-card label, .row, .photo-field { display: block; padding: 24rpx 0; border-bottom: 1rpx solid $dz-border-subtle; }
 .form-card > :last-child { border-bottom: 0; }
-.form-card label > text, .row > text, .row-label > text, .radius > view > text, .field-head > text { font-size:$dz-fs-caption; font-weight:$dz-fw-bold; }
+.form-card label > text, .row > text, .row-label > text, .field-head > text { font-size:$dz-fs-caption; font-weight:$dz-fw-bold; }
 .field-head { display: flex; align-items: center; justify-content: space-between; }
 .field-head small { color: $dz-price-primary; font-size:$dz-fs-micro; }
 .photo-upload { display: flex; width: 100%; height: 152rpx; align-items: center; margin: 18rpx 0 0; padding: 14rpx; border: 1rpx dashed #9bdedc; border-radius:$dz-radius-md; background: #effcfc; line-height: normal; touch-action: manipulation; }
@@ -381,16 +343,12 @@ onLoad(() => { if (guardCurrentPage()) load() })
 .photo-copy text { margin-top: 7rpx; overflow: hidden; color: $dz-text-secondary; font-size:$dz-fs-micro; line-height: 1.4; text-overflow: ellipsis; white-space: nowrap; }
 .photo-action { flex: none; margin-left: 12rpx; color: $dz-brand-deep; font-size:$dz-fs-caption; font-weight:$dz-fw-bold; }
 .photo-help { display: block; margin-top: 12rpx; color: $dz-text-tertiary; font-size:$dz-fs-micro; line-height: 1.5; }
-.form-card textarea { width: 100%; height: 150rpx; margin-top: 17rpx; font-size:$dz-fs-caption; line-height: 1.55; }
 .form-card label > small { display: block; color: $dz-text-tertiary; text-align: right; font-size:$dz-fs-micro; }
 .row { display: flex; min-height: 54rpx; align-items: center; justify-content: space-between; }
 .row-label { display: flex; flex-direction: column; gap: 7rpx; }
 .row-label small { color: $dz-text-tertiary; font-size:$dz-fs-micro; font-weight:$dz-fw-regular; }
 .row picker view { color: $dz-text-secondary; font-size:$dz-fs-caption; }
 .row b { margin-left: 12rpx; font-size:$dz-fs-heading; font-weight: 300; }
-.radius > view { display: flex; justify-content: space-between; }
-.radius strong { color: $dz-brand-deep; font-size:$dz-fs-caption; }
-.radius slider { margin: 20rpx 0 0; }
 .input-row { display: flex !important; align-items: center; }
 .input-row input { min-height: 54rpx; flex: 1; text-align: right; font-size:$dz-fs-caption; }
 .tips { display: flex; flex-direction: column; gap: 10rpx; margin-top: 20rpx; padding: 23rpx 25rpx; }
@@ -401,7 +359,7 @@ onLoad(() => { if (guardCurrentPage()) load() })
 .agreement i.active { border-color: $dz-brand-primary; color: #fff; background: $dz-brand-primary; }
 .submit, .status-card button { height: 84rpx; border: 0; border-radius:$dz-radius-full; color: #fff; background: $dz-gradient-brand; font-size:$dz-fs-body; font-weight:$dz-fw-bold; line-height: 84rpx; }
 .submit[disabled] { opacity: .45; }
-.submit.blocked{background:#d94a4a}.input-row.invalid,.form-card textarea.invalid{border-color:$dz-status-danger!important;background:$dz-status-danger-soft!important}.input-row{flex-wrap:wrap}.input-row .field-error{width:100%;margin-top:8rpx;color:$dz-status-danger!important;text-align:right}.field-error{display:block!important;margin-top:7rpx;color:$dz-status-danger!important;font-size:$dz-fs-micro!important;text-align:left!important}
+.submit.blocked{background:#d94a4a}.input-row.invalid{border-color:$dz-status-danger!important;background:$dz-status-danger-soft!important}.input-row{flex-wrap:wrap}.input-row .field-error{width:100%;margin-top:8rpx;color:$dz-status-danger!important;text-align:right}.field-error{display:block!important;margin-top:7rpx;color:$dz-status-danger!important;font-size:$dz-fs-micro!important;text-align:left!important}
 .reject { display: flex; flex-direction: column; gap: 8rpx; margin-bottom: 18rpx; padding: 20rpx 24rpx; border-left: 6rpx solid $dz-price-primary; }
 .reject strong { color: $dz-status-danger-deep; font-size:$dz-fs-caption; }
 .reject text { color: $dz-text-secondary; font-size:$dz-fs-caption; }

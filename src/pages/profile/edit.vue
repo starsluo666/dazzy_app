@@ -10,7 +10,7 @@
           <view class="camera">相机</view>
         </view>
         <strong>更换头像</strong>
-        <text>支持 JPG、PNG、WebP，大小不超过 5MB</text>
+        <text>支持 JPG、PNG、WebP、HEIC/HEIF，大小不超过 5MB</text>
       </section>
 
       <section class="form-panel">

@@ -112,8 +112,8 @@ export function createActivityDraft(payload: ActivityDraftPayload) {
   return request<DataResponse<ActivityDraftResult>>('/activities/', { method: 'POST', data: payload as unknown as Record<string, unknown> })
 }
 
-export function uploadActivityCover(filePath: string) {
-  return uploadFile<DataResponse<{ id: string; url: string }>>('/media/activity-covers/', filePath)
+export function uploadActivityCover(filePath: string, file?: unknown) {
+  return uploadFile<DataResponse<{ id: string; url: string }>>('/media/activity-covers/', filePath, 'file', file)
 }
 
 export function createActivityPublishOrder(activityId: number) {
