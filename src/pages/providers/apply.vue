@@ -134,7 +134,6 @@ const cities = [
   { code: '310100', name: '上海市' },
 ]
 const genderOptions: Array<{ label: string; value: Gender }> = [
-  { label: '保密', value: 'unspecified' },
   { label: '男', value: 'male' },
   { label: '女', value: 'female' },
 ]
@@ -172,6 +171,7 @@ const locked = computed(() =>
 )
 const canSubmit = computed(() =>
   form.application_real_name.trim().length >= 2
+  && (gender.value === 'male' || gender.value === 'female')
   && Boolean(form.application_birth_date)
   && Boolean(form.lifestyle_photo_id || photoPath.value)
   && Boolean(form.service_city_code)
@@ -179,7 +179,7 @@ const canSubmit = computed(() =>
 )
 const nameShort = computed(() => form.application_real_name.trim().length < 2)
 const genderLabel = computed(() =>
-  genderOptions.find(item => item.value === gender.value)?.label || '保密',
+  genderOptions.find(item => item.value === gender.value)?.label || '请选择',
 )
 const genderIndex = computed(() =>
   Math.max(0, genderOptions.findIndex(item => item.value === gender.value)),
@@ -270,7 +270,7 @@ async function submit() {
   if (!canSubmit.value) {
     warn(nameShort.value
       ? '真实姓名至少填写2个字'
-      : '请补齐出生日期、生活照、服务城市并同意协议')
+      : '请选择性别，补齐出生日期、生活照、服务城市并同意协议')
     return
   }
   saving.value = true

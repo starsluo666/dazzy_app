@@ -5,28 +5,10 @@
       <main class="report-main dz-container">
         <section class="reward-card">
           <image class="reward-rays" src="/static/report/reward-rays.svg" mode="aspectFill" aria-hidden="true" />
-          <view class="reward-medal" aria-hidden="true"><text>奖</text></view>
+          <view class="reward-envelope" aria-hidden="true"><view class="reward-medal"><text>奖</text></view></view>
           <view class="reward-eyebrow"><i class="eyebrow-line" /><text>举报有奖</text><i class="eyebrow-line" /></view>
-          <view v-if="rules" class="reward-primary">
-            <view class="reward-price"><text class="reward-currency">¥</text><text class="reward-amount">{{ money(rules.coupon_amount) }}</text></view>
-            <text class="reward-name">奖励优惠券</text>
-          </view>
-          <view v-if="rules" class="reward-terms">
-            <text>订单原价大于 ¥{{ money(rules.coupon_min_order_amount) }} 可用</text>
-            <i class="reward-separator" aria-hidden="true">·</i>
-            <text>有效期 {{ rules.coupon_valid_days }} 天</text>
-          </view>
-          <view v-else class="reward-state"><text>{{ loading ? '正在加载奖励规则…' : '奖励规则暂时无法显示' }}</text></view>
         </section>
 
-        <section v-if="rules" class="rule-summary panel">
-          <view class="rule-clock" aria-hidden="true"><i class="clock-hand" /></view>
-          <text class="rule-copy"><b class="rule-emphasis">维护真实、安全的服务体验。</b>订单确认完成后，在待评价期内关联本人订单并提交真实、完整的证据；待评价期限 <b class="rule-days">{{ rules.review_timeout_days }} 天</b>，过期、已评价或已举报的订单不可关联。最终是否发券以客服核查结果为准。</text>
-        </section>
-        <section v-else-if="loading" class="rule-summary rule-summary--loading panel">
-          <view class="rule-clock" aria-hidden="true"><i class="clock-hand" /></view>
-          <text class="rule-copy">正在读取举报奖励规则…</text>
-        </section>
 
         <section class="form-card panel order-card">
           <view class="field-title-row">
@@ -113,9 +95,8 @@ import { ref } from 'vue'
 import { createSupportCase, getRewardReportRules, uploadSupportAttachment } from '@/services/support'
 import type { RewardReportRules } from '@/services/support'
 import type { SupportCaseReason } from '@/types/api'
-import { formatAmount, getErrorMessage } from '@/utils/formatters'
+import { getErrorMessage } from '@/utils/formatters'
 
-const money = formatAmount
 const reasons: Array<{ value: SupportCaseReason; label: string }> = [
   { value: 'service_quality', label: '服务质量' },
   { value: 'false_information', label: '虚假信息' },
@@ -275,7 +256,7 @@ onLoad(async (query) => {
 .reward-card {
   position: relative;
   overflow: hidden;
-  height: 272rpx;
+  height: 248rpx;
   border: 1rpx solid rgba(255, 255, 255, .55);
   border-radius: $dz-radius-lg;
   color: $dz-text-inverse;
@@ -292,14 +273,16 @@ onLoad(async (query) => {
   height: 100%;
 }
 
+.reward-envelope { position: relative; width: 112rpx; height: 134rpx; margin: 22rpx auto 0; border: 2rpx solid #ffd68b; border-radius: 14rpx; background: #d94524; box-shadow: 0 8rpx 24rpx rgba(120,40,10,.18); }
+.reward-envelope::before { position: absolute; top: 0; left: 0; right: 0; height: 64rpx; border-bottom: 2rpx solid #ffd68b; border-radius: 10rpx 10rpx 50% 50%; background: #f35f38; content: ''; }
 .reward-medal {
   position: absolute;
   z-index: 2;
-  top: 28rpx;
-  right: 38rpx;
+  top: 40rpx;
+  left: 25rpx;
   display: flex;
-  width: 76rpx;
-  height: 76rpx;
+  width: 62rpx;
+  height: 62rpx;
   align-items: center;
   justify-content: center;
   border: 6rpx solid rgba(255, 245, 198, .82);
@@ -319,90 +302,12 @@ onLoad(async (query) => {
   gap: $dz-space-2;
   align-items: center;
   justify-content: center;
-  padding-top: 50rpx;
+  padding-top: 18rpx;
 }
 
 .reward-eyebrow text { font-size: $dz-fs-caption; font-weight: $dz-fw-bold; letter-spacing: .16em; }
 .eyebrow-line { width: 58rpx; height: 2rpx; background: rgba(255, 255, 255, .72); }
 
-.reward-primary {
-  position: relative;
-  z-index: 2;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  margin-top: 10rpx;
-}
-
-.reward-price { display: flex; align-items: baseline; }
-.reward-currency { font-size: 62rpx; font-weight: $dz-fw-bold; line-height: 1; letter-spacing: -.04em; }
-.reward-amount { font-size: 88rpx; font-weight: $dz-fw-bold; line-height: .9; letter-spacing: -.06em; }
-.reward-name { margin: 0 0 8rpx 12rpx; font-size: $dz-fs-body-strong; font-weight: $dz-fw-bold; line-height: $dz-lh-body-strong; }
-
-.reward-terms {
-  position: relative;
-  z-index: 2;
-  display: flex;
-  gap: 12rpx;
-  align-items: center;
-  justify-content: center;
-  margin-top: 22rpx;
-  color: rgba(255, 255, 255, .94);
-  font-size: $dz-fs-caption;
-  line-height: $dz-lh-caption;
-}
-
-.reward-separator { font-style: normal; }
-.reward-state { position: relative; z-index: 2; display: flex; height: 142rpx; align-items: center; justify-content: center; }
-.reward-state text { color: rgba(255, 255, 255, .9); font-size: $dz-fs-caption; }
-
-.rule-summary {
-  display: grid;
-  grid-template-columns: 42rpx minmax(0, 1fr);
-  gap: $dz-space-2;
-  align-items: start;
-  margin-top: $dz-space-3;
-  padding: $dz-space-3 $dz-space-4;
-  border-radius: $dz-radius-lg;
-  background: $dz-surface-card;
-}
-
-.rule-clock {
-  position: relative;
-  width: 32rpx;
-  height: 32rpx;
-  margin-top: 4rpx;
-  border: 3rpx solid $dz-brand-deep;
-  border-radius: $dz-radius-full;
-  box-sizing: border-box;
-}
-
-.clock-hand {
-  position: absolute;
-  left: 50%;
-  top: 5rpx;
-  width: 2rpx;
-  height: 9rpx;
-  background: $dz-brand-deep;
-  transform: translateX(-50%);
-}
-
-.clock-hand::after {
-  position: absolute;
-  left: 0;
-  bottom: 0;
-  width: 8rpx;
-  height: 2rpx;
-  background: $dz-brand-deep;
-  content: '';
-  transform: rotate(32deg);
-  transform-origin: left center;
-}
-
-.rule-copy { color: $dz-text-secondary; font-size: $dz-fs-caption; line-height: 1.72; }
-.rule-emphasis { color: $dz-text-primary; font-weight: $dz-fw-bold; }
-.rule-days { color: $dz-text-primary; font-weight: $dz-fw-bold; }
-.rule-summary--loading { color: $dz-text-tertiary; }
 
 .form-card {
   margin-top: $dz-space-3;

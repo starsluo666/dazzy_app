@@ -1,0 +1,23 @@
+const assert = require('node:assert/strict')
+const fs = require('node:fs')
+const path = require('node:path')
+const read = file => fs.readFileSync(path.resolve(__dirname, '../src', file), 'utf8')
+for (const file of ['pages/profile/edit.vue', 'pages/providers/apply.vue']) {
+  const source = read(file)
+  const options = source.match(/const genderOptions[^=]*= \[([\s\S]*?)\n\]/)?.[1]
+  assert.ok(options, file)
+  assert.match(options, /value: 'male'/)
+  assert.match(options, /value: 'female'/)
+  assert.doesNotMatch(options, /保密|unspecified/)
+}
+assert.match(read('pages/profile/edit.vue'), /gender\.value === 'male' \|\| gender\.value === 'female'/, 'leave historic unset gender untouched when saving other profile fields')
+assert.match(read('pages/providers/apply.vue'), /&& \(gender\.value === 'male' \|\| gender\.value === 'female'\)/, 'application requires a gender choice')
+const report = read('pages/report/index.vue')
+const template = report.slice(0, report.indexOf('</template>'))
+assert.match(template, /reward-envelope/)
+assert.doesNotMatch(template, /coupon_amount|coupon_min_order_amount|coupon_valid_days|rule-summary|奖励规则/)
+assert.match(template, /关联订单/)
+assert.match(template, /证据图片/)
+assert.match(report, /reward_eligible: true/)
+assert.match(report, /description\.value\.trim\(\)\.length < 5/)
+console.log('PASS gender choices and legacy unset handling, required application gender, report visual-only simplification preserves validation')

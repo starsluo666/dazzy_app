@@ -103,7 +103,6 @@ const wechat = useWechatBinding({
 })
 const today = businessDateKey()
 const genderOptions: Array<{ label: string; value: Gender }> = [
-  { label: '保密', value: 'unspecified' },
   { label: '男', value: 'male' },
   { label: '女', value: 'female' },
 ]
@@ -141,7 +140,8 @@ async function save() {
   saving.value = true
   try {
     await updateCurrentUser({
-      nickname: nickname.value.trim(), gender: gender.value, birth_date: birthDate.value || null,
+      nickname: nickname.value.trim(), birth_date: birthDate.value || null,
+      ...(gender.value === 'male' || gender.value === 'female' ? { gender: gender.value } : {}),
     })
     if (avatarFilePath.value) {
       try { await uploadAvatar(avatarFilePath.value, avatarFile.value) }
