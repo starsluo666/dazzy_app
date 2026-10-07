@@ -43,6 +43,9 @@
         <view class="map"><view class="roads" /><i>●</i></view>
         <view><i>▤</i><text>订单编号</text><strong class="muted">{{ order.order_no }}</strong><button aria-label="复制订单编号" @tap="copyOrderNo">▣</button></view>
         <view><i>▦</i><text>创建时间</text><strong class="muted">{{ createdLabel }}</strong></view>
+        <view v-if="order.status === 'pending_service' && order.timeout?.departure_deadline_at">
+          <i>⌛</i><text>出发截止</text><strong class="muted">{{ formatDateTime(order.timeout.departure_deadline_at) }}</strong>
+        </view>
         <view v-if="order.status === 'pending_confirmation' && order.confirmation_expires_at">
           <i>⌛</i><text>确认截止</text><strong class="muted">{{ formatDateTime(order.confirmation_expires_at) }}</strong>
         </view>
@@ -195,6 +198,10 @@ const steps = ['已支付', '已接单', '待出发', '履约中', '待确认']
 const contactableStatuses = ['pending_acceptance', 'pending_service', 'departed', 'in_service']
 const statusCopy = computed(() => {
   const copy = orderStatusCopy(order.value?.status || '')
+  if (order.value?.timeout?.timed_out_at) return {
+    ...copy, title: order.value.timeout.reason,
+    description: `${order.value.timeout.refund_label}。订单已取消，剩余实付款（含路费）按原支付路径退回，具体到账以退款结果为准。`,
+  }
   return order.value?.fulfillment_review_required
     ? { ...copy, description: '履约时间待客服核实，自动确认和分账已暂停。' }
     : copy

@@ -664,6 +664,15 @@ export interface MyInvitationSummary {
 }
 
 export interface ProviderOrder {
+  timeout?: {
+    departure_deadline_at: string | null
+    timed_out_at: string | null
+    reason: string
+    refund_label: string
+    credit_points: number
+    credit_reversed_at: string | null
+    configured_credit_penalty: number | null
+  }
   public_id: string
   order_no: string
   status: string
