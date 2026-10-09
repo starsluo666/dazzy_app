@@ -69,6 +69,10 @@ export function simulateProviderOrderPayment(orderNo: string) {
   return request<DataResponse<ProviderOrder>>(`/provider-orders/${orderNo}/simulate-payment/`, { method: 'POST' })
 }
 
+export function createTerminationRequest(orderNo: string, data: { ended_at: string; reason: string; evidence_asset_ids: string[] }) {
+  return request<DataResponse<ProviderOrderAfterSalesCase>>(`/provider-orders/${encodeURIComponent(orderNo)}/termination/`, { method: 'POST', data })
+}
+
 export function getMyCoupons() {
   return request<{ data: { items: UserCoupon[] } }>('/users/me/coupons/')
 }

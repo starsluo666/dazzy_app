@@ -823,11 +823,23 @@ export interface ProviderOrderSettlementSummary {
   settled_at: string | null
 }
 
+export interface OrderTerminationSummary {
+  reported_ended_at: string
+  finance_state: string
+  finance_label: string
+  decision?: {
+    ended_at: string
+    responsibility_label: string
+    component_refunds: { service: number; transport: number; other: number }
+  }
+}
+
 export interface ProviderOrderAfterSalesSummary {
+  termination?: OrderTerminationSummary | null
   case_no: string
   case_type: string
   case_type_label: string
-  status: 'pending' | 'processing' | 'approved' | 'refunded' | 'rejected'
+  status: 'pending' | 'processing' | 'approved' | 'refunded' | 'rejected' | 'resolved'
   status_label: string
   requested_amount: number
   approved_amount: number | null
@@ -842,10 +854,11 @@ export interface ProviderOrderAfterSalesSummary {
 }
 
 export interface ProviderOrderAfterSalesCase {
+  termination?: OrderTerminationSummary | null
   case_no: string
-  case_type: 'refund' | 'service_dispute' | 'provider_cancel' | 'other'
+  case_type: 'refund' | 'service_dispute' | 'provider_cancel' | 'other' | 'early_termination'
   case_type_label: string
-  status: 'pending' | 'processing' | 'approved' | 'refunded' | 'rejected'
+  status: 'pending' | 'processing' | 'approved' | 'refunded' | 'rejected' | 'resolved'
   status_label: string
   requested_amount: number
   approved_amount: number | null

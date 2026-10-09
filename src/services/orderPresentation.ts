@@ -2,7 +2,7 @@ export type OrderBucket = 'all' | 'pending_payment' | 'upcoming' | 'active' | 'p
 
 const upcoming = ['pending_acceptance', 'pending_support', 'pending_service']
 const active = ['departed', 'in_service', 'pending_confirmation']
-const afterSales = ['after_sales', 'refunded']
+const afterSales = ['after_sales', 'refunded', 'terminated']
 
 export const orderTabs: { key: OrderBucket; label: string }[] = [
   { key: 'all', label: '全部' },
@@ -33,6 +33,7 @@ export function orderStatusCopy(status: string) {
     pending_confirmation: { title: '待确认', description: '达人已提交完成，请确认服务结果。', step: 4 },
     pending_review: { title: '待评价', description: '服务已完成，期待你的真实评价。', step: 4 },
     completed: { title: '已完成', description: '本次服务已顺利完成。', step: 4 },
+    terminated: { title: '已提前终止', description: '服务已终止，退款与剩余款项按客服核定结果处理。', step: 4 },
     cancelled: { title: '已取消', description: '订单已关闭，档期已经释放。', step: 0 },
     after_sales: { title: '售后中', description: '客服正在处理售后申请。', step: 4 },
     refunded: { title: '已退款', description: '退款已按原支付路径发起。', step: 4 },

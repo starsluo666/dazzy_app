@@ -77,7 +77,7 @@
       <section v-if="order.after_sales || order.refund_orders.length" class="finance-panel panel">
         <view class="finance-head"><strong>退款 / 售后进度</strong><text v-if="order.after_sales" :class="['finance-badge', afterSalesTone]">{{ order.after_sales.status_label }}</text></view>
         <view v-if="order.after_sales" class="finance-row"><text>申请单号</text><text>{{ order.after_sales.case_no }}</text></view>
-        <view v-if="order.after_sales" class="finance-row"><text>申请金额</text><strong>¥{{ money(order.after_sales.requested_amount) }}</strong></view>
+        <view v-if="order.after_sales" class="finance-row"><text>{{ order.after_sales.termination ? '申请时可退上限' : '申请金额' }}</text><strong>¥{{ money(order.after_sales.requested_amount) }}</strong></view>
         <view v-if="order.after_sales?.approved_amount != null" class="finance-row"><text>审核金额</text><strong>¥{{ money(order.after_sales.approved_amount) }}</strong></view>
         <view v-if="latestRefund" class="finance-row"><text>退款状态</text><text :class="['refund-text', refundTone]">{{ latestRefund.status_label }}</text></view>
         <view v-if="latestRefund" class="finance-row"><text>退款金额</text><strong>¥{{ money(latestRefund.refund_amount) }}</strong></view>
@@ -85,6 +85,12 @@
         <text v-if="order.after_sales?.result_note" class="finance-tip">{{ order.after_sales.result_note }}</text>
       </section>
 
+      <TerminationRequestForm v-if="['in_service', 'pending_confirmation'].includes(order.status)" :order-no="order.order_no" @submitted="load" />
+      <section v-if="order.after_sales?.termination" class="finance-panel panel">
+        <view class="finance-head"><strong>提前终止服务</strong><text>{{ order.after_sales.status_label }}</text></view>
+        <text class="finance-tip">{{ order.after_sales.termination.finance_label }}</text>
+        <text v-if="order.after_sales.termination.decision" class="finance-tip">核定结束时间：{{ formatDateTime(order.after_sales.termination.decision.ended_at) }} · {{ order.after_sales.termination.decision.responsibility_label }}</text>
+      </section>
       <section class="safety panel">
         <button
           v-if="order.arrival_photo_url"
@@ -165,6 +171,7 @@
 <script setup lang="ts">
 import { navigateBackOr } from '@/utils/navigation'
 import DzNavBar from '@/components/DzNavBar.vue'
+import TerminationRequestForm from '@/components/TerminationRequestForm.vue'
 import { computed, ref } from 'vue'
 import { onLoad, onShow } from '@dcloudio/uni-app'
 

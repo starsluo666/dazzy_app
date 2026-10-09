@@ -33,9 +33,10 @@
         <view class="progress-list">
           <view class="progress-item done"><i /><view><strong>申请已提交</strong><text>{{ formatDateTime(latestCase.created_at) }}</text></view></view>
           <view class="progress-item" :class="{ done: latestCase.status !== 'pending' }"><i /><view><strong>平台处理中</strong><text>{{ latestCase.status === 'pending' ? '客服将尽快受理' : latestCase.status_label }}</text></view></view>
-          <view class="progress-item" :class="{ done: ['refunded', 'rejected'].includes(latestCase.status) }"><i /><view><strong>处理完成</strong><text>{{ latestCase.result_note || '处理结果将通过消息通知' }}</text></view></view>
+          <view class="progress-item" :class="{ done: ['refunded', 'rejected', 'resolved'].includes(latestCase.status) }"><i /><view><strong>客服处理结果</strong><text>{{ latestCase.result_note || '处理结果将通过消息通知' }}</text></view></view>
         </view>
-        <view class="case-detail"><text>申请金额</text><strong>¥{{ money(latestCase.requested_amount) }}</strong></view>
+        <view class="case-detail"><text>{{ latestCase.termination ? '申请时可退上限' : '申请金额' }}</text><strong>¥{{ money(latestCase.requested_amount) }}</strong></view>
+        <view v-if="latestCase.termination" class="reason-copy"><small>提前终止与资金进度</small><text>{{ latestCase.termination.finance_label }}</text><text v-if="latestCase.termination.decision">核定结束 {{ formatDateTime(latestCase.termination.decision.ended_at) }} · {{ latestCase.termination.decision.responsibility_label }}</text></view>
         <view v-if="latestCase.approved_amount != null" class="case-detail"><text>核准金额</text><strong>¥{{ money(latestCase.approved_amount) }}</strong></view>
         <view v-if="latestCase.refund_order" class="refund-result">
           <strong>{{ latestCase.refund_order.status_label }}</strong>
@@ -158,6 +159,7 @@ const canSubmit = computed(() => !submitting.value
 const canReapply = computed(() => Boolean(
   latestCase.value
   && ['refunded', 'rejected'].includes(latestCase.value.status)
+  && order.value?.status !== 'terminated'
   && refundableAmount.value > 0
   && order.value?.settlement?.status !== 'settled',
 ))
