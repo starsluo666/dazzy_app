@@ -10,6 +10,7 @@ function orderPayload(draft: BookingDraft, couponId?: string | null) {
     duration_minutes: draft.durationMinutes,
     address_id: draft.addressId,
     note: draft.note,
+    ...(draft.pricingToken ? { pricing_token: draft.pricingToken } : {}),
     ...(draft.transportMode ? { transport_mode: draft.transportMode } : {}),
     ...(draft.cancellationPolicyVersion ? { cancellation_policy_version: draft.cancellationPolicyVersion } : {}),
     ...(couponId ? { coupon_id: couponId } : {}),

@@ -47,7 +47,12 @@ const server = http.createServer((req, res) => {
         } else data = quote
       } else if (url.pathname.endsWith('/CANCEL-OFFLINE/')) data = order
       else if (url.pathname.endsWith('/addresses/')) data = { items: [address] }
-      else if (url.pathname.endsWith('/provider-orders/preview/')) data = { ...order, cancellation_policy: policy, route_distance_km: '6.80', route_duration_minutes: 18 }
+      else if (url.pathname.endsWith('/provider-orders/preview/')) data = {
+        ...order, discount_amount: 1700, payable_amount: 15100, pricing_token: 'OFFLINE-CONSUMPTION-QUOTE',
+        wallet_amount: 5000, external_amount: 10100,
+        pricing_snapshot: { coupon_discount_amount: 1000, wallet_discount_amount: 700, wallet_discount_rate_bps: 9500 },
+        cancellation_policy: policy, route_distance_km: '6.80', route_duration_minutes: 18,
+      }
       await route.fulfill({ json: { data } })
     })
     await page.goto(`${base}/#/pages/orders/detail?orderNo=CANCEL-OFFLINE`)
@@ -84,6 +89,13 @@ const server = http.createServer((req, res) => {
     } })))
     await page.goto(`${base}/#/pages/booking/confirm`)
     await page.getByText('达人出行方式', { exact: true }).waitFor()
+    await page.getByText('余额消费折扣 · 9.5折', { exact: true }).waitFor()
+    const feeText = await page.locator('.fee-card').innerText()
+    assert.match(feeText, /−¥10/)
+    assert.match(feeText, /−¥7/)
+    assert.match(feeText, /¥151/)
+    assert.ok(feeText.indexOf('优惠券') < feeText.indexOf('余额消费折扣'))
+    assert.ok(feeText.indexOf('余额消费折扣') < feeText.indexOf('往返交通费'))
     const pay = page.locator('.order-footer uni-button')
     assert.equal(await pay.getAttribute('disabled'), 'true')
     await page.getByText('服务与取消规则 ›', { exact: true }).click()

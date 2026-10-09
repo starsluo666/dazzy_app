@@ -13,6 +13,12 @@
     </view>
 
     <main class="wallet-content dz-container">
+      <section v-if="wallet?.discount_balances?.length" class="wallet-note">
+        <strong>消费折扣余额</strong>
+        <view v-for="item in wallet.discount_balances" :key="item.discount_rate_bps" class="benefit-row"><text>{{ item.discount_rate_bps === 10000 ? '无折扣' : `${item.discount_rate_bps / 1000}折` }}余额</text><strong>¥{{ money(item.available_amount) }}</strong></view>
+        <view v-if="wallet.ordinary_balance" class="benefit-row"><text>普通 / 历史余额</text><strong>¥{{ money(wallet.ordinary_balance) }}</strong></view>
+        <text>达人服务费先减券再按当前最优档位整单打折，路费不打折。扣款先用最优惠余额，用完再用下一档。</text>
+      </section>
       <view class="section-head"><strong>余额明细</strong><text>最近 {{ wallet?.ledger_entries.length || 0 }} 条</text></view>
       <view v-if="loading" class="ledger-card"><view v-for="i in 3" :key="i" class="ledger-skeleton dz-skeleton" /></view>
       <NetworkState v-else-if="error" :message="error" error @retry="load" />
@@ -24,7 +30,7 @@
           <view class="ledger-amount" :class="entry.available_delta >= 0 ? 'income' : ''"><strong>{{ signedMoney(entry.available_delta) }}</strong><text>余额 ¥{{ money(entry.available_balance_after) }}</text></view>
         </view>
       </section>
-      <section class="wallet-note"><strong>余额使用说明</strong><text>余额仅用于平台内消费，不支持提现；订单退款会按照余额与外部支付的原支付构成分别退回。</text></section>
+      <section class="wallet-note"><strong>余额使用说明</strong><text>余额仅用于平台内消费，不支持提现；全部余额不足时才组合支付。订单退款按原支付构成退回，余额部分恢复至原充值批次及折扣。活动消费不享受达人服务折扣。</text></section>
     </main>
   </view>
 </template>
@@ -54,6 +60,7 @@ onShow(() => { if (guardCurrentPage()) void load() })
 
 <style lang="scss" scoped>
 @use '../../styles/tokens.scss' as *;
+.benefit-row { display: flex; justify-content: space-between; gap: 20rpx; padding: 10rpx 0; }
 .wallet-page{background:$dz-surface-page}.wallet-hero{padding-bottom:42rpx;background:linear-gradient(155deg,#e9ffff 0%,#d8f7f7 45%,#f3f6f7 100%)}.dz-page-head text{font-size:$dz-fs-title;font-weight:$dz-fw-bold}.head-space{width:72rpx}.balance-card{position:relative;overflow:hidden;margin-top:18rpx;padding:38rpx;border:1rpx solid rgba(255,255,255,.8);border-radius:36rpx;color:#fff;background:linear-gradient(140deg,#10343a,#0b777c 58%,#11b8bb);box-shadow:0 28rpx 60rpx rgba(7,90,95,.22)}.balance-card::after{position:absolute;right:-80rpx;bottom:-110rpx;width:320rpx;height:320rpx;border:46rpx solid rgba(255,255,255,.08);border-radius:50%;content:''}.balance-label{display:flex;align-items:center;justify-content:space-between}.balance-label>text{font-size:27rpx;font-weight:700}.balance-label i{font-size:22rpx;font-style:normal;opacity:.76}.balance-value{display:flex;align-items:baseline;margin:28rpx 0 26rpx}.balance-value text{margin-right:8rpx;font-size:34rpx}.balance-value strong{font-size:72rpx;line-height:1;letter-spacing:-3rpx}.frozen{margin-top:-10rpx;margin-bottom:22rpx;font-size:23rpx;opacity:.78}
 .recharge-button {
   position: relative;

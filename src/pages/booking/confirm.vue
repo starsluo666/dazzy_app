@@ -58,7 +58,7 @@
         <button @tap="openCouponSheet">
           <i class="orange">券</i>
           <strong>优惠券</strong>
-          <text>{{ selectedCoupon ? (quote ? `已减 ¥${money(quote.discount_amount)}` : '已选择，待计价') : availableCouponCount ? `${availableCouponCount}张可用` : '暂无可用优惠券' }}</text>
+          <text>{{ selectedCoupon ? (quote ? `已减 ¥${money(Number(quote.pricing_snapshot.coupon_discount_amount ?? quote.discount_amount))}` : '已选择，待计价') : availableCouponCount ? `${availableCouponCount}张可用` : '暂无可用优惠券' }}</text>
           <b>›</b>
         </button>
         <button @tap="editingNote = true">
@@ -79,9 +79,11 @@
       <section class="fee-card panel">
         <text class="fee-title">费用明细</text>
         <view><text>服务费</text><text>{{ quote ? `¥${money(quote.service_fee_amount)}` : '确认时间后计算' }}</text></view>
-        <view><text>往返交通费</text><text>{{ quote ? `¥${money(quote.transport_fee_amount)}` : '确认地址后计算' }}</text></view>
+        <view><text>优惠券</text><text class="discount">−¥{{ money(Number(quote?.pricing_snapshot.coupon_discount_amount ?? quote?.discount_amount ?? 0)) }}</text></view>
+        <view v-if="Number(quote?.pricing_snapshot.wallet_discount_rate_bps || 10000) < 10000"><text>余额消费折扣 · {{ Number(quote?.pricing_snapshot.wallet_discount_rate_bps) / 1000 }}折</text><text class="discount">−¥{{ money(Number(quote?.pricing_snapshot.wallet_discount_amount || 0)) }}</text></view>
+        <view><text>往返交通费 · 不打折</text><text>{{ quote ? `¥${money(quote.transport_fee_amount)}` : '确认地址后计算' }}</text></view>
         <text v-if="quote" class="route-tip">距达人约 {{ quote.route_distance_km }}km · 驾车约 {{ quote.route_duration_minutes }}分钟</text>
-        <view><text>优惠券</text><text class="discount">−¥{{ money(quote?.discount_amount || 0) }}</text></view>
+        <text v-if="Number(quote?.pricing_snapshot.wallet_discount_rate_bps || 10000) < 10000" class="route-tip">先减券再按最优档位整单折扣，路费不打折。提交后锁定本单余额，取消或超时后释放。</text>
         <view class="total"><text>合计</text><strong>¥{{ money(quote?.payable_amount || estimatedServiceFee) }}</strong></view>
         <text v-if="previewError" class="quote-error">{{ previewError }}</text>
       </section>
@@ -548,11 +550,11 @@ async function refreshQuote() {
 
 async function submit() {
   if (!draft.value || !canSubmit.value || submitting.value) return
-  const submittedDraft = { ...draft.value, transportMode: transportMode.value, cancellationPolicyVersion: agreedVersion.value }
+  const submittedDraft = { ...draft.value, transportMode: transportMode.value, cancellationPolicyVersion: agreedVersion.value, pricingToken: quote.value?.pricing_token }
   const submittedCouponId = selectedCouponId.value
   submitting.value = true
   try {
-    await requireProviderOrderPaymentCapability()
+    if (quote.value?.external_amount !== 0) await requireProviderOrderPaymentCapability()
     const order = (await createProviderOrder(submittedDraft, submittedCouponId)).data
     uni.navigateTo({ url: `/pages/booking/payment?orderNo=${order.order_no}` })
   } catch (reason) {

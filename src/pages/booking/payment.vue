@@ -5,6 +5,7 @@
     <view v-else-if="order" class="payment-content">
       <section class="countdown booking-card"><view><text>支付剩余</text><strong>{{ countdown }}</strong><small>超时后将释放达人档期</small></view></section>
       <section class="amount-card booking-card"><strong>¥{{ money(order.payable_amount) }}</strong><text>{{ order.provider_name }} · {{ order.service_name }}</text><small>{{ timeLabel }}</small></section>
+      <section v-if="Number(order.pricing_snapshot.wallet_discount_rate_bps || 10000) < 10000" class="safe-note"><strong>本单服务费享 {{ Number(order.pricing_snapshot.wallet_discount_rate_bps) / 1000 }} 折</strong><text>优惠券减 ¥{{ money(Number(order.pricing_snapshot.coupon_discount_amount || 0)) }}，余额折扣再减 ¥{{ money(Number(order.pricing_snapshot.wallet_discount_amount || 0)) }}；路费 ¥{{ money(order.transport_fee_amount) }} 不打折。</text><text>本单余额已锁定，取消或超时后释放。</text></section>
       <text class="booking-section-title">安全支付</text>
       <section class="payment-methods booking-card">
         <view v-if="walletAmount" class="cashier-method"><i class="balance">余</i><view><strong>余额支付</strong><text>{{ fullBalancePayment ? '余额充足，将直接全额支付' : `余额不足，使用全部余额抵扣 ¥${money(walletAmount)}` }}</text></view><b>−¥{{ money(walletAmount) }}</b></view>

@@ -4,7 +4,7 @@
     <DzNavBar title="余额充值" :back-action="goBack" />
     <main v-if="campaign" class="recharge-content dz-container">
       <section class="recharge-hero">
-        <view class="hero-copy"><text>固定面值充值</text><strong><i>¥</i>{{ money(campaign.unit_face_amount) }}<small>/ 张</small></strong><p>购买多张可享阶梯折扣，余额按面值全额到账</p></view>
+        <view class="hero-copy"><text>固定面值充值</text><strong><i>¥</i>{{ money(campaign.unit_face_amount) }}<small>/ 张</small></strong><p>充多少到账多少，达人服务消费享对应档位折扣</p></view>
         <view class="coin coin-a">¥</view><view class="coin coin-b">¥</view>
       </section>
       <section class="quantity-card">
@@ -24,11 +24,11 @@
       </section>
       <section class="summary-card">
         <view><text>余额到账</text><strong>¥{{ money(creditedAmount) }}</strong></view>
-        <view><text>充值折扣</text><strong class="discount">{{ discountLabel }}</strong></view>
-        <view v-if="discountAmount"><text>本次优惠</text><strong class="discount">-¥{{ money(discountAmount) }}</strong></view>
+        <view><text>{{ legacyPending ? '历史充值折扣' : '达人服务消费折扣' }}</text><strong class="discount">{{ discountLabel }}</strong></view>
+        <view v-if="discountAmount"><text>历史充值优惠</text><strong class="discount">-¥{{ money(discountAmount) }}</strong></view>
         <view class="payable"><text>需支付</text><strong>¥{{ money(payableAmount) }}</strong></view>
       </section>
-      <section class="rules"><strong>充值说明</strong><text>{{ campaign.rules_text }}</text><text>充值成功以服务端支付确认结果为准，请勿重复支付。</text></section>
+      <section class="rules"><strong>充值说明</strong><text>{{ campaign.rules_text }}</text><text v-if="legacyPending">本笔为历史充值单，仍按原金额支付，不额外获得消费折扣。</text><text v-else>折扣随本次充值余额保留，用完为止。达人订单先减优惠券，再按可用余额的最优档位整单打折，最后加路费；优先扣最优惠余额，全部余额不足时由微信补差额。</text><text>充值成功以服务端支付确认结果为准，请勿重复支付。</text></section>
     </main>
     <view v-else-if="loading" class="loading-state">正在加载充值规则…</view>
     <NetworkState v-else :message="error || '充值活动暂不可用'" error @retry="load" />
@@ -57,10 +57,11 @@ const quickQuantities = computed(() => { const max = campaign.value?.max_quantit
 function quickAmount(count: number) { return money((campaign.value?.unit_face_amount || 0) * count) }
 function rateFor(count: number) { return [...(campaign.value?.tiers || [])].filter((tier) => tier.min_quantity <= count).sort((a, b) => b.min_quantity - a.min_quantity)[0]?.discount_rate_bps || 10000 }
 const creditedAmount = computed(() => pendingOrder.value?.credited_amount ?? (campaign.value?.unit_face_amount || 0) * quantity.value)
-const payableAmount = computed(() => pendingOrder.value?.payable_amount ?? Math.round(creditedAmount.value * rateFor(quantity.value) / 10000))
+const legacyPending = computed(() => Boolean(pendingOrder.value && pendingOrder.value.discount_usage !== 'consumption'))
+const payableAmount = computed(() => pendingOrder.value?.payable_amount ?? creditedAmount.value)
 const discountAmount = computed(() => creditedAmount.value - payableAmount.value)
 const discountLabel = computed(() => { const rate = pendingOrder.value?.discount_rate_bps ?? rateFor(quantity.value); return rate === 10000 ? '原价' : `${(rate / 1000).toFixed(rate % 1000 ? 2 : 1)} 折` })
-function tierLabel(count: number) { const rate = rateFor(count); return rate === 10000 ? '原价' : `${(rate / 1000).toFixed(rate % 1000 ? 2 : 1)}折` }
+function tierLabel(count: number) { const rate = rateFor(count); return rate === 10000 ? '消费无折扣' : `消费${(rate / 1000).toFixed(rate % 1000 ? 2 : 1)}折` }
 function goBack() { navigateBackOr(() => uni.redirectTo({ url: '/pages/wallet/index' })) }
 function clearPendingOrder() { pendingOrder.value = null; pendingOrderNo.value = ''; uni.removeStorageSync('pendingRechargeOrderNo') }
 function setQuantity(count: number) {
@@ -87,9 +88,10 @@ async function pay() { if (!campaign.value?.is_enabled || paying.value) return; 
     if (pendingOrderNo.value !== originalOrderNo) return
   } else {
     const displayedAmount = payableAmount.value
+    const displayedRate = rateFor(quantity.value)
     const created = (await createRechargeOrder(quantity.value)).data
     rememberOrder(created)
-    if (created.payable_amount !== displayedAmount) throw new Error('充值规则已更新，请确认最新金额后再次支付')
+    if (created.payable_amount !== displayedAmount || created.discount_rate_bps !== displayedRate) throw new Error('充值规则已更新，请确认最新金额和消费折扣后再次支付')
   }
   const orderNo = pendingOrderNo.value
   const authorization = (await getRechargePaymentAuthorization(orderNo)).data

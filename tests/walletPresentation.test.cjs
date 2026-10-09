@@ -14,6 +14,7 @@ function execute(relative, names, imports = {}, uni = {}) {
   }).outputText
   const context = {
     exports: {},
+    Error,
     require(name) {
       if (Object.hasOwn(imports, name)) return imports[name]
       if (name === 'vue') return vue
@@ -42,8 +43,11 @@ function recharge(uni = {}, service = {}) {
   const subject = execute('pages/wallet/recharge.vue', [
     'campaign', 'quantity', 'paying', 'quickQuantities', 'quickAmount', 'setQuantity',
     'creditedAmount', 'payableAmount', 'discountAmount', 'tierLabel', 'discountLabel',
-    'pendingOrder', 'pendingOrderNo', 'pay', 'load',
-  ], { '@/utils/formatters': formatters, '@/services/wallet': service }, uni)
+    'pendingOrder', 'pendingOrderNo', 'pay', 'load', 'legacyPending',
+  ], {
+    '@/utils/formatters': formatters, '@/services/wallet': service,
+    '@/services/wechatPay': { isWechatBrowser: () => true, handlePaymentRecovery: async () => false },
+  }, uni)
   subject.campaign.value = rules()
   return subject
 }
@@ -63,14 +67,14 @@ async function amountSelectionPreservesQuantityAndTierPricing() {
   page.setQuantity(2)
   assert.equal(page.quantity.value, 2)
   assert.equal(page.creditedAmount.value, 200000)
-  assert.equal(page.payableAmount.value, 190000)
-  assert.equal(page.discountAmount.value, 10000)
-  assert.equal(page.tierLabel(2), '9.50折')
+  assert.equal(page.payableAmount.value, 200000)
+  assert.equal(page.discountAmount.value, 0)
+  assert.equal(page.tierLabel(2), '消费9.50折')
   assert.equal(page.discountLabel.value, '9.50 折')
   page.setQuantity(5)
   assert.equal(page.creditedAmount.value, 500000)
-  assert.equal(page.payableAmount.value, 450000)
-  assert.equal(page.tierLabel(5), '9.0折')
+  assert.equal(page.payableAmount.value, 500000)
+  assert.equal(page.tierLabel(5), '消费9.0折')
 }
 
 async function pendingOrderKeepsItsSnapshotUntilSelectionChanges() {
@@ -79,6 +83,7 @@ async function pendingOrderKeepsItsSnapshotUntilSelectionChanges() {
   page.quantity.value = 2
   page.pendingOrderNo.value = 'TEST-RECHARGE'
   page.pendingOrder.value = { credited_amount: 150000, payable_amount: 123456, discount_rate_bps: 8230 }
+  assert.equal(page.legacyPending.value, true)
   page.setQuantity(2)
   assert.equal(page.creditedAmount.value, 150000)
   assert.equal(page.payableAmount.value, 123456)
@@ -89,6 +94,36 @@ async function pendingOrderKeepsItsSnapshotUntilSelectionChanges() {
   assert.equal(page.pendingOrderNo.value, '')
   assert.deepEqual(removals, ['pendingRechargeOrderNo'])
   assert.equal(page.creditedAmount.value, 300000)
+}
+
+async function changedConsumptionRateRequiresConsentEvenWhenRechargePriceIsUnchanged() {
+  const toasts = []
+  const page = recharge({ showToast: value => toasts.push(value.title) }, {
+    createRechargeOrder: async () => ({ data: {
+      order_no: 'NEW-RATE', quantity: 2, credited_amount: 200000, payable_amount: 200000,
+      discount_rate_bps: 9700, discount_usage: 'consumption',
+    } }),
+    getRechargePaymentAuthorization: () => assert.fail('changed rate must not proceed to payment'),
+  })
+  page.campaign.value.is_enabled = true
+  page.setQuantity(2)
+  await page.pay()
+  assert.equal(page.payableAmount.value, 200000)
+  assert.equal(page.discountLabel.value, '9.70 折')
+  assert.equal(page.legacyPending.value, false)
+  assert.match(toasts[0], /确认最新金额和消费折扣/)
+}
+
+async function bookingCreationCarriesServerQuoteConfirmation() {
+  const requests = []
+  const service = execute('services/orders.ts', ['createProviderOrder'], {
+    './http': { request: (...args) => { requests.push(args); return Promise.resolve({ data: {} }) } },
+    '@/utils/businessTime': { toBusinessDateTime: () => '2026-10-10T13:00:00+08:00' },
+  })
+  await service.createProviderOrder({ serviceId: 1, addressId: 2, durationMinutes: 120, pricingToken: 'signed-quote' })
+  assert.equal(requests[0][1].data.pricing_token, 'signed-quote')
+  assert.equal(Object.hasOwn(requests[0][1].data, 'payable_amount'), false)
+  assert.equal(Object.hasOwn(requests[0][1].data, 'wallet_discount_rate_bps'), false)
 }
 
 async function disabledAndOutOfRangeControlsDoNotCreateOrChangeOrders() {
@@ -135,6 +170,8 @@ async function main() {
     amountsFollowConfiguredFaceValue,
     amountSelectionPreservesQuantityAndTierPricing,
     pendingOrderKeepsItsSnapshotUntilSelectionChanges,
+    changedConsumptionRateRequiresConsentEvenWhenRechargePriceIsUnchanged,
+    bookingCreationCarriesServerQuoteConfirmation,
     disabledAndOutOfRangeControlsDoNotCreateOrChangeOrders,
     campaignSwitchIsLoadedWithoutBeingOverridden,
     feedbackPickerReflectsSelectionAndReset,

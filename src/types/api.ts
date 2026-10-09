@@ -585,6 +585,9 @@ export interface CurrentUserOverview {
 }
 
 export interface ProviderOrderQuote {
+  pricing_token?: string
+  wallet_amount?: number
+  external_amount?: number
   cancellation_policy?: import('./cancellation').CancellationPolicy
   provider: { public_id: string; nickname: string; avatar_url: string | null; verified: boolean }
   service: { id: number; name: string; billing_type: 'hourly' | 'per_session'; unit_price_amount: number }
@@ -764,6 +767,9 @@ export interface WalletLedgerEntry {
 }
 
 export interface UserWallet {
+  discount_balances?: { discount_rate_bps: number; available_amount: number }[]
+  ordinary_balance?: number
+  best_discount_rate_bps?: number
   available_balance: number
   frozen_balance: number
   total_balance: number
@@ -776,6 +782,7 @@ export interface RechargeDiscountTier {
 }
 
 export interface RechargeCampaign {
+  discount_usage?: 'consumption' | 'recharge'
   is_enabled: boolean
   unit_face_amount: number
   max_quantity_per_order: number
@@ -784,6 +791,7 @@ export interface RechargeCampaign {
 }
 
 export interface WalletRechargeOrder {
+  discount_usage?: 'consumption' | 'recharge'
   order_no: string
   unit_face_amount: number
   quantity: number
