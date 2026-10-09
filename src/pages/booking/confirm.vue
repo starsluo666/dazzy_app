@@ -86,9 +86,16 @@
         <text v-if="previewError" class="quote-error">{{ previewError }}</text>
       </section>
 
-      <label class="agreement" @tap="agreed = !agreed">
+      <view v-if="quote?.cancellation_policy?.version" class="cancel-transport panel">
+        <text class="cancel-transport__title">达人出行方式</text>
+        <text class="cancel-transport__tip">用于确定取消规则；往返交通费以本单费用明细为准</text>
+        <view class="cancel-transport__options">
+          <button v-for="mode in transportModes" :key="mode.value" class="cancel-transport__option" :class="{ 'cancel-transport__option--active': transportMode === mode.value }" @tap="transportMode = mode.value; agreed = false">{{ mode.label }}</button>
+        </view>
+      </view>
+      <label class="agreement" @tap="toggleAgreement">
         <text :class="{ active: agreed }">{{ agreed ? '✓' : '' }}</text>
-        我已阅读并同意<em>服务规则</em>
+        我已阅读并同意<text class="cancel-rule-link" @tap.stop="rulesVisible = true">服务与取消规则 ›</text>
       </label>
     </view>
     <view v-else class="empty">预约信息已失效，请返回达人详情重新选择。</view>
@@ -100,6 +107,10 @@
       </button>
     </footer>
 
+    <DzBottomSheet :visible="rulesVisible" title="服务与取消规则" @close="rulesVisible = false">
+      <OrderCancellationRules :policy="quote?.cancellation_policy || {}" />
+      <button class="sheet-confirm" :disabled="!quote" @tap="acceptRules">我已阅读并同意</button>
+    </DzBottomSheet>
     <DzBottomSheet :visible="activeSheet === 'time'" title="选择预约时间" @close="closeSheet">
       <scroll-view scroll-x class="date-scroll" :show-scrollbar="false">
         <view class="date-options">
@@ -195,6 +206,7 @@ import DzNavBar from '@/components/DzNavBar.vue'
 import { onShow } from '@dcloudio/uni-app'
 import { computed, ref } from 'vue'
 import DzBottomSheet from '@/components/DzBottomSheet.vue'
+import OrderCancellationRules from '@/components/OrderCancellationRules.vue'
 import {
   bookingEndTime,
   bookingServiceAmount,
@@ -220,6 +232,20 @@ const selectedCoupon = computed(() => coupons.value.find((item) => item.public_i
 const availableCouponCount = computed(() => coupons.value.filter(couponCanUse).length)
 const activeSheet = ref<Sheet>(null)
 const agreed = ref(false)
+const rulesVisible = ref(false)
+const agreedVersion = ref('')
+const transportMode = ref<BookingDraft['transportMode']>()
+const transportModes = [
+  { value: 'taxi' as const, label: '出租车' }, { value: 'ride_hailing' as const, label: '网约车' },
+  { value: 'bus' as const, label: '公交' }, { value: 'subway' as const, label: '地铁' },
+]
+function toggleAgreement() { if (agreed.value) agreed.value = false; else rulesVisible.value = true }
+function acceptRules() {
+  if (!quote.value) return
+  agreedVersion.value = quote.value.cancellation_policy?.version || ''
+  agreed.value = true
+  rulesVisible.value = false
+}
 const submitting = ref(false)
 const editingNote = ref(false)
 const note = ref('')
@@ -272,7 +298,7 @@ const selectedAddressComplete = computed(() => (
   && /^1\d{10}$/.test(draft.value?.contactPhone || '')
 ))
 const canPreview = computed(() => Boolean(draft.value?.timeConfirmed) && selectedAddressComplete.value)
-const canSubmit = computed(() => Boolean(quote.value) && agreed.value)
+const canSubmit = computed(() => Boolean(quote.value) && agreed.value && (!quote.value?.cancellation_policy?.version || Boolean(transportMode.value)) && agreedVersion.value === (quote.value?.cancellation_policy?.version || ''))
 const money = formatAmount
 
 function displayRange(date: string, time: string, duration: number) {
@@ -522,7 +548,7 @@ async function refreshQuote() {
 
 async function submit() {
   if (!draft.value || !canSubmit.value || submitting.value) return
-  const submittedDraft = { ...draft.value }
+  const submittedDraft = { ...draft.value, transportMode: transportMode.value, cancellationPolicyVersion: agreedVersion.value }
   const submittedCouponId = selectedCouponId.value
   submitting.value = true
   try {
@@ -531,6 +557,8 @@ async function submit() {
     uni.navigateTo({ url: `/pages/booking/payment?orderNo=${order.order_no}` })
   } catch (reason) {
     uni.showToast({ title: getErrorMessage(reason, '订单创建失败'), icon: 'none' })
+    agreed.value = false
+    await refreshQuote()
   } finally {
     submitting.value = false
   }
@@ -549,6 +577,14 @@ onShow(async () => {
 
 <style lang="scss" scoped>
 @use '../../styles/tokens.scss' as *;
+.cancel-transport { margin-top: 20rpx; padding: 28rpx; }
+.cancel-transport__title { display: block; font-size: 30rpx; font-weight: 600; }
+.cancel-transport__tip { display: block; color: #667085; font-size: 24rpx; line-height: 1.6; margin: 12rpx 0 20rpx; }
+.cancel-transport__options { display: flex; flex-wrap: wrap; gap: 12rpx; }
+.cancel-transport__option { flex: 1 0 40%; margin: 0; padding: 20rpx 8rpx; line-height: 1.4; font-size: 27rpx; color: #475467; background: #f4f7f8; border-radius: 18rpx; }
+.cancel-transport__option--active { color: #007e86; background: #ddf7f7; }
+.cancel-transport__option::after { border: none; }
+.agreement .cancel-rule-link { width: auto; height: auto; border: 0; color: #007e86; margin: 0; font-size: 24rpx; }
 .coupon-options { padding: 12rpx 20rpx 30rpx; }
 .coupon-option { display: flex; align-items: center; gap: 12rpx; width: 100%; min-height: 90rpx; margin: 10rpx 0; padding: 14rpx; border: 1rpx solid #e0e5ea; border-radius: 12rpx; background: #fff; text-align: left; }
 .coupon-option.active { border-color: #08b5ba; background: #f0fcfc; }

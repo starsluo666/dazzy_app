@@ -85,6 +85,7 @@
         <text v-if="order.after_sales?.result_note" class="finance-tip">{{ order.after_sales.result_note }}</text>
       </section>
 
+      <OrderCancellationCard v-if="order.paid_at || order.cancellation?.policy.version" :order-no="order.order_no" :info="order.cancellation" @changed="load" @support="openSupport()" />
       <TerminationRequestForm v-if="['in_service', 'pending_confirmation'].includes(order.status)" :order-no="order.order_no" @submitted="load" />
       <section v-if="order.after_sales?.termination" class="finance-panel panel">
         <view class="finance-head"><strong>提前终止服务</strong><text>{{ order.after_sales.status_label }}</text></view>
@@ -172,6 +173,7 @@
 import { navigateBackOr } from '@/utils/navigation'
 import DzNavBar from '@/components/DzNavBar.vue'
 import TerminationRequestForm from '@/components/TerminationRequestForm.vue'
+import OrderCancellationCard from '@/components/OrderCancellationCard.vue'
 import { computed, ref } from 'vue'
 import { onLoad, onShow } from '@dcloudio/uni-app'
 

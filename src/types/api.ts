@@ -585,6 +585,7 @@ export interface CurrentUserOverview {
 }
 
 export interface ProviderOrderQuote {
+  cancellation_policy?: import('./cancellation').CancellationPolicy
   provider: { public_id: string; nickname: string; avatar_url: string | null; verified: boolean }
   service: { id: number; name: string; billing_type: 'hourly' | 'per_session'; unit_price_amount: number }
   starts_at: string
@@ -664,6 +665,7 @@ export interface MyInvitationSummary {
 }
 
 export interface ProviderOrder {
+  cancellation?: import('./cancellation').CancellationSummary
   timeout?: {
     departure_deadline_at: string | null
     timed_out_at: string | null

@@ -4,6 +4,8 @@ import { businessDateKeyAfter } from '@/utils/businessTime'
 const STORAGE_KEY = 'dazzy-provider-booking-draft-v1'
 
 export interface BookingDraft {
+  transportMode?: 'taxi' | 'ride_hailing' | 'bus' | 'subway'
+  cancellationPolicyVersion?: string
   providerPublicId: string
   providerName: string
   providerAvatarUrl: string | null
