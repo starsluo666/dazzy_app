@@ -506,6 +506,7 @@ export interface HomeProviderListItem extends ProviderListItem {
 }
 
 export interface HomeDiscoveryData {
+  coupon_campaigns?: CouponCampaign[]
   card_assets: HomeCardAssets
   recommended_activities: HomeActivityListItem[]
   recommended_providers: HomeProviderListItem[]
@@ -514,6 +515,19 @@ export interface HomeDiscoveryData {
 
 export interface DataResponse<T> {
   data: T
+}
+
+export interface CouponCampaign {
+  public_id: string
+  name: string
+  banner_url: string
+  coupon: { name: string; face_amount: number; min_order_amount: number; valid_days: number; description: string }
+  starts_at: string
+  ends_at: string
+  state: 'active' | 'upcoming' | 'ended' | 'exhausted' | 'offline' | 'draft'
+  claimed: boolean
+  can_claim: boolean
+  user_coupon: UserCoupon | null
 }
 
 export interface PaymentPathCapability {

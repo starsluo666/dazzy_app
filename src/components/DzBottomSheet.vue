@@ -161,7 +161,7 @@ function onTouchEnd() {
   align-self: center;
   width: 72rpx;
   height: 10rpx;
-  margin-top: 12rpx;
+  margin: 12rpx auto 0;
   border-radius: $dz-radius-full;
   background: rgba(102, 115, 122, 0.24);
 }

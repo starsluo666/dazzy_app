@@ -7,11 +7,13 @@
 
     <main class="content dz-container">
       <button class="location-note" @tap="chooseCity">{{ discoveryLocationLabel(discovery) }} ›</button>
+      <HomeCouponCampaigns :items="couponCampaigns" :initial-campaign-id="initialCampaignId" @claimed="campaignClaimed">
       <view class="hero">
         <image class="hero-art" src="/static/home/city-discovery-hero-v1.webp" mode="aspectFill" />
         <text class="hero-title">发现同城好搭子</text>
         <text class="hero-subtitle">一起玩， 一起聊， 一起出发</text>
       </view>
+      </HomeCouponCampaigns>
 
       <view class="scene-grid dz-anim-stagger">
         <view class="scene provider dz-anim-fade-up" hover-class="scene--pressed" @tap="openProviders()">
@@ -74,12 +76,13 @@
 
 <script setup lang="ts">
 import DzNavBar from '@/components/DzNavBar.vue'
-import { onShow, onUnload } from '@dcloudio/uni-app'
+import { onLoad, onShow, onUnload } from '@dcloudio/uni-app'
 import { ref } from 'vue'
 
 import DazzyTabBar from '@/components/DazzyTabBar.vue'
 import HomeActivityCarousel from '@/components/HomeActivityCarousel.vue'
 import HomeProviderCard from '@/components/HomeProviderCard.vue'
+import HomeCouponCampaigns from '@/components/HomeCouponCampaigns.vue'
 import { getHomeDiscovery, getServiceCategories } from '@/services/discovery'
 import { allProviderCategory, configuredProviderCategories } from '@/services/providerCategories'
 import {
@@ -90,10 +93,14 @@ import {
   discoveryLocationLabel,
 } from '@/services/discoveryContext'
 import { openPage } from '@/services/navigation'
-import type { HomeActivityListItem, HomeCardAssets, HomeProviderListItem } from '@/types/api'
+import type { CouponCampaign, HomeActivityListItem, HomeCardAssets, HomeProviderListItem } from '@/types/api'
 import { getErrorMessage } from '@/utils/formatters'
 
 const categories = ref([allProviderCategory])
+const couponCampaigns = ref<CouponCampaign[]>([])
+const initialCampaignId = ref('')
+function campaignClaimed(item: CouponCampaign) { couponCampaigns.value = couponCampaigns.value.map(c => c.public_id === item.public_id ? item : c) }
+onLoad((query) => { initialCampaignId.value = typeof query?.coupon_campaign === 'string' ? query.coupon_campaign : '' })
 const providers = ref<HomeProviderListItem[]>([])
 const activities = ref<HomeActivityListItem[]>([])
 const loading = ref(true)
@@ -139,6 +146,7 @@ async function loadDiscovery() {
     providers.value = response.data.recommended_providers
     activities.value = response.data.recommended_activities
     homeCardAssets.value = response.data.card_assets
+    couponCampaigns.value = response.data.coupon_campaigns || []
     providerError.value = response.data.errors.recommended_providers || ''
     activityError.value = response.data.errors.recommended_activities || ''
   } catch (error) {
@@ -146,6 +154,7 @@ async function loadDiscovery() {
     providers.value = []
     activities.value = []
     homeCardAssets.value = null
+    couponCampaigns.value = []
     providerError.value = getErrorMessage(error)
     activityError.value = getErrorMessage(error)
   } finally {
