@@ -38,6 +38,7 @@ export function isAuthenticated(): boolean {
 }
 
 const protectedRoutes = [
+  '/pages/invitations/application',
   '/pages/coupons/index',
   '/pages/booking/confirm',
   '/pages/booking/payment',

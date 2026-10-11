@@ -5,6 +5,14 @@
       "style": { "navigationStyle": "custom" }
     },
     {
+      "path": "pages/invitations/provider-register",
+      "style": { "navigationStyle": "custom" }
+    },
+    {
+      "path": "pages/invitations/application",
+      "style": { "navigationStyle": "custom" }
+    },
+    {
       "path": "pages/discovery/cities",
       "style": { "navigationStyle": "custom" }
     },
