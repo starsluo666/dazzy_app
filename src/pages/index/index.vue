@@ -6,7 +6,6 @@
     </DzNavBar>
 
     <main class="content dz-container">
-      <button class="location-note" @tap="chooseCity">{{ discoveryLocationLabel(discovery) }} ›</button>
       <HomeCouponCampaigns :items="couponCampaigns" :initial-campaign-id="initialCampaignId" @claimed="campaignClaimed">
       <view class="hero">
         <image class="hero-art" src="/static/home/city-discovery-hero-v1.webp" mode="aspectFill" />
@@ -16,19 +15,17 @@
       </HomeCouponCampaigns>
 
       <view class="scene-grid dz-anim-stagger">
-        <view class="scene provider dz-anim-fade-up" hover-class="scene--pressed" @tap="openProviders()">
+        <view class="scene provider dz-anim-fade-up" hover-class="scene--pressed" role="button" aria-label="达人陪伴，找搭子" @tap="openProviders()">
           <text class="scene-title">达人陪伴</text>
           <text class="scene-copy">1对1预约服务</text>
-          <text class="scene-action">找搭子 <i>›</i></text>
-          <image v-if="homeCardAssets?.provider_companion_url" class="scene-art provider-art" :src="homeCardAssets.provider_companion_url" mode="aspectFit" />
-          <b v-else>搭</b>
+          <text class="scene-action">找搭子 <text class="scene-arrow">›</text></text>
+          <image class="scene-art provider-art" src="/static/home/provider-companion-v2.webp" mode="aspectFit" aria-hidden="true" />
         </view>
-        <view class="scene activity dz-anim-fade-up" hover-class="scene--pressed" @tap="openActivities()">
+        <view class="scene activity dz-anim-fade-up" hover-class="scene--pressed" role="button" aria-label="同城组局，去组局" @tap="openActivities()">
           <text class="scene-title">同城组局</text>
           <text class="scene-copy">多人兴趣活动</text>
-          <text class="scene-action">去组局 <i>›</i></text>
-          <image v-if="homeCardAssets?.group_activity_url" class="scene-art group-art" :src="homeCardAssets.group_activity_url" mode="aspectFit" />
-          <b v-else>局</b>
+          <text class="scene-action">去组局 <text class="scene-arrow">›</text></text>
+          <image class="scene-art group-art" src="/static/home/group-activity-v2.webp" mode="aspectFit" aria-hidden="true" />
         </view>
       </view>
 
@@ -90,10 +87,9 @@ import {
   getDiscoveryContext,
   resolveDiscoveryContext,
   openDiscoveryCityPicker,
-  discoveryLocationLabel,
 } from '@/services/discoveryContext'
 import { openPage } from '@/services/navigation'
-import type { CouponCampaign, HomeActivityListItem, HomeCardAssets, HomeProviderListItem } from '@/types/api'
+import type { CouponCampaign, HomeActivityListItem, HomeProviderListItem } from '@/types/api'
 import { getErrorMessage } from '@/utils/formatters'
 
 const categories = ref([allProviderCategory])
@@ -106,7 +102,6 @@ const activities = ref<HomeActivityListItem[]>([])
 const loading = ref(true)
 const activityError = ref('')
 const providerError = ref('')
-const homeCardAssets = ref<HomeCardAssets | null>(null)
 const discovery = ref(getDiscoveryContext())
 let loadVersion = 0
 let categoryVersion = 0
@@ -145,7 +140,6 @@ async function loadDiscovery() {
     if (version !== loadVersion) return
     providers.value = response.data.recommended_providers
     activities.value = response.data.recommended_activities
-    homeCardAssets.value = response.data.card_assets
     couponCampaigns.value = response.data.coupon_campaigns || []
     providerError.value = response.data.errors.recommended_providers || ''
     activityError.value = response.data.errors.recommended_activities || ''
@@ -153,7 +147,6 @@ async function loadDiscovery() {
     if (version !== loadVersion) return
     providers.value = []
     activities.value = []
-    homeCardAssets.value = null
     couponCampaigns.value = []
     providerError.value = getErrorMessage(error)
     activityError.value = getErrorMessage(error)
@@ -184,8 +177,7 @@ onUnload(() => { loadVersion++; categoryVersion++ })
 @use '../../styles/tokens.scss' as *;
 
 .topbar { display:flex; align-items:center; gap:24rpx; height:100rpx; }
-.location-note { display:flex; align-items:center; min-height:88rpx; text-align:left; color:$dz-text-secondary; font-size:24rpx; line-height:1.5; }
-.location-note::after,.search::after { border:0; }
+.search::after { border:0; }
 .control--pressed { opacity:.65; }
 button { margin:0; padding:0; line-height:1; background:transparent; }
 .city { border:0; outline:0; box-shadow:none; }
@@ -202,20 +194,20 @@ button { margin:0; padding:0; line-height:1; background:transparent; }
 .hero-title { font-size:$dz-fs-price-lg; line-height:62rpx; font-weight:$dz-fw-bold; letter-spacing:-1rpx; }
 .hero-subtitle { margin-top:$dz-space-1; font-size:$dz-fs-body; font-weight:$dz-fw-medium; letter-spacing:1rpx; }
 .scene-grid { display:grid; grid-template-columns:1fr 1fr; gap:$dz-space-2; margin-top:$dz-space-3; }
-.scene { position:relative; overflow:hidden; display:flex; flex-direction:column; height:210rpx; padding:$dz-space-3; border:1rpx solid $dz-border-material; border-radius:$dz-radius-lg; color:$dz-text-secondary; box-shadow:$dz-shadow-card,inset 0 1rpx 0 $dz-surface-highlight; font-size:$dz-fs-caption; line-height:32rpx; box-sizing:border-box; transition:transform $dz-duration-fast $dz-ease-out, opacity $dz-duration-fast $dz-ease-standard, box-shadow $dz-duration-fast $dz-ease-standard; }
-.scene.provider { background:linear-gradient(145deg,#fff8f2 0%,$dz-price-soft 58%,#ffe7da 100%); }
-.scene.activity { background:linear-gradient(145deg,#f7ffff 0%,$dz-brand-soft 58%,#ccefed 100%); }
-.scene-title { position:relative; z-index:1; font-size:$dz-fs-heading; line-height:44rpx; font-weight:$dz-fw-bold; }
-.provider .scene-title { color:$dz-price-primary; }
-.activity .scene-title { color:$dz-brand-deep; }
-.scene-copy { position:relative; z-index:1; margin-top:3rpx; }
-.scene-action { position:relative; z-index:2; align-self:flex-start; height:48rpx; margin-top:19rpx; padding:0 20rpx; border:1rpx solid rgba(255,255,255,.36); border-radius:$dz-radius-full; color:$dz-text-inverse; background:$dz-gradient-brand; box-shadow:$dz-shadow-brand; font-size:$dz-fs-caption; font-weight:$dz-fw-semibold; line-height:46rpx; box-sizing:border-box; }
-.scene-action i,.more i { font-style:normal; }
-.activity .scene-action { color:$dz-text-inverse; }
-.scene-art { position:absolute; z-index:0; right:-12rpx; bottom:-8rpx; pointer-events:none; }
-.provider-art { width:174rpx; height:202rpx; }
-.group-art { right:-20rpx; width:210rpx; height:190rpx; }
-.scene b { display:none; }
+.scene { position:relative; overflow:hidden; display:flex; flex-direction:column; min-width:0; height:210rpx; padding:$dz-space-3; border:1rpx solid $dz-border-material; border-radius:$dz-radius-lg; color:#607477; box-shadow:0 8rpx 24rpx rgba(31,65,72,.05),inset 0 1rpx 0 $dz-surface-highlight; font-size:$dz-fs-caption; line-height:32rpx; box-sizing:border-box; transition:transform $dz-duration-fast $dz-ease-out, opacity $dz-duration-fast $dz-ease-standard; }
+.scene.provider { background:linear-gradient(135deg,#fff8f2,#ffeade); }
+.scene.activity { background:linear-gradient(135deg,#f1fbfa,#d7f2ee); }
+.scene-title { position:relative; z-index:1; align-self:flex-start; white-space:nowrap; font-size:$dz-fs-heading; line-height:44rpx; font-weight:$dz-fw-bold; }
+.provider .scene-title { color:#b64724; }
+.activity .scene-title { color:#087d82; }
+.scene-copy { position:relative; z-index:1; align-self:flex-start; margin-top:3rpx; white-space:nowrap; }
+.scene-action { position:relative; z-index:2; display:flex; align-items:center; justify-content:center; gap:10rpx; align-self:flex-start; height:48rpx; margin-top:19rpx; padding:0 20rpx; border:1rpx solid rgba(255,255,255,.36); border-radius:$dz-radius-full; color:$dz-text-inverse; background:#087d82; font-size:$dz-fs-caption; font-weight:$dz-fw-semibold; line-height:1; white-space:nowrap; box-sizing:border-box; }
+.provider .scene-action { background:#c64920; }
+.scene-arrow { font-size:30rpx; font-weight:$dz-fw-medium; }
+.more i { font-style:normal; }
+.scene-art { position:absolute; z-index:0; right:2rpx; bottom:5rpx; pointer-events:none; }
+.provider-art { width:154rpx; height:174rpx; }
+.group-art { bottom:2rpx; width:160rpx; height:182rpx; }
 .scene--pressed,.category--pressed { transform:scale(0.98); opacity:0.94; }
 .categories { display:grid; grid-template-columns:repeat(4,1fr); grid-auto-rows:112rpx; margin-top:$dz-space-3; padding:12rpx 8rpx; border:1rpx solid $dz-border-material; border-radius:$dz-radius-lg; background:$dz-surface-card; box-shadow:$dz-shadow-card,inset 0 1rpx 0 $dz-surface-highlight; box-sizing:border-box; }
 .category { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:5rpx; border-radius:$dz-radius-md; color:$dz-text-primary; font-size:$dz-fs-caption; transition:transform $dz-duration-fast $dz-ease-out, opacity $dz-duration-fast $dz-ease-standard, background-color $dz-duration-base $dz-ease-standard; }
