@@ -186,7 +186,7 @@ button { margin:0; padding:0; line-height:1; background:transparent; }
 .city-arrow { font-size:$dz-fs-caption; }
 .search { display:flex; align-items:center; flex:1; min-width:0; gap:12rpx; height:76rpx; min-height:44px; padding:0 24rpx; border:1rpx solid $dz-border-material; border-radius:$dz-radius-full; color:$dz-text-secondary; background:$dz-surface-glass; box-shadow:inset 0 1rpx 0 $dz-surface-highlight, 0 8rpx 24rpx rgba(31,65,72,.06); font-size:$dz-fs-caption; line-height:1; box-sizing:border-box; white-space:nowrap; }
 .search-icon { color:$dz-text-secondary; font-size:$dz-fs-body; }
-.content { display:block; padding-right:22rpx; padding-left:22rpx; }
+.content { display:block; padding-top:24rpx; padding-right:22rpx; padding-left:22rpx; }
 .hero { position:relative; overflow:hidden; display:flex; flex-direction:column; justify-content:center; height:240rpx; padding:0 32rpx; border:1rpx solid $dz-border-material; border-radius:$dz-radius-lg; color:#075b67; box-shadow:$dz-shadow-card; box-sizing:border-box; }
 .hero::after { position:absolute; inset:0; border-radius:inherit; box-shadow:inset 0 1rpx 0 $dz-surface-highlight; content:''; pointer-events:none; }
 .hero-art { position:absolute; width:100%; height:100%; top:0; right:0; bottom:0; left:0; }

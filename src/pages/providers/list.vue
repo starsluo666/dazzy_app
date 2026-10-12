@@ -56,8 +56,8 @@
         hover-class="card--pressed"
         @tap="openDetail(item.public_id)"
       >
-        <view class="photo">
-          <image v-if="item.avatar_url" :src="item.avatar_url" mode="aspectFill" />
+        <view class="photo" :class="{ 'photo--image': !!item.avatar_url }">
+          <image v-if="item.avatar_url" :src="item.avatar_url" mode="aspectFit" />
           <text v-else class="photo-fallback">{{ item.nickname.slice(0, 1) }}</text>
           <text class="online" :class="{ offline: !item.is_online }"><i />{{ item.is_online ? '在线' : '离线' }}</text>
         </view>
@@ -428,6 +428,7 @@ button::after { display:none; }
 .card--pressed { transform:scale(0.98); opacity:0.94; }
 .photo { position:relative; display:flex; align-items:center; justify-content:center; height:260rpx; color:$dz-text-inverse; background:linear-gradient(145deg,$dz-brand-soft,$dz-brand-primary); font-size:64rpx; font-weight:$dz-fw-bold; }
 .photo image { width:100%; height:100%; }
+.photo--image { background:$dz-surface-page; }
 .photo-fallback { font-size:64rpx; }
 .online { position:absolute; left:12rpx; bottom:10rpx; padding:5rpx 12rpx; border:1rpx solid rgba(255,255,255,.4); border-radius:$dz-radius-full; color:$dz-text-primary; background:rgba(255,255,255,.86); font-size:$dz-fs-micro; font-weight:$dz-fw-medium; }
 .online i { display:inline-block; width:13rpx; height:13rpx; margin-right:7rpx; border-radius:50%; background:$dz-status-success; }

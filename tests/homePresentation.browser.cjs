@@ -31,6 +31,17 @@ async function main() {
       const page = await context.newPage()
       const errors = []
       page.on('pageerror', error => errors.push(error.message))
+      // Deliberately mismatched aspect ratios expose centered-cover cropping.
+      const photoSizes = [[600, 1200], [1200, 600], [800, 800]]
+      const providers = [...photoSizes, null].map((size, i) => ({
+        public_id: i === 0 ? 'online' : i === 1 ? 'offline' : `photo-${i}`,
+        nickname: ['竖图达人', '横图达人', '方图达人', '无图达人'][i],
+        avatar_url: size ? `${origin}/test-provider-${i}.svg` : null,
+        is_online: i !== 1, verified: true, birth_date: '2000-01-01', service_city_name: '邯郸市',
+        bio: '测试封面完整展示', rating: '5.00', service_count: 12, order_count: 12, distance_km: null,
+        availability_status: 'available', earliest_available_at: null, is_favorited: false,
+        services: [{ id: 1, category: '桌球', category_slug: 'billiards', billing_type: 'hourly', price_amount: 8800 }],
+      }))
       const campaign = id => ({ public_id: id, name: id === 'newcomer' ? '新人见面礼' : '秋日搭伴好礼',
         banner_url: process.env.TEST_BANNER_IMAGE ? `${origin}/test-banner.png` : `${origin}/static/activities/activity-channel-hero-v1.webp`,
         coupon: { name: '达人服务券', face_amount: 3000, min_order_amount: 10000, valid_days: 7, description: '领取后在有效期内使用。' },
@@ -38,17 +49,25 @@ async function main() {
       let campaigns = [campaign('newcomer'), campaign('autumn')]
       await context.route('**/*', async route => {
         const url = new URL(route.request().url())
+        const photo = url.pathname.match(/^\/test-provider-(\d)\.svg$/)
+        if (photo) {
+          const [w, h] = photoSizes[Number(photo[1])]
+          return route.fulfill({ contentType: 'image/svg+xml', body: `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}"><rect width="${w}" height="${h}" fill="#e8ddd1"/><rect width="${w}" height="40" fill="#167a68"/><circle cx="${w / 2}" cy="${h * 0.16}" r="${Math.min(w, h) * 0.12}" fill="#9f7860"/><rect x="${w * 0.3}" y="${h * 0.35}" width="${w * 0.4}" height="${h * 0.6}" rx="24" fill="#879cad"/><rect y="${h - 40}" width="${w}" height="40" fill="#a85437"/></svg>` })
+        }
         if (url.pathname === '/test-banner.png' && process.env.TEST_BANNER_IMAGE) return route.fulfill({ contentType: 'image/png', body: fs.readFileSync(process.env.TEST_BANNER_IMAGE) })
         if (!url.pathname.includes('/api/v1/')) return url.origin === origin ? route.continue() : route.abort()
         let data = { items: [], counters: {}, unread: 0, pagination: { total: 0 } }
         if (url.pathname.endsWith('/locations/cities/')) data = { items: [{ city_code: '130400', city_name: '邯郸市' }] }
         // Deliberately omit card_assets: the bundled illustrations work without remote art URLs.
-        else if (url.pathname.endsWith('/home/')) data = { coupon_campaigns: campaigns, recommended_providers: [], recommended_activities: [], errors: {} }
+        else if (url.pathname.endsWith('/home/')) data = { coupon_campaigns: campaigns, recommended_providers: providers, recommended_activities: [], errors: {} }
+        else if (url.pathname.endsWith('/providers/')) data = { items: providers, pagination: { page: 1, page_size: 8, total: providers.length } }
         else if (/\/providers\/(offline|online)\/reviews\/$/.test(url.pathname)) data = { items: [], summary: { total: 0, rating: '0.00', distribution: {} } }
         else if (url.pathname.endsWith('/availability/')) data = { earliest: null }
         else if (/\/providers\/(offline|online)\/$/.test(url.pathname)) data = {
           public_id: url.pathname.includes('/offline/') ? 'offline' : 'online', nickname: '测试达人',
-          is_online: url.pathname.includes('/online/'), verified: true, avatar_url: null, media: [],
+          is_online: url.pathname.includes('/online/'), verified: true,
+          avatar_url: url.pathname.includes('/online/') ? providers[0].avatar_url : null,
+          media: url.pathname.includes('/online/') ? providers.slice(0, 3).map((p, i) => ({ id: `gallery-${i}`, type: 'image', url: p.avatar_url })) : [],
           gender: 'female', birth_date: null, lifestyle_photo_url: null, service_city_name: '邯郸市',
           bio: '用于本地布局检查的模拟资料。', max_service_radius_km: 20, rating: '5.00', service_count: 0,
           is_favorited: false, services: [{ id: 1, category: '桌球', billing_type: 'hourly', price_amount: 8800 }],
@@ -63,11 +82,38 @@ async function main() {
         await page.locator('.scene-art img').evaluateAll(imgs => Promise.all(imgs.map(img => img.decode())))
         await page.locator('.loading-block').waitFor({ state: 'hidden' })
       }
+      async function assertCompletePhotos(selector, fallbackSelector, heightRpx) {
+        const photos = page.locator(selector)
+        await photos.nth(2).waitFor({ state: 'attached' })
+        assert.equal(await photos.count(), 3)
+        for (let i = 0; i < 3; i++) {
+          const photo = photos.nth(i)
+          await photo.locator('img').evaluate(img => img.decode())
+          const layout = await photo.evaluate(el => {
+            const picture = el.querySelector('img')
+            const style = getComputedStyle(el.querySelector('div'))
+            return { fit: style.backgroundSize, position: style.backgroundPosition,
+              natural: [picture.naturalWidth, picture.naturalHeight], height: el.getBoundingClientRect().height,
+              background: getComputedStyle(el.parentElement).backgroundColor }
+          })
+          assert.equal(layout.fit, 'contain', 'all photo edges remain inside thumbnail, never cover-cropped')
+          assert.equal(layout.position, '50% 50%', 'complete image remains centered')
+          assert.deepEqual(layout.natural, photoSizes[i], 'original photo aspect ratio is preserved')
+          assert.ok(Math.abs(layout.height - heightRpx * width / 750) < 1, 'card image container size is unchanged')
+          assert.equal(layout.background, 'rgb(243, 245, 246)', 'unused area has a neutral background')
+        }
+        assert.equal(await page.locator(fallbackSelector).innerText(), '无', 'missing photo keeps nickname fallback')
+      }
       await home()
+      await assertCompletePhotos('.provider-image', '.provider-fallback', 208)
       assert.equal(await page.locator('.location-note').count(), 0, 'removed home location hint leaves no row')
       assert.equal(await page.locator('.city').isVisible(), true, 'top city picker remains available')
       const banner = await page.locator('.campaign-swiper').boundingBox()
-      assert.ok(Math.abs(banner.height - (402 * width / 750 - 20)) < 1, `${width}: carousel is exactly 20 CSS px shorter`)
+      assert.ok(Math.abs(banner.height - (402 * width / 750 - 20) * 0.8) < 1, `${width}: carousel is another 20% shorter`)
+      const toolbar = await page.locator('.dz-navbar').boundingBox()
+      const search = await page.locator('.search').boundingBox()
+      assert.ok(Math.abs(banner.y - toolbar.y - toolbar.height - 24 * width / 750) < 1, 'homepage adds 24rpx spacing below toolbar')
+      assert.ok(banner.y - search.y - search.height >= 24 * width / 750 - 1, 'banner stays separated from search field')
       assert.equal(await page.locator('.campaign-dot').count(), 2)
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1), false)
       for (const scene of await page.locator('.scene').all()) {
@@ -93,6 +139,13 @@ async function main() {
       }
       const cta = await page.locator('.campaign-cta').first().boundingBox()
       assert.ok(cta.height >= 44 && cta.y >= banner.y && cta.y + cta.height <= banner.y + banner.height, 'claim remains completely inside banner with 44px hit area')
+      const ctaFace = await page.locator('.campaign-cta-face').first().boundingBox()
+      assert.ok(Math.abs(ctaFace.height - 44 * 0.8) < 1, 'claim pill is visually 20% shorter while its hit area stays usable')
+      assert.ok(Math.abs(ctaFace.y + ctaFace.height / 2 - cta.y - cta.height / 2) < 1, 'visible pill is centered inside hit area')
+      for (const selector of ['.campaign-cta-label', '.campaign-arrow']) {
+        const label = await page.locator(selector).first().boundingBox()
+        assert.ok(Math.abs(label.y + label.height / 2 - ctaFace.y - ctaFace.height / 2) < 1, 'claim label and arrow remain vertically centered')
+      }
       if (process.env.TEST_SCREENSHOT_DIR) {
         fs.mkdirSync(process.env.TEST_SCREENSHOT_DIR, { recursive: true })
         await page.screenshot({ path: path.join(process.env.TEST_SCREENSHOT_DIR, `home-${width}.png`), fullPage: true })
@@ -109,6 +162,11 @@ async function main() {
       await page.locator('.dz-sheet__close').click()
       await page.locator('.scene.provider .scene-art').click({ force: true })
       await page.waitForURL(/pages\/providers\/list/)
+      await assertCompletePhotos('.photo uni-image', '.photo-fallback', 260)
+      assert.equal(await page.locator('.book.disabled').innerText(), '不可预约', 'offline booking state is preserved')
+      if (process.env.TEST_SCREENSHOT_DIR) await page.screenshot({ path: path.join(process.env.TEST_SCREENSHOT_DIR, `provider-list-${width}.png`), fullPage: true })
+      await page.locator('.photo').first().click()
+      await page.waitForURL(/pages\/providers\/detail\?id=online/)
       await home()
       await page.locator('.scene.activity .scene-action').click()
       await page.waitForURL(/pages\/activities\/list/)
@@ -131,12 +189,42 @@ async function main() {
         if (state === 'offline') {
           await primary.click({ force: true })
           assert.match(page.url(), /providers\/detail/, 'offline button must not start booking')
+          assert.equal(await page.locator('.hero-fallback').innerText(), '测', 'missing gallery keeps fallback')
+        } else {
+          const gallery = page.locator('.hero-gallery')
+          const galleryBox = await gallery.boundingBox()
+          const nav = await page.locator('.dz-navbar').boundingBox()
+          const avatar = await page.locator('.portrait-ring').boundingBox()
+          const counter = await page.locator('.photo-count').boundingBox()
+          assert.ok(galleryBox.y >= nav.y + nav.height - 1, 'navigation must not cover the top of the photo')
+          assert.ok(avatar.y >= galleryBox.y + galleryBox.height - 1, 'profile avatar must not cover the bottom of the photo')
+          assert.ok(counter.y >= galleryBox.y + galleryBox.height - 1, 'counter stays outside image and video controls')
+          for (let i = 0; i < 3; i++) {
+            const photo = page.locator('.gallery-image').nth(i)
+            await photo.locator('img').evaluate(img => img.decode())
+            assert.deepEqual(await photo.evaluate(el => ({ fit: getComputedStyle(el.querySelector('div')).backgroundSize,
+              natural: [el.querySelector('img').naturalWidth, el.querySelector('img').naturalHeight] })),
+            { fit: 'contain', natural: photoSizes[i] }, 'detail shows original portrait, landscape and square photos without cropping')
+          }
+          await page.locator('.gallery-image').first().click()
+          const preview = page.locator('#u-a-p > div')
+          await preview.waitFor({ state: 'visible' })
+          assert.equal(await page.locator('#u-a-p img').count(), 3, 'tap still previews the original gallery')
+          await preview.click({ position: { x: width - 24, y: 20 } })
+          await preview.waitFor({ state: 'hidden' })
+          if (process.env.TEST_SCREENSHOT_DIR) await page.screenshot({ path: path.join(process.env.TEST_SCREENSHOT_DIR, `provider-detail-portrait-${width}.png`) })
+          for (let i = 1; i < 3; i++) {
+            await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: galleryBox.x + galleryBox.width - 30, y: galleryBox.y + galleryBox.height / 2 }] })
+            for (let step = 1; step <= 8; step++) await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: galleryBox.x + galleryBox.width - 30 - step * (galleryBox.width - 60) / 8, y: galleryBox.y + galleryBox.height / 2 }] })
+            await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
+            await page.waitForFunction(n => document.querySelector('.photo-count').textContent === `${n}/3`, i + 1)
+          }
         }
         if (process.env.TEST_SCREENSHOT_DIR) await page.screenshot({ path: path.join(process.env.TEST_SCREENSHOT_DIR, `provider-${state}-${width}.png`) })
       }
       assert.deepEqual(errors, [])
       await context.close()
-      console.log(`PASS ${width}px: compact cards, centered CTAs, artwork, links, carousel, fallback, online/offline booking labels`)
+      console.log(`PASS ${width}px: compact cards, centered CTAs, full provider photos, artwork, links, carousel, fallback, online/offline booking labels`)
     }
   } finally {
     if (browser) await browser.close()
