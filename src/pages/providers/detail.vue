@@ -82,7 +82,7 @@
 
       <view class="action-bar dz-container">
         <button class="secondary" :disabled="favoriteSubmitting" hover-class="button--pressed" @tap="toggleFavorite"><text class="action-icon">{{ provider.is_favorited?'★':'☆' }}</text><text>{{ provider.is_favorited?'已收藏':'收藏' }}</text></button>
-        <button class="primary" :disabled="!provider.is_online" hover-class="button--pressed" @tap="startBooking">{{ provider.is_online ? '立即预约' : '离线不可预约' }}</button>
+        <button class="primary" :class="{ 'primary--disabled': !provider.is_online }" :disabled="!provider.is_online" hover-class="button--pressed" @tap="startBooking"><text class="primary-label">{{ provider.is_online ? '立即预约' : '离线不可预约' }}</text></button>
       </view>
       <DzBottomSheet :visible="serviceSheetOpen" title="选择服务" @close="serviceSheetOpen = false">
           <view class="sheet-services">
@@ -286,8 +286,10 @@ watch(selectedServiceId,()=>loadAvailability())
 .action-bar button{margin:0;border:0}
 .secondary{display:flex;flex-direction:column;align-items:center;justify-content:center;width:104rpx;height:86rpx;padding:0;border:1rpx solid $dz-border-subtle!important;border-radius:$dz-radius-sm;color:$dz-text-primary;background:$dz-surface-card;font-size:$dz-fs-micro;line-height:25rpx}
 .action-icon{font-size:$dz-fs-heading}
-.primary{flex:1;height:86rpx;border-radius:$dz-radius-full;color:$dz-text-inverse;background:$dz-gradient-brand;font-size:$dz-fs-body-strong;font-weight:$dz-fw-bold}
-.primary[disabled]{color: $dz-text-secondary;background:#e8ecee}
+.primary{display:flex;align-items:center;justify-content:center;flex:1;min-width:0;height:86rpx;padding:0 24rpx;border-radius:$dz-radius-full;color:$dz-text-inverse;background:$dz-gradient-brand;font-size:$dz-fs-body-strong;font-weight:$dz-fw-bold;line-height:1;box-sizing:border-box}
+.primary::after{border:0}
+.primary-label{display:block;line-height:40rpx;white-space:nowrap}
+.primary.primary--disabled{color:$dz-text-secondary;background:#e8ecee}
 .detail-state{min-height:500rpx}
 @media screen and (orientation:landscape) and (max-height:600px){.detail-page{padding-bottom:84px}
 .hero{height:220px}

@@ -1,12 +1,11 @@
 <template>
   <view class="dz-page dz-page--with-tabbar activity-channel">
     <DzNavBar mode="toolbar">
-      <button class="city" hover-class="control--pressed" @tap="chooseCity"><text>{{ discovery.cityName }}</text><text>⌄</text></button>
+      <text class="channel-title">同城活动</text>
       <button class="search" aria-label="搜索活动" hover-class="control--pressed" @tap="openPage('/pages/discovery/search?type=activity')">⌕</button>
     </DzNavBar>
 
     <main class="content dz-container">
-      <button class="location-note" @tap="chooseCity">{{ discoveryLocationLabel(discovery) }} ›</button>
       <view class="hero">
         <image src="/static/activities/activity-channel-hero-v1.webp" mode="aspectFill" />
         <text class="hero-title">同城精彩活动</text>
@@ -77,8 +76,6 @@ import {
   discoveryQuery,
   getDiscoveryContext,
   resolveDiscoveryContext,
-  openDiscoveryCityPicker,
-  discoveryLocationLabel,
 } from '@/services/discoveryContext'
 import { openPage } from '@/services/navigation'
 import type { ActivityListItem } from '@/types/api'
@@ -128,8 +125,7 @@ async function loadActivities() {
 
 function changeOrdering(value: Ordering) {
   if (value === 'distance' && !discovery.value.longitude) {
-    uni.showToast({ title: '请先定位，再按距离排序', icon: 'none' })
-    chooseCity()
+    uni.showToast({ title: '请先在首页设置定位', icon: 'none' })
     return
   }
   ordering.value = value
@@ -148,7 +144,6 @@ function openPublish() {
   openPage('/pages/publish/index')
 }
 
-function chooseCity() { openDiscoveryCityPicker() }
 onShow(loadActivities)
 onReachBottom(() => loadPage(false))
 onUnload(() => { refreshVersion++; invalidate() })
@@ -158,9 +153,8 @@ onUnload(() => { refreshVersion++; invalidate() })
 @use '../../styles/tokens.scss' as *;
 
 .activity-channel { background:$dz-surface-page; }
-.location-note { min-height:88rpx; padding:0; text-align:left; color:$dz-text-secondary; background:transparent; font-size:24rpx; line-height:1.5; }.location-note::after { border:0; }
 .topbar { display:flex; align-items:center; justify-content:space-between; height:94rpx; }
-.city { display:flex; align-items:center; gap:8rpx; height:88rpx; min-height:44px; margin:0 auto 0 0; padding:0; color:$dz-text-primary; background:transparent; font-size:$dz-fs-body-strong; font-weight:$dz-fw-semibold; line-height:1; }
+.channel-title { display:flex; align-items:center; flex:1; min-height:44px; color:$dz-text-primary; font-size:$dz-fs-body-strong; font-weight:$dz-fw-semibold; line-height:1.4; }
 .search { display:flex; align-items:center; justify-content:center; width:88rpx; min-width:44px; height:88rpx; min-height:44px; margin:0; padding:0; color:$dz-text-primary; background:transparent; font-size:$dz-fs-price-lg; line-height:1; }
 .control--pressed { opacity:.65; }
 .hero { position:relative; overflow:hidden; height:242rpx; border:1rpx solid $dz-border-material; border-radius:$dz-radius-lg; color:$dz-text-inverse; box-shadow:$dz-shadow-card; }

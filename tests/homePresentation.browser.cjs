@@ -44,6 +44,15 @@ async function main() {
         if (url.pathname.endsWith('/locations/cities/')) data = { items: [{ city_code: '130400', city_name: '邯郸市' }] }
         // Deliberately omit card_assets: the bundled illustrations work without remote art URLs.
         else if (url.pathname.endsWith('/home/')) data = { coupon_campaigns: campaigns, recommended_providers: [], recommended_activities: [], errors: {} }
+        else if (/\/providers\/(offline|online)\/reviews\/$/.test(url.pathname)) data = { items: [], summary: { total: 0, rating: '0.00', distribution: {} } }
+        else if (url.pathname.endsWith('/availability/')) data = { earliest: null }
+        else if (/\/providers\/(offline|online)\/$/.test(url.pathname)) data = {
+          public_id: url.pathname.includes('/offline/') ? 'offline' : 'online', nickname: '测试达人',
+          is_online: url.pathname.includes('/online/'), verified: true, avatar_url: null, media: [],
+          gender: 'female', birth_date: null, lifestyle_photo_url: null, service_city_name: '邯郸市',
+          bio: '用于本地布局检查的模拟资料。', max_service_radius_km: 20, rating: '5.00', service_count: 0,
+          is_favorited: false, services: [{ id: 1, category: '桌球', billing_type: 'hourly', price_amount: 8800 }],
+        }
         else if (url.pathname.includes('/coupon-campaigns/')) data = campaigns.find(c => url.pathname.includes(c.public_id))
         else if (url.pathname.endsWith('/service-categories/')) data = { items: ['桌球', '电竞', '桌游', '密室'].map((name, i) => ({ name, slug: `category-${i}`, icon_url: `${origin}/static/home/categories/${['billiards', 'esports', 'board-games', 'escape-room'][i]}.svg` })) }
         await route.fulfill({ json: { data } })
@@ -64,9 +73,16 @@ async function main() {
       for (const scene of await page.locator('.scene').all()) {
         assert.equal(await scene.getAttribute('role'), 'button')
         const box = await scene.boundingBox()
-        assert.ok(Math.abs(box.height - 210 * width / 750) < 1, 'entry card height is unchanged')
+        assert.ok(Math.abs(box.height - (210 * width / 750 - 20)) < 1, 'entry card is another 20 CSS px shorter')
         const art = await scene.locator('.scene-art').boundingBox()
         assert.ok(art.x >= box.x && art.x + art.width <= box.x + box.width, 'complete illustration stays inside card')
+        assert.ok(art.y >= box.y && art.y + art.height <= box.y + box.height, 'illustration fits the shorter card vertically')
+        const action = await scene.locator('.scene-action').boundingBox()
+        assert.equal(await scene.locator('.scene-action').evaluate(el => el.tagName), 'UNI-VIEW', 'use a layout container, not nested mini-program text')
+        for (const selector of ['.scene-action-label', '.scene-arrow']) {
+          const label = await scene.locator(selector).boundingBox()
+          assert.ok(Math.abs(label.y + label.height / 2 - action.y - action.height / 2) < 1, 'CTA text and arrow are vertically centered')
+        }
         for (const selector of ['.scene-title', '.scene-copy', '.scene-action']) {
           const text = await scene.locator(selector).boundingBox()
           assert.ok(text.x >= box.x && text.x + text.width <= box.x + box.width, `${selector} stays inside card`)
@@ -101,9 +117,26 @@ async function main() {
       await page.locator('.hero-title').waitFor()
       assert.equal(await page.locator('.scene-art').count(), 2, 'art remains visible without campaigns')
       assert.equal(await page.locator('.campaign-swiper').count(), 0)
+      for (const state of ['offline', 'online']) {
+        await page.goto(`${origin}/#/pages/providers/detail?id=${state}`)
+        await page.reload()
+        const primary = page.locator('.action-bar .primary')
+        await primary.waitFor()
+        assert.equal(await primary.innerText(), state === 'offline' ? '离线不可预约' : '立即预约')
+        assert.equal(await primary.getAttribute('disabled') !== null, state === 'offline')
+        const box = await primary.boundingBox()
+        const label = await primary.locator('.primary-label').boundingBox()
+        assert.ok(Math.abs(label.y + label.height / 2 - box.y - box.height / 2) < 1, `${state}: booking label is vertically centered`)
+        assert.ok(Math.abs(label.x + label.width / 2 - box.x - box.width / 2) < 1, `${state}: booking label is horizontally centered`)
+        if (state === 'offline') {
+          await primary.click({ force: true })
+          assert.match(page.url(), /providers\/detail/, 'offline button must not start booking')
+        }
+        if (process.env.TEST_SCREENSHOT_DIR) await page.screenshot({ path: path.join(process.env.TEST_SCREENSHOT_DIR, `provider-${state}-${width}.png`) })
+      }
       assert.deepEqual(errors, [])
       await context.close()
-      console.log(`PASS ${width}px: artwork, text clearance, card links, carousel -20px, CTA, swipe, detail and fallback`)
+      console.log(`PASS ${width}px: compact cards, centered CTAs, artwork, links, carousel, fallback, online/offline booking labels`)
     }
   } finally {
     if (browser) await browser.close()

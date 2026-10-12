@@ -90,9 +90,53 @@ async function main() {
     await page.locator('.locate:visible').click()
     await page.locator('.location:visible').filter({ hasText: '本次定位' }).waitFor()
     assert(requests.some(item => item.path.endsWith('/activities/') && item.query.longitude === '114.5240000'))
+    // The activity channel and category list inherit the SAME home location.
+    await page.locator('.dz-navbar__back:visible').click()
+    await page.locator('.scene-grid:visible').waitFor()
+    const lastActivity = () => requests.filter(item => item.path.endsWith('/activities/')).at(-1).query
+    async function enterActivity() {
+      const response = page.waitForResponse(r => new URL(r.url()).pathname.endsWith('/activities/'))
+      await page.locator('.tabbar:visible .tab[aria-label="活动"]').click()
+      await response
+      await page.locator('.channel-title:visible').waitFor()
+      assert.equal(await page.locator('.activity-channel .city,.activity-channel .location-note').count(), 0)
+    }
+    async function activityCategories() {
+      const response = page.waitForResponse(r => new URL(r.url()).pathname.endsWith('/activities/'))
+      await page.locator('.category-panel .category').filter({ hasText: '全部' }).click()
+      await response
+      await page.waitForURL(/pages\/activities\/list/)
+    }
+    await enterActivity()
+    assert.equal(lastActivity().longitude, '114.5240000')
+    assert.equal(lastActivity().latitude, '36.6070000')
+    await screenshot('activity-shared-location')
+    const sorted = page.waitForResponse(r => new URL(r.url()).searchParams.get('ordering') === 'distance')
+    await page.locator('.sorts:visible').getByText('距离最近', { exact: true }).click()
+    await sorted
+    assert.equal(lastActivity().ordering, 'distance')
+    await activityCategories()
+    assert.equal(lastActivity().longitude, '114.5240000')
+    // Select a different city on HOME: both activity pages must discard old GPS.
+    await page.locator('.tabbar:visible .tab[aria-label="首页"]').click()
+    await page.locator('.city:visible').click()
+    await page.locator('.city-grid uni-button').filter({ hasText: '北京市' }).click()
+    await page.locator('.city:visible').filter({ hasText: '北京市' }).waitFor()
+    await enterActivity()
+    assert.equal(lastActivity().city_code, '110100')
+    assert.equal(lastActivity().longitude, undefined)
+    await page.locator('.sorts:visible').getByText('距离最近', { exact: true }).click()
+    await page.getByText('请先在首页设置定位', { exact: true }).waitFor()
+    assert.match(page.url(), /pages\/activities\/index/, 'missing GPS must not open a separate city picker')
+    await activityCategories()
+    assert.equal(lastActivity().city_code, '110100')
+    assert.equal(lastActivity().longitude, undefined)
+    await page.locator('.sorts:visible').getByText('距离', { exact: true }).click()
+    await page.getByText('请先在首页设置定位', { exact: true }).waitFor()
+    assert.match(page.url(), /pages\/activities\/list/)
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false)
     assert.deepEqual(errors, [])
-    console.log('PASS: city search/selection, guest global search, 23-result pagination, activity tab, explicit positioning, no runtime errors or horizontal overflow')
+    console.log('PASS: city search, pagination, positioning, activity channel/list share home GPS and city changes, no duplicate city picker or runtime errors')
   } catch (error) {
     await screenshot('failure')
     throw error

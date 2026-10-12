@@ -70,7 +70,6 @@ import {
   discoveryQuery,
   getDiscoveryContext,
   resolveDiscoveryContext,
-  openDiscoveryCityPicker,
 } from '@/services/discoveryContext'
 import { openPage } from '@/services/navigation'
 import type { ActivityListItem, ActivityTagItem } from '@/types/api'
@@ -140,8 +139,7 @@ function clearFilters() {
 
 function changeOrdering(value: Ordering) {
   if (value === 'distance' && !discovery.value.longitude) {
-    uni.showToast({ title: '请先定位，再按距离排序', icon: 'none' })
-    openDiscoveryCityPicker()
+    uni.showToast({ title: '请先在首页设置定位', icon: 'none' })
     return
   }
   ordering.value = value

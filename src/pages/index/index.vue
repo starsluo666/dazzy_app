@@ -18,13 +18,13 @@
         <view class="scene provider dz-anim-fade-up" hover-class="scene--pressed" role="button" aria-label="达人陪伴，找搭子" @tap="openProviders()">
           <text class="scene-title">达人陪伴</text>
           <text class="scene-copy">1对1预约服务</text>
-          <text class="scene-action">找搭子 <text class="scene-arrow">›</text></text>
+          <view class="scene-action"><text class="scene-action-label">找搭子</text><text class="scene-arrow">›</text></view>
           <image class="scene-art provider-art" src="/static/home/provider-companion-v2.webp" mode="aspectFit" aria-hidden="true" />
         </view>
         <view class="scene activity dz-anim-fade-up" hover-class="scene--pressed" role="button" aria-label="同城组局，去组局" @tap="openActivities()">
           <text class="scene-title">同城组局</text>
           <text class="scene-copy">多人兴趣活动</text>
-          <text class="scene-action">去组局 <text class="scene-arrow">›</text></text>
+          <view class="scene-action"><text class="scene-action-label">去组局</text><text class="scene-arrow">›</text></view>
           <image class="scene-art group-art" src="/static/home/group-activity-v2.webp" mode="aspectFit" aria-hidden="true" />
         </view>
       </view>
@@ -194,20 +194,21 @@ button { margin:0; padding:0; line-height:1; background:transparent; }
 .hero-title { font-size:$dz-fs-price-lg; line-height:62rpx; font-weight:$dz-fw-bold; letter-spacing:-1rpx; }
 .hero-subtitle { margin-top:$dz-space-1; font-size:$dz-fs-body; font-weight:$dz-fw-medium; letter-spacing:1rpx; }
 .scene-grid { display:grid; grid-template-columns:1fr 1fr; gap:$dz-space-2; margin-top:$dz-space-3; }
-.scene { position:relative; overflow:hidden; display:flex; flex-direction:column; min-width:0; height:210rpx; padding:$dz-space-3; border:1rpx solid $dz-border-material; border-radius:$dz-radius-lg; color:#607477; box-shadow:0 8rpx 24rpx rgba(31,65,72,.05),inset 0 1rpx 0 $dz-surface-highlight; font-size:$dz-fs-caption; line-height:32rpx; box-sizing:border-box; transition:transform $dz-duration-fast $dz-ease-out, opacity $dz-duration-fast $dz-ease-standard; }
+.scene { position:relative; overflow:hidden; display:flex; flex-direction:column; justify-content:center; min-width:0; height:calc(210rpx - 20px); padding:16rpx 22rpx; border:1rpx solid $dz-border-material; border-radius:32rpx; color:#607477; box-shadow:0 8rpx 24rpx rgba(31,65,72,.05),inset 0 1rpx 0 $dz-surface-highlight; font-size:22rpx; line-height:28rpx; box-sizing:border-box; transition:transform $dz-duration-fast $dz-ease-out, opacity $dz-duration-fast $dz-ease-standard; }
 .scene.provider { background:linear-gradient(135deg,#fff8f2,#ffeade); }
 .scene.activity { background:linear-gradient(135deg,#f1fbfa,#d7f2ee); }
-.scene-title { position:relative; z-index:1; align-self:flex-start; white-space:nowrap; font-size:$dz-fs-heading; line-height:44rpx; font-weight:$dz-fw-bold; }
+.scene-title { position:relative; z-index:1; align-self:flex-start; white-space:nowrap; font-size:30rpx; line-height:36rpx; font-weight:$dz-fw-bold; }
 .provider .scene-title { color:#b64724; }
 .activity .scene-title { color:#087d82; }
-.scene-copy { position:relative; z-index:1; align-self:flex-start; margin-top:3rpx; white-space:nowrap; }
-.scene-action { position:relative; z-index:2; display:flex; align-items:center; justify-content:center; gap:10rpx; align-self:flex-start; height:48rpx; margin-top:19rpx; padding:0 20rpx; border:1rpx solid rgba(255,255,255,.36); border-radius:$dz-radius-full; color:$dz-text-inverse; background:#087d82; font-size:$dz-fs-caption; font-weight:$dz-fw-semibold; line-height:1; white-space:nowrap; box-sizing:border-box; }
+.scene-copy { position:relative; z-index:1; align-self:flex-start; margin-top:2rpx; white-space:nowrap; }
+.scene-action { position:relative; z-index:2; display:flex; align-items:center; justify-content:center; gap:8rpx; align-self:flex-start; flex-shrink:0; height:40rpx; margin-top:8rpx; padding:0 16rpx; border:1rpx solid rgba(255,255,255,.36); border-radius:$dz-radius-full; color:$dz-text-inverse; background:#087d82; font-size:22rpx; font-weight:$dz-fw-semibold; line-height:28rpx; white-space:nowrap; box-sizing:border-box; }
 .provider .scene-action { background:#c64920; }
-.scene-arrow { font-size:30rpx; font-weight:$dz-fw-medium; }
+.scene-action-label,.scene-arrow { display:block; line-height:28rpx; }
+.scene-arrow { font-size:26rpx; font-weight:$dz-fw-medium; }
 .more i { font-style:normal; }
-.scene-art { position:absolute; z-index:0; right:2rpx; bottom:5rpx; pointer-events:none; }
-.provider-art { width:154rpx; height:174rpx; }
-.group-art { bottom:2rpx; width:160rpx; height:182rpx; }
+.scene-art { position:absolute; z-index:0; right:2rpx; bottom:6rpx; height:calc(100% - 12rpx); pointer-events:none; }
+.provider-art { width:148rpx; }
+.group-art { width:152rpx; }
 .scene--pressed,.category--pressed { transform:scale(0.98); opacity:0.94; }
 .categories { display:grid; grid-template-columns:repeat(4,1fr); grid-auto-rows:112rpx; margin-top:$dz-space-3; padding:12rpx 8rpx; border:1rpx solid $dz-border-material; border-radius:$dz-radius-lg; background:$dz-surface-card; box-shadow:$dz-shadow-card,inset 0 1rpx 0 $dz-surface-highlight; box-sizing:border-box; }
 .category { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:5rpx; border-radius:$dz-radius-md; color:$dz-text-primary; font-size:$dz-fs-caption; transition:transform $dz-duration-fast $dz-ease-out, opacity $dz-duration-fast $dz-ease-standard, background-color $dz-duration-base $dz-ease-standard; }
