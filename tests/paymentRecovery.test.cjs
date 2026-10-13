@@ -23,7 +23,7 @@ function mount() {
     const output = ts.transpileModule(source, {
       compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020 },
     }).outputText
-    const context = { exports: {}, require: name => imports[name], uni, Error }
+    const context = { exports: {}, require: name => name.endsWith('userMessages') ? require('./userMessages.fixture.cjs') : imports[name], uni, Error }
     vm.runInNewContext(output, context, { filename })
     return context.exports
   }

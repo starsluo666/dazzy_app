@@ -93,7 +93,7 @@
           <strong>申请流程</strong>
           <text>• 客服先审核本次达人入驻意向</text>
           <text>• 初审通过后，在达人端完成实名认证和资料上传</text>
-          <text>• 完成资料和服务配置，开通审核通过并完成接单学习后即可接单</text>
+          <text>• 完成资料和服务设置，开通审核通过并完成接单学习后即可接单</text>
         </section>
 
         <view class="agreement" role="checkbox" :aria-checked="agreed" @tap="agreed = !agreed">

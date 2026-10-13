@@ -16,6 +16,7 @@ function execute(relative, names, imports = {}, uni = {}) {
     exports: {},
     Error,
     require(name) {
+      if (name.endsWith('userMessages')) return require('./userMessages.fixture.cjs')
       if (Object.hasOwn(imports, name)) return imports[name]
       if (name === 'vue') return vue
       if (name === '@dcloudio/uni-app') return { onShow() {}, onLoad() {} }

@@ -31,7 +31,7 @@
         <button v-if="checkout.payment_order.external_amount" class="active"><i class="wechat">微</i><strong>微信支付</strong><small>¥{{ money(checkout.payment_order.external_amount) }}</small><text>✓</text></button>
       </section>
 
-      <section class="rule-confirm"><strong>◆ 规则版本已确认</strong><text>{{ paymentMode==='mock'?'本地模拟支付不会产生真实扣款。':'支付即表示已阅读并同意活动规则及退款规则；结果以服务端汇付查单为准。' }}</text></section>
+      <section class="rule-confirm"><strong>◆ 报名须知</strong><text>{{ paymentMode==='mock'?'本地模拟支付不会产生真实扣款。':'支付即表示已阅读并同意活动规则及退款规则。支付后请确认报名状态，勿重复支付。' }}</text></section>
     </main>
     <footer v-if="checkout" class="checkout-footer"><button :disabled="paying || secondsLeft <= 0" @tap="pay">{{ paying ? '正在确认支付…' : secondsLeft <= 0 ? '名额锁定已超时' : `${paymentMode==='mock'?'模拟支付':checkout.payment_order.external_amount?'余额 + 微信支付':'余额支付'} ¥${money(checkout.payment_order.payable_amount)}` }}</button></footer>
   </view>
@@ -72,7 +72,7 @@ function startTicker() { if (ticker) clearInterval(ticker); ticker = setInterval
 function showSuccess() {
   if (completionHandled.value) return
   completionHandled.value = true
-  uni.showModal({ title: '报名成功', content: '服务端已确认支付，活动名额已正式占用。可在“我的活动”查看报名与退款记录。', showCancel: false, success: () => uni.redirectTo({ url: `/pages/activities/detail?id=${activityId.value}` }) })
+  uni.showModal({ title: '报名成功', content: '支付成功，已为你保留活动名额。可在“我的活动”查看报名与退款记录。', showCancel: false, success: () => uni.redirectTo({ url: `/pages/activities/detail?id=${activityId.value}` }) })
 }
 async function loadCheckout() {
   loading.value = true; error.value = ''
@@ -100,10 +100,10 @@ async function pay() {
     else {
       if(checkout.value.payment_order.external_amount===0){const session=(await createActivityParticipationPaymentSession(activityId.value)).data;if(session.invoke_type!=='BALANCE')throw new Error('余额支付状态已变化，请刷新后重试');showSuccess();return}
       // #ifdef H5
-      if(!isWechatBrowser())throw new Error('请在微信服务号内打开页面完成支付');const authorization=(await getActivityParticipationPaymentAuthorization(activityId.value)).data;if(!authorization.authorized){if(!authorization.authorize_url)throw new Error('微信授权地址不可用');window.location.assign(authorization.authorize_url);return}const session=(await createActivityParticipationPaymentSession(activityId.value)).data;if(session.invoke_type==='BALANCE'){showSuccess();return}if(session.invoke_type!=='WECHAT_JSAPI'||!session.pay_info)throw new Error('支付通道未返回有效的微信调起参数');await invokeWechatPay(session.pay_info);await confirmPayment()
+      if(!isWechatBrowser())throw new Error('请在微信服务号内打开页面完成支付');const authorization=(await getActivityParticipationPaymentAuthorization(activityId.value)).data;if(!authorization.authorized){if(!authorization.authorize_url)throw new Error('暂时无法完成微信授权，请稍后重试');window.location.assign(authorization.authorize_url);return}const session=(await createActivityParticipationPaymentSession(activityId.value)).data;if(session.invoke_type==='BALANCE'){showSuccess();return}if(session.invoke_type!=='WECHAT_JSAPI'||!session.pay_info)throw new Error('暂时无法打开微信支付，请先查看报名状态，勿重复支付');await invokeWechatPay(session.pay_info);await confirmPayment()
       // #endif
       // #ifndef H5
-      throw new Error('当前版本暂未开放 App 支付，请在微信服务号 H5 完成支付')
+      throw new Error('当前页面暂不支持支付，请从微信服务号进入后完成支付')
       // #endif
     }
     showSuccess()

@@ -1,3 +1,4 @@
+import { responseErrorText, requestFailureText, networkErrorText } from '../utils/userMessages'
 import { getAccessToken, getRefreshToken, handleSessionExpired, updateTokens } from './session'
 
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || '/api/v1').replace(/\/+$/, '')
@@ -19,11 +20,13 @@ let refreshPromise: Promise<RefreshResult> | null = null
 
 export class ApiError extends Error {
   readonly code: string
+  readonly status?: number
 
-  constructor(body: unknown, fallback: string) {
+  constructor(body: unknown, fallback: string, status?: number) {
     const parsed = parseErrorBody(body)
-    super(errorMessage(parsed, fallback))
+    super(responseErrorText(parsed, fallback))
     this.name = 'ApiError'
+    this.status = status
     const code = parsed && typeof parsed === 'object' ? (parsed as Record<string, unknown>).code : ''
     this.code = typeof code === 'string' ? code : ''
   }
@@ -53,7 +56,7 @@ function refreshAccessToken(): Promise<RefreshResult> {
         } else {
           resolve({
             status: 'unavailable',
-            message: errorMessage(response.data, `登录状态刷新失败（${response.statusCode}）`),
+            message: responseErrorText(response.data, '暂时无法确认登录状态，请稍后重试'),
           })
         }
       },
@@ -75,36 +78,6 @@ async function retryAfterUnauthorized<T>(retry: () => Promise<T>): Promise<T> {
     throw new Error('登录已过期，请重新登录。')
   }
   throw new Error(result.message)
-}
-
-function errorMessage(body: unknown, fallback: string): string {
-  if (Array.isArray(body)) {
-    for (const value of body) {
-      if (typeof value === 'string' && value.trim()) return value
-      if (value && typeof value === 'object') {
-        const nested = errorMessage(value, fallback)
-        if (nested !== fallback) return nested
-      }
-    }
-    return fallback
-  }
-  if (!body || typeof body !== 'object') return fallback
-  const record = body as Record<string, unknown>
-  if (typeof record.detail === 'string') return record.detail
-  const values = Object.entries(record).filter(([key]) => key !== 'code').map(([, value]) => value)
-  for (const value of values) {
-    if (typeof value === 'string') return value
-    if (Array.isArray(value) && typeof value[0] === 'string') return value[0]
-    if (value && typeof value === 'object') {
-      const nested = errorMessage(value, fallback)
-      if (nested !== fallback) return nested
-    }
-  }
-  // DRF also uses "code" as a field name for SMS verification errors. Keep
-  // machine-readable error codes (e.g. huifu_payment_closed) out of the toast.
-  const codeMessage = Array.isArray(record.code) ? record.code[0] : record.code
-  if (typeof codeMessage === 'string' && codeMessage.trim() && !/^[A-Za-z0-9_.-]+$/.test(codeMessage)) return codeMessage
-  return fallback
 }
 
 export function request<T>(path: string, options: RequestOptions = {}, retried = false): Promise<T> {
@@ -145,9 +118,9 @@ export function request<T>(path: string, options: RequestOptions = {}, retried =
             .catch(reject)
           return
         }
-        reject(new ApiError(response.data, `请求失败（${response.statusCode}）`))
+        reject(new ApiError(response.data, requestFailureText(path, response.statusCode), response.statusCode))
       },
-      fail: (error) => reject(new Error(error.errMsg || '网络连接失败')),
+      fail: (error) => reject(new Error(networkErrorText(error, path))),
     })
   })
 }
@@ -187,9 +160,9 @@ export function uploadFile<T>(
               .catch(reject)
             return
           }
-          reject(new Error(errorMessage(body, `上传失败（${response.statusCode}）`)))
+          reject(new Error(responseErrorText(body, requestFailureText(path, response.statusCode, true))))
         },
-        fail: (error) => reject(new Error(error.errMsg || '文件上传失败')),
+        fail: (error) => reject(new Error(networkErrorText(error, path, true))),
       } as UniApp.UploadFileOption)
     })
   }

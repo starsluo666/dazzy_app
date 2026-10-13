@@ -1,4 +1,5 @@
 import { businessTimeParts } from './businessTime'
+import { publicErrorText } from './userMessages'
 
 const pad2 = (value: number) => String(value).padStart(2, '0')
 
@@ -45,5 +46,5 @@ export function formatMonthDay(value: Date) {
 }
 
 export function getErrorMessage(reason: unknown, fallback = '加载失败') {
-  return reason instanceof Error ? reason.message : fallback
+  return publicErrorText(reason instanceof Error ? reason.message : '', fallback)
 }

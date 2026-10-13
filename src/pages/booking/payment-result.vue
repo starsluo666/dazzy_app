@@ -36,7 +36,7 @@ const title = computed(() => ({
   confirming: '正在确认支付结果', processing: '支付结果处理中', confirmed: '支付已确认', failed: '订单未支付',
 })[state.value])
 const description = computed(() => ({
-  confirming: '请稍候，服务端正在核对汇付交易结果。',
+  confirming: '正在确认支付结果，请勿重复支付。',
   processing: '暂未收到最终结果，请稍后刷新；请勿重复支付。',
   confirmed: '订单已进入待接单状态。',
   failed: '订单已关闭或支付超时，请返回后重新下单。',

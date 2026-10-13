@@ -38,10 +38,10 @@ export async function requireProviderOrderPaymentCapability(): Promise<ProviderO
   }
   const scene = currentProviderOrderScene()
   if (scene === 'unsupported') {
-    throw new Error('当前端尚未开放支付，请使用微信服务号 H5。')
+    throw new Error('当前页面暂不支持支付，请从微信服务号进入后完成支付。')
   }
   const capability = capabilities[scene]
-  if (!capability.available) throw new Error(capability.reason || '当前支付场景尚未开放。')
+  if (!capability.available) throw new Error(capability.reason || '当前暂不支持此支付方式。')
   return scene
 }
 
@@ -54,7 +54,7 @@ export async function requireActivityPaymentCapability(
     && import.meta.env.VITE_ENABLE_MOCK_PAYMENT === 'true'
     && item.mock.available
   ) return 'mock'
-  if (!isWechatBrowser()) throw new Error('当前活动支付请使用微信服务号 H5。')
+  if (!isWechatBrowser()) throw new Error('请从微信服务号进入后完成活动支付。')
   if (item.real.available) return 'official_account'
   throw new Error(item.real.reason || item.mock.reason || '当前活动支付尚未开放。')
 }

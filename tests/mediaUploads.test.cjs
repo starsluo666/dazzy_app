@@ -10,7 +10,7 @@ function load(relative, dependencies, globals = {}) {
     compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020 },
   }).outputText
   const context = { exports: {}, __env: { VITE_API_BASE_URL: '/api/v1', DEV: false }, ...globals,
-    require: name => { assert.ok(name in dependencies, `Unexpected import ${name}`); return dependencies[name] } }
+    require: name => { if (name.endsWith('userMessages')) return require('./userMessages.fixture.cjs'); assert.ok(name in dependencies, `Unexpected import ${name}`); return dependencies[name] } }
   vm.runInNewContext(output, context)
   return context.exports
 }

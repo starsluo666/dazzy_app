@@ -28,7 +28,7 @@
         <view v-if="discountAmount"><text>历史充值优惠</text><strong class="discount">-¥{{ money(discountAmount) }}</strong></view>
         <view class="payable"><text>需支付</text><strong>¥{{ money(payableAmount) }}</strong></view>
       </section>
-      <section class="rules"><strong>充值说明</strong><text>{{ campaign.rules_text }}</text><text v-if="legacyPending">本笔为历史充值单，仍按原金额支付，不额外获得消费折扣。</text><text v-else>折扣随本次充值余额保留，用完为止。达人订单先减优惠券，再按可用余额的最优档位整单打折，最后加路费；优先扣最优惠余额，全部余额不足时由微信补差额。</text><text>充值成功以服务端支付确认结果为准，请勿重复支付。</text></section>
+      <section class="rules"><strong>充值说明</strong><text>{{ campaign.rules_text }}</text><text v-if="legacyPending">本笔为历史充值单，仍按原金额支付，不额外获得消费折扣。</text><text v-else>折扣随本次充值余额保留，用完为止。达人订单先减优惠券，再按可用余额的最优档位整单打折，最后加路费；优先扣最优惠余额，全部余额不足时由微信补差额。</text><text>充值后请确认余额和充值记录，结果未确认前请勿重复支付。</text></section>
     </main>
     <view v-else-if="loading" class="loading-state">正在加载充值规则…</view>
     <NetworkState v-else :message="error || '充值活动暂不可用'" error @retry="load" />
@@ -95,7 +95,7 @@ async function pay() { if (!campaign.value?.is_enabled || paying.value) return; 
   }
   const orderNo = pendingOrderNo.value
   const authorization = (await getRechargePaymentAuthorization(orderNo)).data
-  if (!authorization.authorized) { if (!authorization.authorize_url) throw new Error('微信授权地址不可用'); uni.setStorageSync('pendingRechargeOrderNo', orderNo); window.location.assign(authorization.authorize_url); return }
+  if (!authorization.authorized) { if (!authorization.authorize_url) throw new Error('暂时无法完成微信授权，请稍后重试'); uni.setStorageSync('pendingRechargeOrderNo', orderNo); window.location.assign(authorization.authorize_url); return }
   const session = (await createRechargePaymentSession(orderNo, 'official_account')).data
   await invokeWechatPay(session.pay_info)
   const confirmed = (await confirmRechargePayment(orderNo)).data.order

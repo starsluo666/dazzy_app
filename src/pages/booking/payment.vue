@@ -9,9 +9,9 @@
       <text class="booking-section-title">安全支付</text>
       <section class="payment-methods booking-card">
         <view v-if="walletAmount" class="cashier-method"><i class="balance">余</i><view><strong>余额支付</strong><text>{{ fullBalancePayment ? '余额充足，将直接全额支付' : `余额不足，使用全部余额抵扣 ¥${money(walletAmount)}` }}</text></view><b>−¥{{ money(walletAmount) }}</b></view>
-        <view v-if="externalAmount" class="cashier-method"><i class="wechat">微</i><view><strong>微信支付</strong><text>{{ walletAmount ? '组合支付剩余差额' : '汇付聚合支付 · 服务号安全支付' }}</text></view><b>¥{{ money(externalAmount) }}</b></view>
+        <view v-if="externalAmount" class="cashier-method"><i class="wechat">微</i><view><strong>微信支付</strong><text>{{ walletAmount ? '组合支付剩余差额' : '通过微信完成支付' }}</text></view><b>¥{{ money(externalAmount) }}</b></view>
       </section>
-      <section class="safe-note"><strong>⬟ 平台担保交易 · 服务完成后结算</strong><text>{{ mockPaymentEnabled?'本地模拟支付已开启，不会发起真实扣款。':'页面回跳不代表支付成功，订单结果以服务端确认为准。' }}</text></section>
+      <section class="safe-note"><strong>⬟ 平台担保交易 · 服务完成后结算</strong><text>{{ mockPaymentEnabled?'本地模拟支付已开启，不会发起真实扣款。':'支付后请确认订单状态，结果未确认前请勿重复支付。' }}</text></section>
     </view>
     <view v-else class="booking-empty">{{ error || '订单不存在' }}</view>
     <footer v-if="order" class="booking-footer"><button :disabled="paying||expired" @tap="pay">{{ expired?'订单已超时':paying?'正在处理支付…':fullBalancePayment?`余额支付 ¥${money(order.payable_amount)}`:`${mockPaymentEnabled?'模拟支付':'组合支付'} ¥${money(order.payable_amount)}` }}</button></footer>
@@ -40,10 +40,10 @@ async function load(){loading.value=true;error.value='';try{const [orderResult,w
 async function pay(){if(!order.value||paying.value||expired.value)return;paying.value=true;try{if(mockPaymentEnabled.value){const paid=(await simulateProviderOrderPayment(order.value.order_no)).data;uni.redirectTo({url:`/pages/booking/success?orderNo=${paid.order_no}`});return}
 if(fullBalancePayment.value){const session=(await createProviderOrderPaymentSession(order.value.order_no,'official_account')).data;if(session.invoke_type!=='BALANCE')throw new Error('余额支付状态已变化，请刷新后重试');uni.redirectTo({url:`/pages/booking/success?orderNo=${encodeURIComponent(order.value.order_no)}`});return}
 // #ifdef H5
-if(!isWechatBrowser())throw new Error('请在微信服务号内打开页面完成支付');const authorization=(await getProviderOrderPaymentAuthorization(order.value.order_no)).data;if(!authorization.authorized){if(!authorization.authorize_url)throw new Error('微信授权地址不可用');uni.setStorageSync('pendingProviderOrderNo',order.value.order_no);window.location.assign(authorization.authorize_url);return}const session=(await createProviderOrderPaymentSession(order.value.order_no,'official_account')).data;if(session.invoke_type==='BALANCE'){uni.redirectTo({url:`/pages/booking/success?orderNo=${encodeURIComponent(order.value.order_no)}`});return}if(session.invoke_type!=='WECHAT_JSAPI'||!session.pay_info)throw new Error('支付通道未返回有效的微信调起参数');uni.setStorageSync('pendingProviderOrderNo',order.value.order_no);await invokeWechatPay(session.pay_info);uni.redirectTo({url:`/pages/booking/payment-result?orderNo=${encodeURIComponent(order.value.order_no)}`})
+if(!isWechatBrowser())throw new Error('请在微信服务号内打开页面完成支付');const authorization=(await getProviderOrderPaymentAuthorization(order.value.order_no)).data;if(!authorization.authorized){if(!authorization.authorize_url)throw new Error('暂时无法完成微信授权，请稍后重试');uni.setStorageSync('pendingProviderOrderNo',order.value.order_no);window.location.assign(authorization.authorize_url);return}const session=(await createProviderOrderPaymentSession(order.value.order_no,'official_account')).data;if(session.invoke_type==='BALANCE'){uni.redirectTo({url:`/pages/booking/success?orderNo=${encodeURIComponent(order.value.order_no)}`});return}if(session.invoke_type!=='WECHAT_JSAPI'||!session.pay_info)throw new Error('暂时无法打开微信支付，请先查看订单状态，勿重复支付');uni.setStorageSync('pendingProviderOrderNo',order.value.order_no);await invokeWechatPay(session.pay_info);uni.redirectTo({url:`/pages/booking/payment-result?orderNo=${encodeURIComponent(order.value.order_no)}`})
 // #endif
 // #ifndef H5
-throw new Error('当前版本暂未开放 App 支付，请在 H5 完成支付')
+throw new Error('当前页面暂不支持支付，请从微信服务号进入后完成支付')
 // #endif
 } catch (reason) {
   if (await handlePaymentRecovery(reason, async () => {

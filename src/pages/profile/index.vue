@@ -190,7 +190,7 @@ function openFunction(item: FunctionEntry) {
     }
     const phone = overview.value?.customer_service_phone?.trim()
     if (!phone) {
-      uni.showModal({ title: '客服中心', content: '客服电话暂未配置，请通过问题反馈联系我们。', showCancel: false })
+      uni.showModal({ title: '客服中心', content: '电话客服暂不可用，请通过问题反馈联系我们。', showCancel: false })
       return
     }
     uni.showModal({

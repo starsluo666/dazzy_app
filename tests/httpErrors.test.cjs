@@ -14,7 +14,7 @@ async function errorFor(body) {
   const calls = []
   const context = {
     exports: {}, Error,
-    require: name => name === './session' ? { getAccessToken: () => '' } : {},
+    require: name => name.endsWith('userMessages') ? require('./userMessages.fixture.cjs') : name === './session' ? { getAccessToken: () => '' } : {},
     uni: { request: options => { calls.push(options); options.success({ statusCode: 400, data: body }) } },
   }
   vm.runInNewContext(output, context, { filename })
@@ -29,10 +29,10 @@ async function errorFor(body) {
 ;(async () => {
   assert.equal((await errorFor({ code: '验证码错误或已过期。' })).message, '验证码错误或已过期。')
   assert.equal((await errorFor(JSON.stringify({ code: '验证码错误或已过期。' }))).message, '验证码错误或已过期。')
-  assert.equal((await errorFor({ code: 'huifu_payment_closed' })).message, '请求失败（400）')
+  assert.equal((await errorFor({ code: 'huifu_payment_closed' })).message, '操作未完成，请检查填写内容或稍后重试')
   assert.equal((await errorFor({ code: 'huifu_payment_closed', detail: '订单已关闭' })).message, '订单已关闭')
   assert.equal((await errorFor({ code: 'technical_error', phone: ['手机号无效。'] })).message, '手机号无效。')
   assert.equal((await errorFor({ errors: { code: ['验证码不正确。'] } })).message, '验证码不正确。')
-  assert.equal((await errorFor('<html>error</html>')).message, '请求失败（400）')
+  assert.equal((await errorFor('<html>error</html>')).message, '操作未完成，请检查填写内容或稍后重试')
   console.log('PASS HTTP 400: human-readable code/field/detail messages, machine-code fallback and JSON text bodies')
 })().catch(error => { console.error(error); process.exitCode = 1 })

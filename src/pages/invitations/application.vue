@@ -18,7 +18,7 @@
           <view class="detail"><text class="muted">服务城市</text><text>{{ application.service_city_name || '—' }}</text></view>
           <view v-if="application.invitation_code" class="detail"><text class="muted">邀请码</text><text>{{ application.invitation_code }}</text></view>
         </view>
-        <view class="steps"><text class="section-title">接下来</text><text class="description">入驻初审通过后，请使用注册时的手机号和密码登录达人端，完成实名认证、资料和服务配置，再通过开通审核及接单学习。</text><text class="description">初审通过不代表已经可以接单；达人端也可查看申请进度，无需重复注册。</text></view>
+        <view class="steps"><text class="section-title">接下来</text><text class="description">入驻初审通过后，请使用注册时的手机号和密码登录达人端，完成实名认证、资料和服务设置，再通过开通审核及接单学习。</text><text class="description">初审通过不代表已经可以接单；达人端也可查看申请进度，无需重复注册。</text></view>
       </template>
     </view>
   </view>

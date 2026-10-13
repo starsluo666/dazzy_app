@@ -201,7 +201,7 @@ function showFeeNote() {
 function showRefundRules() {
   uni.showModal({
     title: '标准退款规则',
-    content: '距开始≥12小时全退；6–12小时退AA本金；2–6小时退70% AA本金；不足2小时不退款。具体以活动规则快照为准。',
+    content: '距开始≥12小时全退；6–12小时退AA本金；2–6小时退70% AA本金；不足2小时不退款。具体以报名时确认的活动规则为准。',
     showCancel: false,
   })
 }

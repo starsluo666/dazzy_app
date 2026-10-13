@@ -48,18 +48,18 @@ function waitWechatBridge() {
   if (current) return Promise.resolve(current)
   return new Promise<WechatBridge>((resolve, reject) => {
     if (typeof document === 'undefined') {
-      reject(new Error('当前环境无法调起微信支付'))
+      reject(new Error('无法打开微信支付，请从微信服务号进入后查看订单状态'))
       return
     }
     const onReady = () => {
       window.clearTimeout(timeout)
       const bridge = currentWechatBridge()
       if (bridge) resolve(bridge)
-      else reject(new Error('微信支付组件不可用'))
+      else reject(new Error('微信支付暂不可用，请先查看订单状态，勿重复支付'))
     }
     const timeout = window.setTimeout(() => {
       document.removeEventListener('WeixinJSBridgeReady', onReady)
-      reject(new Error('微信支付组件加载超时，请刷新后重试'))
+      reject(new Error('打开微信支付超时，请先查看订单状态，勿重复支付'))
     }, 8000)
     document.addEventListener('WeixinJSBridgeReady', onReady, { once: true })
   })
@@ -78,7 +78,7 @@ export async function invokeWechatPay(payInfo: Record<string, string | number>) 
         reject(new Error('已取消支付'))
         return
       }
-      reject(new Error('微信支付未完成，请稍后重试'))
+      reject(new Error('支付结果暂未确认，请先查看订单状态，勿重复支付'))
     })
   })
 }
