@@ -56,8 +56,8 @@
         hover-class="card--pressed"
         @tap="openDetail(item.public_id)"
       >
-        <view class="photo" :class="{ 'photo--image': !!item.avatar_url }">
-          <image v-if="item.avatar_url" :src="item.avatar_url" mode="aspectFit" />
+        <view class="photo">
+          <image v-if="item.avatar_url" :src="item.avatar_url" mode="aspectFill" />
           <text v-else class="photo-fallback">{{ item.nickname.slice(0, 1) }}</text>
           <text class="online" :class="{ offline: !item.is_online }"><i />{{ item.is_online ? '在线' : '离线' }}</text>
         </view>
@@ -426,10 +426,9 @@ button::after { display:none; }
 .grid-state { grid-column:1/-1; }
 .card { overflow:hidden; border:1rpx solid $dz-border-material; border-radius:$dz-radius-lg; background:$dz-surface-card; box-shadow:$dz-shadow-card,inset 0 1rpx 0 $dz-surface-highlight; transform-origin:center; transition:transform $dz-duration-fast $dz-ease-out, opacity $dz-duration-fast $dz-ease-standard; will-change:transform; }
 .card--pressed { transform:scale(0.98); opacity:0.94; }
-.photo { position:relative; display:flex; align-items:center; justify-content:center; height:260rpx; color:$dz-text-inverse; background:linear-gradient(145deg,$dz-brand-soft,$dz-brand-primary); font-size:64rpx; font-weight:$dz-fw-bold; }
-.photo image { width:100%; height:100%; }
-.photo--image { background:$dz-surface-page; }
-.photo-fallback { font-size:64rpx; }
+.photo { position:relative; display:flex; align-items:center; justify-content:center; height:0; padding-bottom:80%; color:$dz-text-inverse; background:linear-gradient(145deg,$dz-brand-soft,$dz-brand-primary); font-size:64rpx; font-weight:$dz-fw-bold; }
+.photo image { position:absolute; inset:0; width:100%; height:100%; }
+.photo-fallback { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:64rpx; }
 .online { position:absolute; left:12rpx; bottom:10rpx; padding:5rpx 12rpx; border:1rpx solid rgba(255,255,255,.4); border-radius:$dz-radius-full; color:$dz-text-primary; background:rgba(255,255,255,.86); font-size:$dz-fs-micro; font-weight:$dz-fw-medium; }
 .online i { display:inline-block; width:13rpx; height:13rpx; margin-right:7rpx; border-radius:50%; background:$dz-status-success; }
 .online.offline { color:$dz-text-secondary; }
@@ -466,7 +465,7 @@ button::after { display:none; }
 .sheet-actions .apply { color:$dz-text-inverse; background:$dz-gradient-brand; }
 
 @media screen and (min-width:480px) {
-  .photo { height:276rpx; }
+  .photo { height:0; }
 }
 @media screen and (max-width:360px) {
   .header { gap:10rpx; }

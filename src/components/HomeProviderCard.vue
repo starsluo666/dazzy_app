@@ -1,7 +1,7 @@
 <template>
   <view class="provider-card" hover-class="provider-card--pressed" @tap="$emit('select', item.public_id)">
-    <view class="provider-photo" :class="{ 'provider-photo--image': !!item.avatar_url }">
-      <image v-if="item.avatar_url" class="provider-image" :src="item.avatar_url" mode="aspectFit" />
+    <view class="provider-photo">
+      <image v-if="item.avatar_url" class="provider-image" :src="item.avatar_url" mode="aspectFill" />
       <view v-else class="provider-fallback">{{ item.nickname.slice(0, 1) }}</view>
       <view class="photo-gradient" />
       <view class="availability" :class="{ offline: !item.is_online }"><view class="availability-dot" /><text>{{ availabilityLabel }}</text></view>
@@ -60,11 +60,10 @@ const ageLabel = computed(() => {
 <style lang="scss" scoped>
 @use '../styles/tokens.scss' as *;
 
-.provider-card { overflow:hidden; min-width:0; height:354rpx; border:1rpx solid $dz-border-material; border-radius:$dz-radius-lg; background:$dz-surface-card; box-shadow:$dz-shadow-card,inset 0 1rpx 0 $dz-surface-highlight; transform-origin:center; transition:transform $dz-duration-fast $dz-ease-out, opacity $dz-duration-fast $dz-ease-standard; will-change:transform; box-sizing:border-box; }
+.provider-card { overflow:hidden; min-width:0; min-height:354rpx; border:1rpx solid $dz-border-material; border-radius:$dz-radius-lg; background:$dz-surface-card; box-shadow:$dz-shadow-card,inset 0 1rpx 0 $dz-surface-highlight; transform-origin:center; transition:transform $dz-duration-fast $dz-ease-out, opacity $dz-duration-fast $dz-ease-standard; will-change:transform; box-sizing:border-box; }
 .provider-card--pressed { transform:scale(0.98); opacity:0.94; }
-.provider-photo { position:relative; overflow:hidden; height:208rpx; color:$dz-text-inverse; background:linear-gradient(145deg,$dz-brand-soft,$dz-brand-deep); }
+.provider-photo { position:relative; overflow:hidden; height:0; padding-bottom:80%; color:$dz-text-inverse; background:linear-gradient(145deg,$dz-brand-soft,$dz-brand-deep); }
 .provider-image,.provider-fallback,.photo-gradient { position:absolute; width:100%; height:100%; top:0; right:0; bottom:0; left:0; }
-.provider-photo--image { background:$dz-surface-page; }
 .provider-fallback { display:flex; align-items:center; justify-content:center; font-size:64rpx; font-weight:$dz-fw-bold; }
 .photo-gradient { background:linear-gradient(180deg,rgba(3,12,14,.16) 0%,transparent 42%,rgba(3,12,14,.16) 100%); }
 .availability { position:absolute; z-index:1; top:12rpx; left:12rpx; display:flex; align-items:center; gap:6rpx; height:30rpx; padding:0 10rpx; border:1rpx solid rgba(255,255,255,.28); border-radius:$dz-radius-full; color:$dz-text-inverse; background:rgba(14,28,31,.34); font-size:$dz-fs-micro; line-height:1; text-shadow:0 1rpx 5rpx rgba(0,0,0,.45); white-space:nowrap; box-sizing:border-box; }

@@ -1,21 +1,23 @@
 <template>
   <view class="dz-page detail-page">
-    <DzNavBar title="达人详情" fixed surface="glass" :back-action="goBack">
+    <DzNavBar title="达人详情" fixed :overlay="!loading && Boolean(provider)" :transparent="!loading && Boolean(provider)" :back-action="goBack">
       <template #right><template v-if="provider"><button class="dz-navbar-action dz-navbar-icon-action" aria-label="分享" hover-class="dz-pressed" @tap="showPending('分享')">↥</button><button class="dz-navbar-action dz-navbar-icon-action" aria-label="更多操作" hover-class="dz-pressed" @tap="showMoreActions">•••</button></template></template>
     </DzNavBar>
     <NetworkState v-if="loading" class="dz-container detail-state" message="正在加载达人资料…" />
     <NetworkState v-else-if="error" class="dz-container detail-state" :message="error" error @retry="loadDetail" />
     <template v-else-if="provider">
-      <view class="hero dz-container" :class="{ 'hero--media': gallery.length > 0 }">
+      <view class="hero dz-container">
+        <view class="hero-ratio" aria-hidden="true" />
         <swiper v-if="gallery.length" class="hero-gallery" :current="mediaIndex" :autoplay="false" @change="changeMedia">
           <swiper-item v-for="(item, index) in gallery" :key="item.id">
             <view v-if="failedMedia[item.id]" class="hero-fallback media-error">{{ item.type === 'video' ? '视频暂时无法播放' : '照片暂时无法加载' }}</view>
-            <image v-else-if="item.type === 'image'" class="gallery-image" :src="item.url" mode="aspectFit" @tap="previewGallery(item.url)" @error="failedMedia[item.id] = true" />
+            <image v-else-if="item.type === 'image'" class="gallery-image" :src="item.url" mode="aspectFill" @tap="previewGallery(item.url)" @error="failedMedia[item.id] = true" />
             <video v-else-if="mediaIndex === index" :id="`provider-video-${index}`" class="gallery-video" :src="item.url" :autoplay="false" object-fit="contain" @error="failedMedia[item.id] = true" />
           </swiper-item>
         </swiper>
         <view v-else class="hero-fallback">{{ provider.nickname.slice(0, 1) }}</view>
-        <text v-if="gallery.length" class="photo-count">{{ mediaIndex + 1 }}/{{ gallery.length }}</text>
+        <view class="hero-shade" />
+        <text v-if="gallery.length" class="photo-count" :class="{ 'video-count': gallery[mediaIndex]?.type === 'video' }">{{ mediaIndex + 1 }}/{{ gallery.length }}</text>
       </view>
 
       <main class="profile-sheet dz-container">
@@ -237,10 +239,12 @@ watch(selectedServiceId,()=>loadAvailability())
 <style lang="scss" scoped>
 @use '../../styles/tokens.scss' as *;
 .detail-page{min-height:100vh;padding-bottom:calc(138rpx + env(safe-area-inset-bottom));background:$dz-surface-card}
-.hero{position:relative;overflow:hidden;height:610rpx;padding:0;background:linear-gradient(145deg,$dz-brand-soft,$dz-brand-primary)}
-.hero--media{background:$dz-surface-page}
-.hero-fallback{position:absolute;width:100%;height:100%;inset:0}
+.hero{position:relative;overflow:hidden;padding:0;background:linear-gradient(145deg,$dz-brand-soft,$dz-brand-primary)}
+.hero-ratio{height:0;padding-bottom:80%}
+.hero-gallery{position:absolute;inset:0}
+.hero>image,.hero-fallback,.hero-shade{position:absolute;width:100%;height:100%;inset:0}
 .hero-fallback{display:flex;align-items:center;justify-content:center;color:$dz-text-inverse;font-size:120rpx}
+.hero-shade{background:linear-gradient(180deg,rgba(0,0,0,.13),transparent 25%,transparent 75%,rgba(0,0,0,.1));pointer-events:none}
 .round{display:flex;align-items:center;justify-content:center;width:72rpx;height:72rpx;margin:0;padding:0;border:0;border-radius:50%;color:$dz-text-inverse;background:rgba(23,33,38,.56);line-height:1}
 .round::after,.date-option::after,.time-option::after,.action-bar button::after{display:none}
 .round text{font-size:$dz-fs-price-lg;line-height:1}
@@ -249,7 +253,7 @@ watch(selectedServiceId,()=>loadAvailability())
 .back{position:absolute;left:24rpx;top:calc(24rpx + env(safe-area-inset-top))}
 .hero-actions{position:absolute;right:24rpx;top:calc(24rpx + env(safe-area-inset-top));display:flex;gap:18rpx}
 .share text{transform:translateY(-2rpx);font-size:$dz-fs-heading}
-.photo-count{position:absolute;right:26rpx;bottom:16rpx;display:flex;align-items:center;justify-content:center;height:36rpx;padding:0 14rpx;border-radius:$dz-radius-md;color:$dz-text-inverse;background:rgba(23,33,38,.62);font-size:$dz-fs-caption;line-height:36rpx;pointer-events:none}
+.photo-count{position:absolute;right:26rpx;bottom:28rpx;padding:7rpx 15rpx;border-radius:$dz-radius-md;color:$dz-text-inverse;background:rgba(23,33,38,.62);font-size:$dz-fs-caption}
 .profile-sheet{position:relative;margin-top:-4rpx;padding:0 24rpx 30rpx;border-radius:$dz-radius-lg 34rpx 0 0;background:$dz-surface-card}
 .portrait-ring{position:absolute;z-index:2;left:38rpx;top:-58rpx;overflow:hidden;width:116rpx;height:116rpx;border:7rpx solid #fff;border-radius:50%;background:$dz-brand-soft;box-shadow:0 8rpx 20rpx rgba(23,33,38,.1)}
 .portrait-ring image,.portrait-ring view{width:100%;height:100%}
@@ -291,13 +295,10 @@ watch(selectedServiceId,()=>loadAvailability())
 .primary.primary--disabled{color:$dz-text-secondary;background:#e8ecee}
 .detail-state{min-height:500rpx}
 @media screen and (orientation:landscape) and (max-height:600px){.detail-page{padding-bottom:84px}
-.hero{height:220px}
 .action-bar{height:68px;padding-top:8px}
 .action-bar .secondary,.action-bar .primary{height:48px}
 .action-bar .primary{border-radius:24px}
 }
 
-/* Reserve space for the overlapping avatar and counter, outside the complete photo/video. */
-.hero-gallery{width:100%;height:calc(100% - 68rpx)}
-.gallery-image,.gallery-video{width:100%;height:100%}.gallery-video{background:#111}.media-error{color:$dz-text-secondary;background:$dz-surface-page;font-size:28rpx}
+.hero-gallery,.gallery-image,.gallery-video{width:100%;height:100%}.gallery-video{background:#111}.media-error{font-size:28rpx}.photo-count.video-count{bottom:100rpx;pointer-events:none}
 </style>

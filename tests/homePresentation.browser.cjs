@@ -31,14 +31,14 @@ async function main() {
       const page = await context.newPage()
       const errors = []
       page.on('pageerror', error => errors.push(error.message))
-      // Deliberately mismatched aspect ratios expose centered-cover cropping.
-      const photoSizes = [[600, 1200], [1200, 600], [800, 800]]
+      // Every photo uses the same 5:4 crop in thumbnails, slides and preview.
+      const photoSizes = [[1000, 800], [1000, 800], [1000, 800]]
       const providers = [...photoSizes, null].map((size, i) => ({
         public_id: i === 0 ? 'online' : i === 1 ? 'offline' : `photo-${i}`,
         nickname: ['竖图达人', '横图达人', '方图达人', '无图达人'][i],
         avatar_url: size ? `${origin}/test-provider-${i}.svg` : null,
         is_online: i !== 1, verified: true, birth_date: '2000-01-01', service_city_name: '邯郸市',
-        bio: '测试封面完整展示', rating: '5.00', service_count: 12, order_count: 12, distance_km: null,
+        bio: '测试封面展示', rating: '5.00', service_count: 12, order_count: 12, distance_km: null,
         availability_status: 'available', earliest_available_at: null, is_favorited: false,
         services: [{ id: 1, category: '桌球', category_slug: 'billiards', billing_type: 'hourly', price_amount: 8800 }],
       }))
@@ -68,7 +68,7 @@ async function main() {
           is_online: url.pathname.includes('/online/'), verified: true,
           avatar_url: url.pathname.includes('/online/') ? providers[0].avatar_url : null,
           media: url.pathname.includes('/online/') ? providers.slice(0, 3).map((p, i) => ({ id: `gallery-${i}`, type: 'image', url: p.avatar_url })) : [],
-          gender: 'female', birth_date: null, lifestyle_photo_url: null, service_city_name: '邯郸市',
+          gender: 'female', birth_date: null, lifestyle_photo_url: url.pathname.includes('/online/') ? providers[0].avatar_url : null, service_city_name: '邯郸市',
           bio: '用于本地布局检查的模拟资料。', max_service_radius_km: 20, rating: '5.00', service_count: 0,
           is_favorited: false, services: [{ id: 1, category: '桌球', billing_type: 'hourly', price_amount: 8800 }],
         }
@@ -82,7 +82,7 @@ async function main() {
         await page.locator('.scene-art img').evaluateAll(imgs => Promise.all(imgs.map(img => img.decode())))
         await page.locator('.loading-block').waitFor({ state: 'hidden' })
       }
-      async function assertCompletePhotos(selector, fallbackSelector, heightRpx) {
+      async function assertFilledPhotos(selector, fallbackSelector) {
         const photos = page.locator(selector)
         await photos.nth(2).waitFor({ state: 'attached' })
         assert.equal(await photos.count(), 3)
@@ -93,19 +93,18 @@ async function main() {
             const picture = el.querySelector('img')
             const style = getComputedStyle(el.querySelector('div'))
             return { fit: style.backgroundSize, position: style.backgroundPosition,
-              natural: [picture.naturalWidth, picture.naturalHeight], height: el.getBoundingClientRect().height,
+              natural: [picture.naturalWidth, picture.naturalHeight], width: el.getBoundingClientRect().width, height: el.getBoundingClientRect().height,
               background: getComputedStyle(el.parentElement).backgroundColor }
           })
-          assert.equal(layout.fit, 'contain', 'all photo edges remain inside thumbnail, never cover-cropped')
-          assert.equal(layout.position, '50% 50%', 'complete image remains centered')
+          assert.equal(layout.fit, 'cover', 'restored filled thumbnail presentation')
+          assert.equal(layout.position, '50% 50%', 'cover remains centered')
           assert.deepEqual(layout.natural, photoSizes[i], 'original photo aspect ratio is preserved')
-          assert.ok(Math.abs(layout.height - heightRpx * width / 750) < 1, 'card image container size is unchanged')
-          assert.equal(layout.background, 'rgb(243, 245, 246)', 'unused area has a neutral background')
+          assert.ok(Math.abs(layout.width / layout.height - 1.25) < .01, '5:4 image exactly fills 5:4 card without a second crop')
         }
         assert.equal(await page.locator(fallbackSelector).innerText(), '无', 'missing photo keeps nickname fallback')
       }
       await home()
-      await assertCompletePhotos('.provider-image', '.provider-fallback', 208)
+      await assertFilledPhotos('.provider-image', '.provider-fallback')
       assert.equal(await page.locator('.location-note').count(), 0, 'removed home location hint leaves no row')
       assert.equal(await page.locator('.city').isVisible(), true, 'top city picker remains available')
       const banner = await page.locator('.campaign-swiper').boundingBox()
@@ -162,7 +161,7 @@ async function main() {
       await page.locator('.dz-sheet__close').click()
       await page.locator('.scene.provider .scene-art').click({ force: true })
       await page.waitForURL(/pages\/providers\/list/)
-      await assertCompletePhotos('.photo uni-image', '.photo-fallback', 260)
+      await assertFilledPhotos('.photo uni-image', '.photo-fallback')
       assert.equal(await page.locator('.book.disabled').innerText(), '不可预约', 'offline booking state is preserved')
       if (process.env.TEST_SCREENSHOT_DIR) await page.screenshot({ path: path.join(process.env.TEST_SCREENSHOT_DIR, `provider-list-${width}.png`), fullPage: true })
       await page.locator('.photo').first().click()
@@ -193,23 +192,19 @@ async function main() {
         } else {
           const gallery = page.locator('.hero-gallery')
           const galleryBox = await gallery.boundingBox()
-          const nav = await page.locator('.dz-navbar').boundingBox()
-          const avatar = await page.locator('.portrait-ring').boundingBox()
-          const counter = await page.locator('.photo-count').boundingBox()
-          assert.ok(galleryBox.y >= nav.y + nav.height - 1, 'navigation must not cover the top of the photo')
-          assert.ok(avatar.y >= galleryBox.y + galleryBox.height - 1, 'profile avatar must not cover the bottom of the photo')
-          assert.ok(counter.y >= galleryBox.y + galleryBox.height - 1, 'counter stays outside image and video controls')
+          assert.ok(Math.abs(galleryBox.width / galleryBox.height - 1.25) < .01, 'every detail slide has a 5:4 frame')
           for (let i = 0; i < 3; i++) {
             const photo = page.locator('.gallery-image').nth(i)
             await photo.locator('img').evaluate(img => img.decode())
             assert.deepEqual(await photo.evaluate(el => ({ fit: getComputedStyle(el.querySelector('div')).backgroundSize,
               natural: [el.querySelector('img').naturalWidth, el.querySelector('img').naturalHeight] })),
-            { fit: 'contain', natural: photoSizes[i] }, 'detail shows original portrait, landscape and square photos without cropping')
+            { fit: 'cover', natural: photoSizes[i] }, 'every slide displays a 5:4 cropped photo')
           }
           await page.locator('.gallery-image').first().click()
           const preview = page.locator('#u-a-p > div')
           await preview.waitFor({ state: 'visible' })
-          assert.equal(await page.locator('#u-a-p img').count(), 3, 'tap still previews the original gallery')
+          assert.equal(await page.locator('#u-a-p img').count(), 3, 'preview has the same cropped gallery')
+          assert.ok((await page.locator('#u-a-p img').first().getAttribute('src')).includes('/test-provider-0.svg'), 'enlarged preview uses exactly the same cropped asset')
           await preview.click({ position: { x: width - 24, y: 20 } })
           await preview.waitFor({ state: 'hidden' })
           if (process.env.TEST_SCREENSHOT_DIR) await page.screenshot({ path: path.join(process.env.TEST_SCREENSHOT_DIR, `provider-detail-portrait-${width}.png`) })
@@ -222,9 +217,17 @@ async function main() {
         }
         if (process.env.TEST_SCREENSHOT_DIR) await page.screenshot({ path: path.join(process.env.TEST_SCREENSHOT_DIR, `provider-${state}-${width}.png`) })
       }
+      if (width === 390) {
+        for (const viewport of [{ width: 667, height: 375 }, { width: 1024, height: 768 }]) {
+          await page.setViewportSize(viewport)
+          const galleryBox = await page.locator('.hero-gallery').boundingBox()
+          assert.ok(Math.abs(galleryBox.width / galleryBox.height - 1.25) < .01,
+            `${viewport.width}x${viewport.height}: landscape and wide layouts keep the full 5:4 photo`)
+        }
+      }
       assert.deepEqual(errors, [])
       await context.close()
-      console.log(`PASS ${width}px: compact cards, centered CTAs, full provider photos, artwork, links, carousel, fallback, online/offline booking labels`)
+      console.log(`PASS ${width}px: compact banners retained, all photo frames 5:4, cropped gallery/preview, centered CTAs, carousel, booking states`)
     }
   } finally {
     if (browser) await browser.close()
