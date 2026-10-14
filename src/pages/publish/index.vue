@@ -102,7 +102,7 @@
 
     <DzBottomSheet :visible="addressSheet" title="选择集合地点" @close="closeAddressSheet">
         <text class="sheet-guide">请选择适合参与者集合的场馆、商圈或公共地点</text>
-        <label class="search"><text>⌕</text><input v-model="keyword" placeholder="搜索邯郸市场馆或地点" confirm-type="search" @confirm="searchAddress" /></label>
+        <label class="search"><text>⌕</text><input v-model="keyword" :placeholder="`搜索${searchCity?.city_name || ''}场馆或地点`" confirm-type="search" @confirm="searchAddress" /></label>
         <view v-if="searching" class="sheet-state">正在搜索地点…</view>
         <view v-else-if="!locations.length" class="location-empty">
           <view class="empty-pin"><i /></view><strong>搜索集合地点</strong><text>输入至少两个字，例如“美乐城”或“台球俱乐部”</text>
@@ -172,6 +172,7 @@ import {
   uploadActivityCover,
 } from '@/services/activities'
 import { searchLocations } from '@/services/locations'
+import { getDiscoveryCities, getDiscoveryContext, type DiscoveryCity } from '@/services/discoveryContext'
 import { requireActivityPaymentCapability } from '@/services/payments'
 import type { ActivityTagItem, LocationItem } from '@/types/api'
 import { getErrorMessage } from '@/utils/formatters'
@@ -211,6 +212,8 @@ const form = reactive({
   price: '68',
 })
 const tags = ref<ActivityTagItem[]>([])
+const openCities = ref<DiscoveryCity[]>([])
+const searchCity = ref<DiscoveryCity | null>(null)
 const location = ref<LocationItem | null>(null)
 const pendingLocation = ref<LocationItem | null>(null)
 const coverPath = ref('')
@@ -397,6 +400,7 @@ const titleShort = computed(() => form.title.trim().length > 0 && form.title.tri
 
 /** 第一条未满足的提交条件，用于按钮禁用时点按给出具体原因。 */
 const submitBlocker = computed(() => {
+  if (!openCities.value.length) return '暂无可用的开放城市，请重新进入页面或稍后重试'
   if (coverUploading.value) return '封面还在上传中，请稍候'
   if (!coverAssetId.value && !defaultCoverUrl.value) return '请先上传活动封面'
   if (!form.tagSlugs.length) return '请至少选择一个活动标签'
@@ -404,6 +408,7 @@ const submitBlocker = computed(() => {
   if (!form.description.trim()) return '请填写活动介绍'
   if (!form.rules.trim()) return '请填写参与规则'
   if (!location.value?.city_code) return '请选择集合地点'
+  if (!openCities.value.some(city => city.city_code === location.value?.city_code)) return '集合地点所在城市暂未开放，请重新选择'
   if (principalCents.value <= 0) return '请填写单人 AA 本金'
   if (principalCents.value < minAaPrincipalAmount.value || principalCents.value > maxAaPrincipalAmount.value) return `单人 AA 本金须在 ¥${(minAaPrincipalAmount.value / 100).toFixed(2)}—¥${(maxAaPrincipalAmount.value / 100).toFixed(2)} 之间`
   if (scheduleError.value) return scheduleError.value
@@ -555,9 +560,22 @@ function chooseCover() {
   })
 }
 
-function openAddressSheet() {
-  pendingLocation.value = location.value
-  addressSheet.value = true
+async function refreshOpenCities() {
+  openCities.value = []
+  searchCity.value = null
+  const available = await getDiscoveryCities()
+  openCities.value = available
+  const home = getDiscoveryContext()
+  searchCity.value = available.find(city => city.city_code === home.cityCode) || available[0] || null
+  if (!available.length) throw new Error('暂无开放城市，请稍后再试')
+}
+
+async function openAddressSheet() {
+  try {
+    await refreshOpenCities()
+    pendingLocation.value = location.value && openCities.value.some(city => city.city_code === location.value?.city_code) ? location.value : null
+    addressSheet.value = true
+  } catch (reason) { uni.showToast({ title: getErrorMessage(reason, '城市加载失败，请重试'), icon: 'none' }) }
 }
 
 function closeAddressSheet() {
@@ -565,13 +583,17 @@ function closeAddressSheet() {
 }
 
 async function searchAddress() {
+  if (searching.value) return
   if (keyword.value.trim().length < 2) {
     uni.showToast({ title: '请输入至少2个字的地点名称', icon: 'none' })
     return
   }
   searching.value = true
+  locations.value = []
   try {
-    locations.value = (await searchLocations(keyword.value.trim())).data.items
+    await refreshOpenCities()
+    locations.value = (await searchLocations(keyword.value.trim(), searchCity.value!.city_name)).data.items
+      .filter(item => openCities.value.some(city => city.city_code === item.city_code))
   } catch (reason) {
     uni.showToast({ title: getErrorMessage(reason, '地点搜索失败'), icon: 'none' })
   } finally {
@@ -582,6 +604,10 @@ async function searchAddress() {
 function chooseLocation(item: LocationItem) {
   if (!item.city_code) {
     uni.showToast({ title: '未识别到地点所属城市，请重新选择', icon: 'none' })
+    return
+  }
+  if (!openCities.value.some(city => city.city_code === item.city_code)) {
+    uni.showToast({ title: '该城市暂未开放，请重新选择集合地点', icon: 'none' })
     return
   }
   pendingLocation.value = item
@@ -599,6 +625,8 @@ function sameLocation(left: LocationItem, right: LocationItem | null) {
 async function confirmLocation() {
   if (!pendingLocation.value?.city_code) return
   try {
+    await refreshOpenCities()
+    if (!openCities.value.some(city => city.city_code === pendingLocation.value?.city_code)) throw new Error('该城市暂未开放，请重新选择集合地点')
     await loadTags(pendingLocation.value.city_code)
     location.value = pendingLocation.value
     closeAddressSheet()
@@ -607,7 +635,8 @@ async function confirmLocation() {
   }
 }
 
-async function loadTags(cityCode = '130400') {
+async function loadTags(cityCode = searchCity.value?.city_code || '') {
+  if (!cityCode || !openCities.value.some(city => city.city_code === cityCode)) throw new Error('请选择已开放城市的集合地点')
   const items = (await getActivityTags(cityCode)).data.items
   tags.value = items
   const available = new Set(items.map(item => item.slug))
@@ -647,6 +676,8 @@ async function submit() {
   if (!canSubmit.value || !location.value?.city_code || submitting.value) return
   submitting.value = true
   try {
+    await refreshOpenCities()
+    if (!openCities.value.some(city => city.city_code === location.value?.city_code)) throw new Error('集合地点所在城市暂未开放，请重新选择')
     await requireActivityPaymentCapability('activity_publish')
     const draft = (await createActivityDraft({
       ...(coverAssetId.value ? { cover_id: coverAssetId.value } : {}),
@@ -710,6 +741,12 @@ async function applyCopySource(id: number) {
   }
   coverAssetId.value = source.cover_id || ''
   coverPath.value = source.cover_url || ''
+  if (!openCities.value.some(city => city.city_code === source.city_code)) {
+    location.value = null
+    normalizeSchedule()
+    uni.showToast({ title: '已复制其他资料，原城市暂未开放，请重新选择集合地点', icon: 'none' })
+    return
+  }
   await loadTags(source.city_code)
   location.value = {
     name: source.meeting_place_name,
@@ -728,6 +765,7 @@ onLoad(async (query) => {
   boundaryTimer = setInterval(refreshTimeBoundary, 60000)
   copyFrom.value = Number(query?.copyFrom) || 0
   try {
+    await refreshOpenCities()
     await loadPublishRules()
     await loadTags()
     if (copyFrom.value) await applyCopySource(copyFrom.value)

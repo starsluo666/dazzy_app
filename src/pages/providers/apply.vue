@@ -78,10 +78,12 @@
 
           <view class="row">
             <text>服务城市</text>
-            <picker :range="cities" range-key="name" @change="chooseCity">
-              <view>{{ form.service_city_name || '请选择' }} <b>›</b></view>
+            <view v-if="cities.length === 1 && form.service_city_code">{{ form.service_city_name }}</view>
+            <picker v-else :range="cityOptions" range-key="city_name" :value="cityIndex" :disabled="saving || !cities.length" @change="chooseCity">
+              <view>{{ form.service_city_name || (cities.length ? '请选择' : '暂无开放城市') }} <b>›</b></view>
             </picker>
           </view>
+          <text v-if="cityUnavailable" class="field-warn">原服务城市暂未开放，请重新选择。</text>
 
           <label class="input-row">
             <text>邀请码</text>
@@ -125,14 +127,16 @@ import {
 import { guardCurrentPage } from '@/services/session'
 import type { CurrentUser, ProviderApplication } from '@/types/api'
 import { getErrorMessage } from '@/utils/formatters'
+import { getDiscoveryCities } from '@/services/discoveryContext'
+import { selectServiceCity, type ServiceCity } from '@/utils/serviceCities'
 
 type Gender = CurrentUser['gender']
 
-const cities = [
-  { code: '130400', name: '邯郸市' },
-  { code: '110100', name: '北京市' },
-  { code: '310100', name: '上海市' },
-]
+const cities = ref<ServiceCity[]>([])
+const cityUnavailable = ref(false)
+const cityOptions = computed(() => form.service_city_code
+  ? cities.value : [{ city_code: '', city_name: '请选择服务城市' }, ...cities.value])
+const cityIndex = computed(() => Math.max(0, cityOptions.value.findIndex(city => city.city_code === form.service_city_code)))
 const genderOptions: Array<{ label: string; value: Gender }> = [
   { label: '男', value: 'male' },
   { label: '女', value: 'female' },
@@ -159,8 +163,8 @@ const form = reactive({
   application_real_name: '',
   application_birth_date: '' as string | null,
   lifestyle_photo_id: null as string | null,
-  service_city_code: '130400',
-  service_city_name: '邯郸市',
+  service_city_code: '',
+  service_city_name: '',
   invitation_code: '',
 })
 
@@ -174,7 +178,7 @@ const canSubmit = computed(() =>
   && (gender.value === 'male' || gender.value === 'female')
   && Boolean(form.application_birth_date)
   && Boolean(form.lifestyle_photo_id || photoPath.value)
-  && Boolean(form.service_city_code)
+  && cities.value.some(city => city.city_code === form.service_city_code)
   && agreed.value,
 )
 const nameShort = computed(() => form.application_real_name.trim().length < 2)
@@ -208,11 +212,17 @@ const statusText = computed(() =>
 function warn(title: string) { uni.showToast({ title, icon: 'none' }) }
 function goBack() { navigateBackOr(() => uni.reLaunch({ url: '/pages/profile/index' })) }
 function chooseCity(event: { detail: { value: string } }) {
-  const city = cities[Number(event.detail.value)]
-  if (city) {
-    form.service_city_code = city.code
-    form.service_city_name = city.name
+  if (saving.value || locked.value) return
+  const city = cityOptions.value[Number(event.detail.value)]
+  if (city?.city_code) {
+    applyCity(city.city_code)
   }
+}
+function applyCity(code: string) {
+  const selected = selectServiceCity(cities.value, code)
+  form.service_city_code = selected.code
+  form.service_city_name = selected.name
+  cityUnavailable.value = selected.unavailable
 }
 function chooseGender(event: { detail: { value: string } }) {
   const option = genderOptions[Number(event.detail.value)]
@@ -239,10 +249,12 @@ async function load() {
   loading.value = true
   error.value = ''
   try {
-    const [applicationResponse, userResponse] = await Promise.all([
+    const [applicationResponse, userResponse, availableCities] = await Promise.all([
       getProviderApplication(),
       getCurrentUser(),
+      getDiscoveryCities(),
     ])
+    cities.value = availableCities
     application.value = applicationResponse.data
     gender.value = userResponse.data.gender
     originalGender.value = userResponse.data.gender
@@ -251,12 +263,13 @@ async function load() {
         application_real_name: application.value.application_real_name,
         application_birth_date: application.value.application_birth_date,
         lifestyle_photo_id: application.value.lifestyle_photo_id,
-        service_city_code: application.value.service_city_code || '130400',
-        service_city_name: application.value.service_city_name || '邯郸市',
+        service_city_code: application.value.service_city_code || '',
+        service_city_name: application.value.service_city_name || '',
         invitation_code: application.value.invitation_code,
       })
       photoPreview.value = application.value.lifestyle_photo_url || ''
     }
+    if (!locked.value) applyCity(form.service_city_code)
   } catch (loadError) {
     error.value = getErrorMessage(loadError)
   } finally {
@@ -266,7 +279,7 @@ async function load() {
 
 async function submit() {
   submitAttempted.value = true
-  if (saving.value) return
+  if (loading.value || error.value || locked.value || saving.value) return
   if (!canSubmit.value) {
     warn(nameShort.value
       ? '真实姓名至少填写2个字'
@@ -275,6 +288,9 @@ async function submit() {
   }
   saving.value = true
   try {
+    cities.value = await getDiscoveryCities()
+    applyCity(form.service_city_code)
+    if (!form.service_city_code) throw new Error('原服务城市暂未开放，请重新选择')
     if (photoPath.value) {
       uploading.value = true
       const uploaded = await uploadProviderApplicationPhoto(photoPath.value, photoFile.value)

@@ -67,7 +67,7 @@ export function getMyActivities(options: {
   return request<ListResponse<MyActivityListItem>>('/activities/mine/', { query: options })
 }
 
-export function getActivityTags(cityCode = '130400') {
+export function getActivityTags(cityCode: string) {
   return request<{ data: { items: ActivityCategoryItem[] } }>('/activity-tags/', { query: { city_code: cityCode } })
 }
 

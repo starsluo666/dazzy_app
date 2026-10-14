@@ -2,6 +2,7 @@
   "name": "dazzy-app",
   "version": "0.0.0",
   "scripts": {
+    "test:service-cities": "node tests/serviceCities.test.cjs && node tests/activityCities.test.cjs",
     "test:user-messages": "node tests/userMessages.test.cjs",
     "test:business-changes": "node tests/businessChanges.test.cjs",
     "test:media-uploads": "node tests/mediaUploads.test.cjs",
