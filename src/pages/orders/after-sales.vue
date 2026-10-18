@@ -22,7 +22,7 @@
           </view>
         </view>
         <view class="amount-line"><text>订单实付</text><strong>¥{{ money(order.payable_amount) }}</strong></view>
-        <view class="amount-line subtle"><text>当前可退</text><strong>¥{{ money(refundableAmount) }}</strong></view>
+        <view v-if="!manualRequired" class="amount-line subtle"><text>当前可退</text><strong>¥{{ money(refundableAmount) }}</strong></view>
       </section>
 
       <section v-if="latestCase && !creatingAnother" class="case-card panel">
@@ -49,7 +49,7 @@
         <button v-if="canReapply" class="reapply-button" @tap="startNewApplication">再次申请剩余金额</button>
       </section>
 
-      <template v-else>
+      <template v-else-if="!manualRequired">
         <section class="form-card panel">
           <label class="section-title">售后类型</label>
           <view class="type-grid">
@@ -86,16 +86,22 @@
           </view>
         </section>
 
-        <section class="notice" :class="{ settled: order.settlement?.status === 'settled' }">
+        <section class="notice">
           <strong>提交后会发生什么</strong>
-          <text v-if="order.settlement?.status === 'settled'">该订单资金已经结算，暂不能在线申请退款，请通过订单详情联系平台客服。</text>
-          <text v-else>订单将进入售后状态，待结算款项会暂停结算。客服核查后会通过消息中心告知处理结果。</text>
+          <text>订单将进入售后状态，待结算款项会暂停结算。客服核查后会通过消息中心告知处理结果。</text>
         </section>
       </template>
+      <section v-if="manualRequired" class="notice settled">
+        <strong>请联系售后客服</strong>
+        <text>该订单暂不支持在线退款。如需退款或对服务有疑问，请联系售后客服核实处理。</text>
+      </section>
     </main>
 
-    <footer v-if="order && (!latestCase || creatingAnother)" class="submit-footer">
-      <button :class="{ blocked: reasonTouched && !canSubmit && !submitting && !uploading && order.settlement?.status !== 'settled' }" :disabled="submitting || uploading || order.settlement?.status === 'settled'" @tap="submit">{{ submitting ? '正在提交…' : '确认提交售后申请' }}</button>
+    <footer v-if="order && manualRequired" class="submit-footer">
+      <button @tap="contactSupport">联系售后客服</button>
+    </footer>
+    <footer v-else-if="order && (!latestCase || creatingAnother)" class="submit-footer">
+      <button :class="{ blocked: reasonTouched && !canSubmit && !submitting && !uploading }" :disabled="submitting || uploading" @tap="submit">{{ submitting ? '正在提交…' : '确认提交售后申请' }}</button>
     </footer>
   </view>
 </template>
@@ -138,6 +144,13 @@ const submitting = ref(false)
 const loading = ref(true)
 const error = ref('')
 const money = formatAmount
+const manualRequired = computed(() => Boolean(order.value?.manual_after_sales_required || order.value?.settlement?.status === 'settled'))
+
+function contactSupport() {
+  if (!order.value) return
+  const title = encodeURIComponent(`${order.value.service_name} · ${order.value.order_no}`)
+  uni.navigateTo({ url: `/pages/support/index?mode=new&caseType=complaint&targetType=provider_order&targetId=${encodeURIComponent(order.value.order_no)}&targetTitle=${title}&reason=service_quality` })
+}
 
 const refundableAmount = computed(() => {
   if (!order.value) return 0
@@ -155,13 +168,13 @@ const canSubmit = computed(() => !submitting.value
   && Number.isFinite(requestedAmount.value)
   && reason.value.trim().length >= 5
   && requestedAmount.value > 0
-  && order.value?.settlement?.status !== 'settled')
+  && !manualRequired.value)
 const canReapply = computed(() => Boolean(
   latestCase.value
   && ['refunded', 'rejected'].includes(latestCase.value.status)
   && order.value?.status !== 'terminated'
   && refundableAmount.value > 0
-  && order.value?.settlement?.status !== 'settled',
+  && !manualRequired.value,
 ))
 
 function goBack() { navigateBackOr(() => uni.reLaunch({ url: '/pages/orders/list' })) }

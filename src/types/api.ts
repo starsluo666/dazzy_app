@@ -736,6 +736,7 @@ export interface ProviderOrder {
   refund_orders: ProviderOrderRefundSummary[]
   settlement: ProviderOrderSettlementSummary | null
   after_sales: ProviderOrderAfterSalesSummary | null
+  manual_after_sales_required?: boolean
   created_at: string
 }
 
