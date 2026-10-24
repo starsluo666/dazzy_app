@@ -44,14 +44,16 @@
         <!-- #ifdef MP-WEIXIN -->
         <view class="wechat-divider"><text>或</text></view>
         <button class="wechat-login" open-type="getPhoneNumber" :disabled="wechatSubmitting" @getphonenumber="wechatLogin">
-          {{ wechatSubmitting ? '微信登录中…' : '微信一键登录' }}
+          <image class="wechat-login-icon" src="/static/ui-icons/wechat.svg" mode="aspectFit" aria-hidden="true" />
+          <text>{{ wechatSubmitting ? '微信登录中…' : '微信一键登录' }}</text>
         </button>
         <!-- #endif -->
         <!-- #ifdef H5 || APP-PLUS -->
         <template v-if="wechatAvailable">
           <view class="wechat-divider"><text>或</text></view>
           <button class="wechat-login" :disabled="wechatSubmitting" @tap="startWechatLogin">
-            {{ wechatSubmitting ? '微信登录中…' : '微信登录' }}
+            <image class="wechat-login-icon" src="/static/ui-icons/wechat.svg" mode="aspectFit" aria-hidden="true" />
+            <text>{{ wechatSubmitting ? '微信登录中…' : '微信登录' }}</text>
           </button>
         </template>
         <!-- #endif -->
@@ -284,5 +286,6 @@ function openReset() { uni.navigateTo({ url: `/pages/auth/reset-password?phone=$
 @use '../../styles/auth.scss';
 .closure-pending-notice { margin-bottom: 24rpx; padding: 24rpx; border-radius: 18rpx; color: #784d2b; background: #fff3e7; font-size: max(12px, 24rpx); line-height: 1.6; }
 .wechat-divider{display:flex;align-items:center;gap:18rpx;margin:28rpx 0 20rpx;color:#98a2b3;font-size:21rpx}.wechat-divider::before,.wechat-divider::after{height:1rpx;flex:1;background:#e1e9ea;content:''}.wechat-login{display:flex;width:100%;height:96rpx;align-items:center;justify-content:center;margin:0;border:1rpx solid #d8e7e7;border-radius:18rpx;color:#15875b;background:#f5fffa;font-size:28rpx;font-weight:650}.wechat-login[disabled]{opacity:.58}
+.wechat-login-icon{display:block;flex:none;width:40rpx;height:40rpx;margin-right:16rpx}
 .wechat-bind-heading{display:flex;flex-direction:column;gap:10rpx;margin-bottom:24rpx}.wechat-bind-heading strong{font-size:32rpx;color:#172b35}.wechat-bind-heading text{font-size:24rpx;line-height:1.55;color:#667580}
 </style>
