@@ -8,7 +8,7 @@
       <template v-else-if="data">
         <section class="invite-hero">
           <view class="hero-rays" /><view class="hero-orb orb-one" /><view class="hero-orb orb-two" />
-          <view class="hero-badge">邀</view>
+          <view class="hero-badge"><image src="/static/ui-icons/invite-warm.svg" mode="aspectFit" aria-hidden="true" /></view>
           <text class="hero-title">邀请好友 一起玩</text>
           <text class="hero-subtitle">好友完成有效注册和首单，你可分两次获得奖励</text>
           <view class="reward-pair">
@@ -17,10 +17,10 @@
             <view class="reward-card"><text>好友首单</text><view><small>¥</small><b>{{ amount(data.campaign.first_order_reward_template?.face_amount) }}</b></view><p>首单完成大额券</p></view>
           </view>
           <!-- #ifdef MP-WEIXIN -->
-          <button class="share-button" open-type="share" :disabled="!data.campaign.invitation_enabled" hover-class="share-button--pressed"><text>↗</text>{{ data.campaign.invitation_enabled ? '立即邀请好友' : '活动暂未开放' }}</button>
+          <button class="share-button" open-type="share" :disabled="!data.campaign.invitation_enabled" hover-class="share-button--pressed"><image src="/static/ui-icons/share-warm.svg" mode="aspectFit" aria-hidden="true" />{{ data.campaign.invitation_enabled ? '立即邀请好友' : '活动暂未开放' }}</button>
           <!-- #endif -->
           <!-- #ifndef MP-WEIXIN -->
-          <button class="share-button" :disabled="!data.campaign.invitation_enabled" hover-class="share-button--pressed" @tap="copyInvitation"><text>↗</text>{{ data.campaign.invitation_enabled ? '复制邀请信息' : '活动暂未开放' }}</button>
+          <button class="share-button" :disabled="!data.campaign.invitation_enabled" hover-class="share-button--pressed" @tap="copyInvitation"><image src="/static/ui-icons/share-warm.svg" mode="aspectFit" aria-hidden="true" />{{ data.campaign.invitation_enabled ? '复制邀请信息' : '活动暂未开放' }}</button>
           <!-- #endif -->
           <text class="hero-footnote">微信好友与群聊均可分享</text>
         </section>
@@ -28,14 +28,14 @@
         <section class="steps-section">
           <text class="section-title">如何获得奖励</text>
           <view class="steps">
-            <view><i>01</i><span class="step-icon">↗</span><b>分享邀请</b><p>发送给还未注册的好友</p></view>
-            <view><i>02</i><span class="step-icon">人</span><b>好友注册</b><p>你得注册奖励，好友领礼包</p></view>
-            <view><i>03</i><span class="step-icon">券</span><b>好友首单</b><p>订单完成后再得大额券</p></view>
+            <view><i>01</i><view class="step-icon"><image src="/static/ui-icons/share.svg" mode="aspectFit" aria-hidden="true" /></view><b>分享邀请</b><p>发送给还未注册的好友</p></view>
+            <view><i>02</i><view class="step-icon"><image src="/static/ui-icons/invite.svg" mode="aspectFit" aria-hidden="true" /></view><b>好友注册</b><p>你得注册奖励，好友领礼包</p></view>
+            <view><i>03</i><view class="step-icon"><image src="/static/ui-icons/coupon.svg" mode="aspectFit" aria-hidden="true" /></view><b>好友首单</b><p>订单完成后再得大额券</p></view>
           </view>
         </section>
 
         <section class="newcomer-callout" role="button" hover-class="newcomer-callout--pressed" @tap="openNewcomerGift">
-          <view class="gift-icon">礼</view><view><text>好友注册即领新人礼包</text><p>{{ giftDescription }}</p></view><text class="gift-arrow">›</text>
+          <view class="gift-icon"><image src="/static/ui-icons/gift.svg" mode="aspectFit" aria-hidden="true" /></view><view><text>好友注册即领新人礼包</text><p>{{ giftDescription }}</p></view><text class="gift-arrow">›</text>
         </section>
 
         <section class="records-section">
@@ -285,6 +285,13 @@ onShareTimeline(() => ({ title: '来乐搭伴一起玩，送你新人专属礼�
   transition: transform $dz-duration-fast $dz-ease-out, opacity $dz-duration-fast $dz-ease-standard;
 }
 
+.hero-badge image, .share-button image {
+  display: block;
+  flex: none;
+  width: 40rpx;
+  height: 40rpx;
+}
+
 .share-button::after {
   display: none;
 }
@@ -383,11 +390,6 @@ onShareTimeline(() => ({ title: '来乐搭伴一起玩，送你新人专属礼�
   font-weight: $dz-fw-bold;
 }
 
-.steps > view:nth-child(2) .step-icon {
-  color: $dz-newcomer-deep;
-  background: $dz-newcomer-soft;
-}
-
 .steps > view:nth-child(3) .step-icon {
   color: $dz-invite-deep;
   background: $dz-invite-soft;
@@ -434,6 +436,12 @@ onShareTimeline(() => ({ title: '来乐搭伴一起玩，送你新人专属礼�
   color: $dz-newcomer-deep;
   background: $dz-surface-card;
   font-weight: $dz-fw-bold;
+}
+
+.step-icon image, .gift-icon image {
+  display: block;
+  width: 44rpx;
+  height: 44rpx;
 }
 
 .newcomer-callout view text {

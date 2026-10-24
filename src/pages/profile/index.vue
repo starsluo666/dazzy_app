@@ -24,7 +24,7 @@
             <i v-if="unreadCount"><b>{{ unreadCount > 99 ? '99+' : unreadCount }}</b></i>
           </button>
           <button class="header-action settings-icon" role="button" tabindex="0" hover-class="header-action--pressed" aria-label="设置" @tap.stop="openSettings" @keydown.enter.stop.prevent="openSettings" @keydown.space.stop.prevent="openSettings">
-            <text>⚙</text>
+            <image src="/static/ui-icons/settings.svg" mode="aspectFit" aria-hidden="true" />
           </button>
         </view>
       </view>
@@ -156,8 +156,8 @@ const functionEntries: FunctionEntry[] = [
   { label: '浏览记录', icon: '/static/functions/browsing-history.svg', route: '/pages/history/index' },
   { label: '我的评价', icon: '/static/functions/my-reviews.svg', route: '/pages/reviews/index' },
   { label: '常用地址', icon: '/static/functions/addresses.svg', route: '/pages/addresses/index' },
-  { label: '客服中心', icon: '/static/functions/customer-service.svg', action: 'customer_service' },
-  { label: '帮助中心', icon: '/static/functions/help-center.svg' },
+  { label: '客服中心', icon: '/static/ui-icons/support.svg', action: 'customer_service' },
+  { label: '帮助中心', icon: '/static/ui-icons/help.svg' },
   { label: '问题反馈', icon: '/static/functions/feedback.svg', route: '/pages/support/index?mode=new&caseType=complaint' },
   { label: '举报有奖', icon: '/static/functions/report-reward.svg', route: '/pages/report/index' },
 ]
@@ -373,7 +373,7 @@ onShow(loadProfile)
 .header-action:focus-visible { outline:2px solid $dz-brand-primary; outline-offset:2px; }
 /* #endif */
 
-.settings-icon text { font-size: 43rpx; line-height: 1; }
+.settings-icon image { display: block; width: 42rpx; height: 42rpx; }
 .notification-icon { position:relative; }
 .notification-icon image { width:42rpx; height:42rpx; }
 .notification-icon i { position:absolute; right:-10rpx; top:-7rpx; display:flex; align-items:center; justify-content:center; min-width:25rpx; height:25rpx; padding:0 5rpx; border:3rpx solid #f3fdfe; border-radius:$dz-radius-sm; color:$dz-text-inverse; background:$dz-status-danger; box-sizing:border-box; font-style:normal; }

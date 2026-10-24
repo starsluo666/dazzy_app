@@ -4,7 +4,7 @@
 
     <main v-if="!selected" class="support-content dz-container">
       <section class="support-hero">
-        <view class="hero-icon"><image src="/static/functions/customer-service.svg" mode="aspectFit" /></view>
+        <view class="hero-icon"><image src="/static/ui-icons/support.svg" mode="aspectFit" aria-hidden="true" /></view>
         <view><strong>有问题，我们来帮你</strong><text>反馈会保留完整处理记录</text></view>
       </section>
 

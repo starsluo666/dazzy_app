@@ -22,7 +22,7 @@
       <view class="section-head"><strong>余额明细</strong><text>最近 {{ wallet?.ledger_entries.length || 0 }} 条</text></view>
       <view v-if="loading" class="ledger-card"><view v-for="i in 3" :key="i" class="ledger-skeleton dz-skeleton" /></view>
       <NetworkState v-else-if="error" :message="error" error @retry="load" />
-      <view v-else-if="!wallet?.ledger_entries.length" class="empty-state"><text class="empty-icon">¥</text><strong>暂无余额明细</strong><text>充值或使用余额后，资金变化会记录在这里</text></view>
+      <view v-else-if="!wallet?.ledger_entries.length" class="empty-state"><view class="empty-icon"><image src="/static/ui-icons/wallet.svg" mode="aspectFit" aria-hidden="true" /></view><strong>暂无余额明细</strong><text>充值或使用余额后，资金变化会记录在这里</text></view>
       <section v-else class="ledger-card">
         <view v-for="entry in wallet.ledger_entries" :key="entry.public_id" class="ledger-row">
           <view class="ledger-icon" :class="entry.available_delta >= 0 ? 'income' : 'expense'">{{ entry.available_delta >= 0 ? '+' : '−' }}</view>
@@ -88,4 +88,5 @@ onShow(() => { if (guardCurrentPage()) void load() })
   outline-offset: 3px;
 }
 .recharge-button::after { border: 0; }
+.empty-icon image{display:block;width:48rpx;height:48rpx}
 </style>

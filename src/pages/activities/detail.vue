@@ -1,7 +1,7 @@
 <template>
   <view class="dz-page detail-page">
     <DzNavBar title="活动详情" fixed :overlay="!loading && Boolean(activity)" :transparent="!loading && Boolean(activity)" :back-action="goBack">
-      <template #right><template v-if="activity"><button class="dz-navbar-action dz-navbar-icon-action" aria-label="分享" hover-class="dz-pressed" @tap="showPending('分享')">↥</button><button class="dz-navbar-action dz-navbar-icon-action" aria-label="更多操作" hover-class="dz-pressed" @tap="showMoreActions">•••</button></template></template>
+      <template #right><template v-if="activity"><button class="dz-navbar-action dz-navbar-icon-action" aria-label="分享" hover-class="dz-pressed" @tap="showPending('分享')"><image class="nav-share-icon" src="/static/ui-icons/share-white.svg" mode="aspectFit" aria-hidden="true" /></button><button class="dz-navbar-action dz-navbar-icon-action" aria-label="更多操作" hover-class="dz-pressed" @tap="showMoreActions">•••</button></template></template>
     </DzNavBar>
     <NetworkState v-if="loading" class="dz-container detail-state" message="正在加载活动详情…" />
     <NetworkState v-else-if="error" class="dz-container detail-state" :message="error" error @retry="loadDetail" />
@@ -20,11 +20,11 @@
         </section>
 
         <section class="panel activity-info">
-          <view class="info-row"><text class="line-icon">◷</text><strong>时间</strong><text>{{ formatRange(activity.starts_at, activity.ends_at) }}</text></view>
+          <view class="info-row"><image class="line-icon" src="/static/ui-icons/time.svg" mode="aspectFit" aria-hidden="true" /><strong>时间</strong><text>{{ formatRange(activity.starts_at, activity.ends_at) }}</text></view>
           <view class="divider" />
-          <view class="info-row location-row"><text class="line-icon">⌖</text><strong>地点</strong><text>{{ activity.meeting_place_name }}</text><view class="mini-map" /><button hover-class="button--pressed" @tap="showMapPending">导航 ›</button></view>
+          <view class="info-row location-row"><image class="line-icon" src="/static/ui-icons/location.svg" mode="aspectFit" aria-hidden="true" /><strong>地点</strong><text>{{ activity.meeting_place_name }}</text><view class="mini-map" /><button hover-class="button--pressed" @tap="showMapPending">导航 ›</button></view>
           <view class="divider" />
-          <view class="info-row people-row"><text class="line-icon">♙</text><strong>人数</strong><view class="people-copy"><text>{{ activity.participant_count }}/{{ activity.capacity }}人（至少{{ activity.min_participants }}人成行）</text><text class="participant-note">{{ activity.participant_count ? '查看已报名成员' : '等待首位成员加入' }}</text></view></view>
+          <view class="info-row people-row"><image class="line-icon" src="/static/ui-icons/people.svg" mode="aspectFit" aria-hidden="true" /><strong>人数</strong><view class="people-copy"><text>{{ activity.participant_count }}/{{ activity.capacity }}人（至少{{ activity.min_participants }}人成行）</text><text class="participant-note">{{ activity.participant_count ? '查看已报名成员' : '等待首位成员加入' }}</text></view></view>
         </section>
 
         <section class="panel organizer">
@@ -71,7 +71,7 @@
       </main>
 
       <view class="action-bar dz-container">
-        <button class="secondary" hover-class="button--pressed" @tap="showPending('分享')"><text class="action-icon">↗</text><text>分享</text></button>
+        <button class="secondary" hover-class="button--pressed" @tap="showPending('分享')"><image class="action-icon" src="/static/ui-icons/share.svg" mode="aspectFit" aria-hidden="true" /><text>分享</text></button>
         <button
           class="primary"
           :class="{ 'primary--joined': activity.is_joined }"
@@ -308,16 +308,17 @@ onLoad((query) => {
 .tags text{padding:6rpx 18rpx;border-radius:$dz-radius-full;color:$dz-brand-deep;background:$dz-brand-soft;font-size:$dz-fs-caption}
 .panel{margin-top:16rpx;padding:24rpx 28rpx;border-radius:$dz-radius-md}
 .activity-info{padding-top:12rpx;padding-bottom:12rpx}
-.info-row{display:grid;grid-template-columns:36rpx 94rpx minmax(0,1fr);align-items:center;min-height:78rpx;color:$dz-text-primary;font-size:$dz-fs-caption}
-.line-icon{color:$dz-brand-primary;font-size:$dz-fs-body-strong}
+.info-row{display:grid;grid-template-columns:48rpx 94rpx minmax(0,1fr);align-items:center;min-height:78rpx;color:$dz-text-primary;font-size:$dz-fs-caption}
+.line-icon{display:block;width:40rpx;height:40rpx}
 .info-row strong{font-size:$dz-fs-caption}
 .info-row>text:last-child{line-height:31rpx}
-.divider{height:1rpx;margin-left:130rpx;background:$dz-border-subtle}
-.location-row{grid-template-columns:36rpx 94rpx minmax(0,1fr) 80rpx 82rpx}
+.divider{height:1rpx;margin-left:142rpx;background:$dz-border-subtle}
+.location-row{grid-template-columns:48rpx 94rpx minmax(0,1fr) 80rpx 82rpx}
 .location-row .mini-map{width:74rpx;height:58rpx;border-radius:$dz-radius-sm;background:linear-gradient(135deg,#dcf2d8,#c9e7c4)}
 .location-row button{height:56rpx;margin:0;padding:0;border:0;color:$dz-brand-deep;background:transparent;font-size:$dz-fs-caption;line-height:56rpx}
 .people-row{align-items:start;padding:15rpx 0}
-.people-row .line-icon,.people-row strong{padding-top:6rpx}
+.people-row .line-icon{margin-top:2rpx}
+.people-row strong{padding-top:6rpx}
 .people-copy{display:flex;flex-direction:column;gap:10rpx}
 .participant-note{color:$dz-text-tertiary;font-size:$dz-fs-caption}
 .organizer{display:grid;grid-template-columns:104rpx 72rpx minmax(0,1fr) auto;align-items:center}
@@ -349,7 +350,7 @@ onLoad((query) => {
 .action-bar{position:fixed;z-index:20;right:0;bottom:0;left:0;display:flex;align-items:center;gap:18rpx;height:calc(118rpx + env(safe-area-inset-bottom));padding:10rpx 24rpx calc(10rpx + env(safe-area-inset-bottom));border:1rpx solid $dz-border-material;border-bottom:0;border-radius:$dz-radius-lg 28rpx 0 0;background:$dz-surface-glass-strong;box-shadow:0 -1rpx 0 rgba(255,255,255,.7),0 -14rpx 40rpx rgba(31,65,72,.08);box-sizing:border-box}
 .action-bar button{margin:0;border:0}
 .secondary{display:flex;flex-direction:column;align-items:center;justify-content:center;width:104rpx;height:86rpx;padding:0;color:$dz-text-primary;background:$dz-surface-card;font-size:$dz-fs-micro;line-height:25rpx}
-.action-icon{font-size:$dz-fs-heading}
+.action-icon,.nav-share-icon{display:block;flex:none;width:40rpx;height:40rpx}
 .primary{display:flex;flex:1;flex-direction:column;align-items:center;justify-content:center;height:86rpx;border-radius:$dz-radius-full;color:$dz-text-inverse;background:$dz-gradient-brand}
 .primary strong{font-size:$dz-fs-body;line-height:34rpx}
 .primary text{font-size:$dz-fs-caption;line-height:24rpx}

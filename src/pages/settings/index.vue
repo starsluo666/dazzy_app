@@ -17,7 +17,7 @@
 
       <section v-for="group in settingGroups" :key="group[0].label" class="setting-group">
         <button v-for="item in group" :key="item.label" class="setting-row dz-tappable" :class="{ 'setting-row--danger': item.action === 'close' }" role="button" tabindex="0" hover-class="dz-pressed" @tap="openSetting(item)" @keydown.enter.prevent="openSetting(item)" @keydown.space.prevent="openSetting(item)">
-          <view class="row-copy"><view class="row-icon" :class="item.tone"><image v-if="item.image" :src="item.image" mode="aspectFit" aria-hidden="true" /><text v-else>{{ item.icon }}</text></view><text>{{ item.label }}</text></view>
+          <view class="row-copy"><view class="row-icon" :class="item.tone"><image :src="item.image" mode="aspectFit" aria-hidden="true" /></view><text>{{ item.label }}</text></view>
           <view class="row-tail"><text v-if="item.value">{{ item.value }}</text><text class="chevron">›</text></view>
         </button>
       </section>
@@ -43,7 +43,7 @@ import { getCurrentUser, logout } from '@/services/auth'
 import { guardCurrentPage, isAuthenticated } from '@/services/session'
 import type { CurrentUser } from '@/types/api'
 
-type SettingItem = { label: string; icon?: string; image?: string; tone?: string; value?: string; action?: 'password' | 'close'; document?: LegalDocumentKind }
+type SettingItem = { label: string; image: string; tone?: string; value?: string; action?: 'password' | 'close'; document?: LegalDocumentKind }
 
 const user = ref<CurrentUser | null>(null)
 const avatarFailed = ref(false)
@@ -52,15 +52,15 @@ const accountActions = ref<{ open: (action: 'password' | 'close') => void; close
 const maskedPhone = computed(() => user.value?.phone.replace(/(\d{3})\d{4}(\d{4})/, '$1****$2') || '')
 const settingGroups: SettingItem[][] = [
   [
-    { label: '修改密码', image: '/static/security/password.svg', tone: 'password-tone', action: 'password' },
+    { label: '修改密码', image: '/static/ui-icons/password.svg', action: 'password' },
   ],
   [
-    { label: '注销账号', image: '/static/security/shield-danger.svg', tone: 'danger-tone', action: 'close' },
+    { label: '注销账号', image: '/static/ui-icons/close.svg', tone: 'danger-tone', action: 'close' },
   ],
   [
-    { label: '用户协议', icon: '约', document: 'service' },
-    { label: '隐私政策', icon: '隐', document: 'privacy' },
-    { label: '关于乐搭伴', icon: 'i' },
+    { label: '用户协议', image: '/static/ui-icons/agreement.svg', document: 'service' },
+    { label: '隐私政策', image: '/static/ui-icons/privacy.svg', document: 'privacy' },
+    { label: '关于乐搭伴', image: '/static/ui-icons/about.svg' },
   ],
 ]
 
@@ -125,10 +125,8 @@ onHide(() => accountActions.value?.close(true))
 .setting-row::after { border: 0; }
 .setting-row--danger .row-copy > text { color: $dz-status-danger-deep; }
 .row-copy, .row-tail { display: flex; align-items: center; }
-.row-icon { display: flex; width: 48rpx; height: 48rpx; align-items: center; justify-content: center; margin-right: 20rpx; border-radius:$dz-radius-sm; color: $dz-brand-deep; background: $dz-brand-soft; font-size:$dz-fs-caption; font-weight:$dz-fw-bold; }
-.row-icon { flex: none; }
-.row-icon image { width: 30rpx; height: 30rpx; }
-.row-icon.password-tone { background: $dz-price-soft; }
+.row-icon { display: flex; flex: none; width: 64rpx; height: 64rpx; align-items: center; justify-content: center; margin-right: 20rpx; border-radius:$dz-radius-sm; background: $dz-brand-soft; }
+.row-icon image { display: block; width: 40rpx; height: 40rpx; }
 .row-icon.danger-tone { background: $dz-status-danger-soft; }
 .row-tail { gap: 12rpx; color: $dz-text-tertiary; font-size:$dz-fs-caption; }
 .logout-button { display: flex; align-items: center; justify-content: center; width: 100%; min-height: max(44px, 88rpx); margin-top: 34rpx; padding: $dz-space-2 $dz-space-4; border: 0; border-radius:$dz-radius-md; color:$dz-status-danger-deep; background: $dz-surface-card; font-size: max(14px, #{$dz-fs-body-strong}); font-weight:$dz-fw-bold; line-height: 1.4; box-sizing: border-box; box-shadow: $dz-shadow-card; }

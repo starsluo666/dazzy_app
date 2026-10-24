@@ -7,7 +7,7 @@
         <view class="avatar" role="button" aria-label="更换头像" @tap="chooseAvatar">
           <image v-if="avatarPreview" :src="avatarPreview" mode="aspectFill" />
           <text v-else>{{ nickname.slice(0, 1) || '乐' }}</text>
-          <view class="camera">相机</view>
+          <view class="camera"><image src="/static/ui-icons/camera-white.svg" mode="aspectFit" aria-hidden="true" /></view>
         </view>
         <strong>更换头像</strong>
         <text>支持 JPG、PNG、WebP、HEIC/HEIF，大小不超过 5MB</text>
@@ -191,6 +191,7 @@ onShow(async () => {
 .avatar { position: relative; display: flex; width: 154rpx; height: 154rpx; align-items: center; justify-content: center; border: 6rpx solid #fff; border-radius: 50%; color: $dz-brand-deep; background: $dz-brand-soft; font-size:$dz-fs-price-lg; font-weight:$dz-fw-bold; box-shadow: 0 12rpx 32rpx rgba(31, 65, 72, .13); }
 .avatar image { width: 100%; height: 100%; border-radius: 50%; }
 .camera { position: absolute; right: -4rpx; bottom: 2rpx; display: flex; width: 48rpx; height: 48rpx; align-items: center; justify-content: center; border: 4rpx solid #fff; border-radius: 50%; color: #fff; background: $dz-brand-primary; font-size:$dz-fs-micro; }
+.camera image { display: block; width: 32rpx; height: 32rpx; border-radius: 0; }
 .avatar-section strong { margin-top: 19rpx; font-size:$dz-fs-body; }
 .avatar-section > text { margin-top: 8rpx; color: $dz-text-tertiary; font-size:$dz-fs-caption; }
 .form-panel { overflow: hidden; padding: 0 26rpx; border-radius:$dz-radius-md; background: #fff; box-shadow: $dz-shadow-card; }
