@@ -19,6 +19,7 @@
     "test:wallet-presentation": "node tests/walletPresentation.test.cjs",
     "test:settings": "node tests/settings.test.cjs",
     "test:legal": "node tests/legal.test.cjs",
+    "test:phone-quick-login": "node tests/phoneQuickLogin.test.cjs",
     "test:wechat-binding": "node tests/wechatBinding.test.cjs",
     "test:http-errors": "node tests/httpErrors.test.cjs",
     "test:provider-categories": "node --test tests/providerCategories.test.cjs",

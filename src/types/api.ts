@@ -554,6 +554,7 @@ export interface PaymentCapabilities {
 export type SmsPurpose = 'register' | 'login' | 'reset_password'
 
 export interface CurrentUser {
+  content_reviews?: { kind: string; status: string; label: string; reason: string; submitted_at: string }[]
   public_id: string
   phone: string
   nickname: string

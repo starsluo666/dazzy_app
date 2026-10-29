@@ -13,6 +13,11 @@
         <text>支持 JPG、PNG、WebP、HEIC/HEIF，大小不超过 5MB</text>
       </section>
 
+      <view v-for="item in contentReviews.filter(item => item.status !== 'approved')" :key="item.kind" class="review-notice">
+        <text>{{ item.kind === 'avatar' ? '头像' : '昵称' }}：{{ ['queued', 'processing', 'manual'].includes(item.status) ? '审核中，通过后展示新资料' : item.label }}</text>
+        <text v-if="item.reason">{{ item.reason }}</text>
+      </view>
+
       <section class="form-panel">
         <label class="form-row" :class="{ invalid: saveAttempted && !nickname.trim() }">
           <text>昵称</text>
@@ -94,6 +99,7 @@ const genderSheetVisible = ref(false)
 const saving = ref(false)
 const saveAttempted = ref(false)
 const profileLoaded = ref(false)
+const contentReviews = ref<NonNullable<import('@/types/api').CurrentUser['content_reviews']>>([])
 const userId = ref('')
 const wechat = useWechatBinding({
   userId: () => userId.value,
@@ -139,18 +145,19 @@ async function save() {
   if (!canSave.value) { warn('昵称至少填写1个字'); return }
   saving.value = true
   try {
-    await updateCurrentUser({
+    const updated = await updateCurrentUser({
       nickname: nickname.value.trim(), birth_date: birthDate.value || null,
       ...(gender.value === 'male' || gender.value === 'female' ? { gender: gender.value } : {}),
     })
+    let pending = updated.data.content_reviews?.some(item => ['queued', 'processing', 'manual'].includes(item.status)) || false
     if (avatarFilePath.value) {
-      try { await uploadAvatar(avatarFilePath.value, avatarFile.value) }
+      try { const uploaded = await uploadAvatar(avatarFilePath.value, avatarFile.value); pending ||= Boolean(uploaded.data.review_status) }
       catch (error) {
         warn(`基本资料已保存，${(error as Error).message || '头像上传失败'}`)
         return
       }
     }
-    uni.showToast({ title: '资料已更新', icon: 'success' })
+    uni.showToast({ title: pending ? '已提交审核' : '资料已更新', icon: 'success' })
     setTimeout(returnToSettings, 350)
   } catch (error) { warn((error as Error).message || '保存失败，请稍后重试') }
   finally { saving.value = false }
@@ -161,6 +168,7 @@ onLoad(async (query) => {
   try {
     const user = (await getCurrentUser()).data
     userId.value = user.public_id
+    contentReviews.value = user.content_reviews || []
     nickname.value = user.nickname
     phone.value = user.phone
     gender.value = user.gender
@@ -182,6 +190,7 @@ onShow(async () => {
 @use '../../styles/tokens.scss' as *;
 
 .edit-profile-page { background:$dz-surface-page; }
+.review-notice { display:flex; flex-direction:column; gap:8rpx; margin-bottom:20rpx; padding:20rpx 24rpx; border-radius:20rpx; background:$dz-brand-soft; color:$dz-brand-deep; font-size:$dz-fs-caption; line-height:1.6; }
 .edit-hero { background: linear-gradient(150deg,$dz-brand-soft, #fff); }
 .page-nav { display: flex; align-items: center; justify-content: space-between; height: 94rpx; font-size:$dz-fs-heading; font-weight:$dz-fw-bold; }
 .back, .nav-spacer { width: 64rpx; }

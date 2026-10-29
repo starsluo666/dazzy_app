@@ -154,7 +154,7 @@ export function updateCurrentUser(payload: Partial<Pick<CurrentUser, 'nickname' 
 }
 
 export function uploadAvatar(filePath: string, file?: unknown) {
-  return uploadFile<DataResponse<{ id: string; url: string }>>('/media/avatars/', filePath, 'file', file)
+  return uploadFile<DataResponse<{ id: string; url: string; review_status?: string; message?: string }>>('/media/avatars/', filePath, 'file', file)
 }
 
 export function getCurrentUserOverview() {
