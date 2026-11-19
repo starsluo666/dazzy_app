@@ -14,7 +14,7 @@
       </section>
 
       <view v-for="item in contentReviews.filter(item => item.status !== 'approved')" :key="item.kind" class="review-notice">
-        <text>{{ item.kind === 'avatar' ? '头像' : '昵称' }}：{{ ['queued', 'processing', 'manual'].includes(item.status) ? '审核中，通过后展示新资料' : item.label }}</text>
+        <text>头像：{{ ['queued', 'processing', 'manual'].includes(item.status) ? '审核中，通过后展示新资料' : item.label }}</text>
         <text v-if="item.reason">{{ item.reason }}</text>
       </view>
 
@@ -145,11 +145,11 @@ async function save() {
   if (!canSave.value) { warn('昵称至少填写1个字'); return }
   saving.value = true
   try {
-    const updated = await updateCurrentUser({
+    await updateCurrentUser({
       nickname: nickname.value.trim(), birth_date: birthDate.value || null,
       ...(gender.value === 'male' || gender.value === 'female' ? { gender: gender.value } : {}),
     })
-    let pending = updated.data.content_reviews?.some(item => ['queued', 'processing', 'manual'].includes(item.status)) || false
+    let pending = false
     if (avatarFilePath.value) {
       try { const uploaded = await uploadAvatar(avatarFilePath.value, avatarFile.value); pending ||= Boolean(uploaded.data.review_status) }
       catch (error) {
@@ -168,7 +168,7 @@ onLoad(async (query) => {
   try {
     const user = (await getCurrentUser()).data
     userId.value = user.public_id
-    contentReviews.value = user.content_reviews || []
+    contentReviews.value = (user.content_reviews || []).filter(item => item.kind === 'avatar')
     nickname.value = user.nickname
     phone.value = user.phone
     gender.value = user.gender
