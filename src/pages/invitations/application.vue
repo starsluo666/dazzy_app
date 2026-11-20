@@ -34,7 +34,7 @@ import { logout } from '@/services/auth'
 
 const application = ref<ProviderApplication | null>(null)
 const loading = ref(true), leaving = ref(false), error = ref('')
-const statusTitle = computed(() => ({ draft: '入驻意向尚未提交', pending: '入驻意向审核中', approved: '入驻初审已通过', rejected: '入驻意向未通过', suspended: '达人资格已暂停' })[application.value?.status || 'draft'])
+const statusTitle = computed(() => ({ draft: '入驻意向尚未提交', pending: '入驻意向审核中', approved: '入驻初审已通过', rejected: '入驻意向未通过', suspended: '达人资格已暂停', store: '门店账号已开通' })[application.value?.status || 'draft'])
 const statusDescription = computed(() => {
   if (!application.value) return '当前账号还没有入驻申请。如已用其他手机号提交，请切换到申请时的账号；已有账号请勿重复注册。'
   return {
@@ -43,6 +43,7 @@ const statusDescription = computed(() => {
     approved: '欢迎加入！请使用注册时的手机号和密码登录达人端，继续完成接单准备。',
     rejected: '请根据审核说明联系客服核对资料，无需重新注册账号。',
     suspended: '当前暂不能接单，请联系平台了解原因。',
+    store: '使用此手机号登录达人端，可查看门店邀请奖励及收款账户。',
   }[application.value.status]
 })
 async function load() {

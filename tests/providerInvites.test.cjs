@@ -60,6 +60,8 @@ async function main() {
   assert.equal(fetched.length, 0)
   hooks.load({ code: 'abcdef123456' }); hooks.show()
   assert.deepEqual(fetched, ['ABCDEF123456'])
+  hooks.load({ code: 'a7k9' }); hooks.show()
+  assert.deepEqual(fetched, ['ABCDEF123456', 'A7K9'])
   assert.equal(navigation.length, 0, 'public invitation never redirects an anonymous user to login')
 
   const uploads = [], requests = []

@@ -17,7 +17,7 @@ function serve(folder) {
   return new Promise(resolve => server.listen(0, '127.0.0.1', () => resolve({ server, url: `http://127.0.0.1:${server.address().port}` })))
 }
 const tiny = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAcIAAAHCAQAAAABUY/ToAAAD+ElEQVR4nO1cbWrzMAyWlUJ/prAD9CjJzcZulhxlBxikPwcuepEt5WMQ7Bq6Lq/1MEo+9LAahPRIsusIyjBiIRHAmClg0mIPxkwBkxZ7MGYKmLTYgzFTwKTFHoyZAiYt9mDM/5HpBCdwvd7CeIF4C+Pl7lx/U6v+sOssARaxKmR2xJgAaAD+aD0/vTv6uPDF7czSuwlGdOR1FgBLSFUybxpfOPoA3CQiATuSe6fgUiFAnf7Ct30cWMCJMGYKpx/3jv+om958jD7d55lgdAAEtyOvE435i8zWg3PXb+f6kNBavmLn6p/4P3OB2ZY/YcznM1uiIIWgmxqOPidWRncXVdDQigoi0qx21HU+DizgVMkcQ8GlUih4jutvZ/44gXv/DM/usSx7/bctAJaQAoyZp4doeTBev6OX0Hj18SMkNNpYHW6daMynMSGW61zbQzdJla+prZF6f5XBOKuFRsBwrHWiMZ/sQzTMDhIQXSp6k2eNpG878so41jrRmE/OZQ7aCWDsTx7ilWu4tn/zBHCPhjT2Dmh0jfUYc4GVMCFGFQrVmAYZyWWtl441vwgRSVObxaEcYF3M8QJAH44LsfgglPUAoTgLV0RcnC0ztGOuswBYQqpVD1FsA4Xoo50i4sAjmN9aHMoD1pfLKArruRrjugxYTsttnMPK4NV8KA2shAniEUt8War32SbWZfEq6CbzoRxgXXVZ93kmbUBz+XX54hdNLM4ctKyJbhd+AdxtfNW3RWP+7TgEq6HZKiL5uTiz/tBjwNr61F4SFSseEdbLpHWp6NnNzIfygJUwYdUQkk2KYVCv+nlYKrQQgqw/lA+srC4jcRqt6DeORFrly5X5UBawyrrMqyjaCqCBDWO6U5czH0oDK4xD3SYEyfxjYqNl8Lp43bHWicb8JT3kRUkvA7JBX6xkt/WH8oD11WU0N6tV+8AqGMk4JEgm86EsYIV70EBFtG5Ja+aGkAglm3U8AqxtXgYSc9ZHEZvVwGNV1psP5QErnLkytC5b965BijOp/C2XZQIr09SwOSYdBZDuAllMFob5UBpYCRNoC81lyz4PL3rI5mWPAiv93Y+AeMXByPGZM+ccb2bUg2cHXmcJsIhVaV1GIopkUL/KYJ2qILm1OJQFrPR3P1wMRuGIK2+qjrN81kh8FDaYSq12zHU+Dizg1BmHpvUGatFGejxR24u65driUB6wXmbDp+z5d9CuFI95uPeJn6kUsjiUCaxVDw26J193o9GskSReWV2WCayECZvmz7KP8cfow0tWC85luSwPWOnvftDmg/TZyrle+W3RmAlgymAXxkwBkxZ7MGYKmLTYgzFTwKTFHoyZAiYt9mDMFF6hqf8BBxGj1+sRTcYAAAAASUVORK5CYII='
-const source = { public_id: 'test-source', code: 'ABCDEF123456', kind: 'store', name: '测试合作门店', active: true, revision: 0, invite_url: 'https://h5.example.test/#/pages/invitations/provider-register?code=ABCDEF123456', qr_data: tiny }
+const source = { public_id: 'test-source', code: 'A7K9', kind: 'store', name: '测试合作门店', active: true, revision: 0, invite_url: 'https://h5.example.test/#/pages/invitations/provider-register?code=A7K9', qr_data: tiny }
 const reward = { public_id: 'test-reward', source, source_name_snapshot: source.name, code_snapshot: source.code, amount: 5000, real_name: '测试新人', invitee_phone_masked: '138****9002', service_city_name: '邯郸市', application_status: 'pending', status: 'pending', status_label: '待财务审核', revision: 0, created_at: '2026-10-10T10:00:00Z', review_note: '', paid_at: null }
 async function shot(page, name) {
   if (!process.env.TEST_SCREENSHOT_DIR) return
@@ -30,7 +30,7 @@ async function main() {
   let browser
   try {
     browser = await chromium.launch({ headless: true, ...(process.env.CHROME_EXECUTABLE ? { executablePath: process.env.CHROME_EXECUTABLE } : {}) })
-    const errors = [], actions = [], registrations = [], denied = []
+    const errors = [], actions = [], registrations = [], denied = [], storeBindings = [], configSaves = []
     let currentReward = { ...reward }, permissions = ['*'], applicationStatus = 'pending', workbenchCalls = 0
     const context = await browser.newContext({ viewport: { width: 390, height: 844 } })
     context.setDefaultTimeout(12000)
@@ -52,17 +52,40 @@ async function main() {
         registrations.push(req.postData()); data = { access: 'test-access', refresh: 'test-refresh', user: { phone: '13800009002', nickname: '测试新人' } }
       }
       else if (url.pathname.endsWith('/auth/sms-codes/')) data = { expires_in: 300, retry_after: 60 }
+      else if (url.pathname.endsWith('/users/me/')) data = { phone: '13800009019', nickname: '门店负责人', gender: 'unspecified' }
       else if (url.pathname.endsWith('/auth/login/password/')) data = { access: 'test-access', refresh: 'test-refresh', user: { phone: '13800009002', nickname: '测试新人' } }
+      else if (url.pathname.endsWith('/auth/login/sms/')) {
+        assert.deepEqual(req.postDataJSON(), { phone: '13800009019', code: '123456' })
+        data = { access: 'store-access', refresh: 'store-refresh', user: { phone: '13800009019', nickname: '门店负责人' } }
+      }
       else if (url.pathname.endsWith('/providers/me/application/')) data = { status: applicationStatus, application_real_name: '测试新人', service_city_name: '邯郸市', invitation_code: source.code, rejection_reason: '照片不够清晰，请联系客服核对', submitted_at: '2026-10-10T10:00:00Z' }
       else if (url.pathname.endsWith('/providers/me/workbench/')) { workbenchCalls++; return route.fulfill({ status: 503, json: { detail: '测试工作台占位' } }) }
-      else if (url.pathname.endsWith('/provider-invites/ABCDEF123456/')) data = { ...source, cities: [{ code: '130400', name: '邯郸市' }] }
-      else if (url.pathname.endsWith('/provider-invites/config/')) data = { enabled: true, store_reward_amount: 5000, provider_reward_amount: 3000, revision: 1 }
-      else if (url.pathname.endsWith('/provider-invites/sources/')) data = { items: [source], pagination: { total: 1, page: 1, page_size: 20 } }
+      else if (url.pathname.endsWith('/provider-invites/A7K9/') || url.pathname.endsWith('/provider-invites/ABCDEF123456/')) data = { ...source, cities: [{ code: '130400', name: '邯郸市' }] }
+      else if (url.pathname.endsWith('/provider-invites/config/')) {
+        if (req.method() === 'PUT') configSaves.push(req.postDataJSON())
+        data = configSaves.at(-1) || { enabled: true, store_reward_amount: 5000, provider_reward_amount: 3000, revision: 1 }
+      }
+      else if (url.pathname.endsWith('/provider-invites/sources/')) data = {
+        items: [{ ...source, store_account_bound: storeBindings.length > 0, store_phone_masked: '138****9019', store_identity_status: 'pending' }],
+        pagination: { total: 1, page: 1, page_size: 20 },
+      }
+      else if (url.pathname.endsWith('/provider-invites/sources/test-source/account/')) {
+        storeBindings.push(req.postDataJSON()); data = { ...source, store_account_bound: true }
+      }
       else if (url.pathname.endsWith('/provider-invites/sources/test-source/')) data = source
       else if (url.pathname.endsWith('/provider-invites/rewards/')) data = { items: [currentReward], pagination: { total: 1, page: 1, page_size: 20 }, summary: [{ status: currentReward.status, count: 1, amount: 5000 }] }
       else if (url.pathname.endsWith('/provider-invites/rewards/test-reward/action/')) {
         const body = req.postDataJSON(); actions.push(body)
         currentReward = { ...currentReward, status: body.action === 'approve' ? 'approved' : 'paid', status_label: body.action === 'approve' ? '待人工打款' : '已人工打款', revision: currentReward.revision + 1 }; data = currentReward
+      }
+      else if (url.pathname.endsWith('/provider-invites/store/me/')) data = {
+        source, enabled: true, qr_data: tiny, identity_status: 'pending', receiving_status: '',
+        items: [{ ...reward, amount: 800, reward_kind_label: '首单奖励', order_no: 'DZY-FIRST', status_label: '待财务审核' }],
+        pagination: { total: 1 },
+      }
+      else if (url.pathname.endsWith('/providers/me/income/')) data = {
+        store_mode: true, wallet: { available_amount: 800, reserved_amount: 0, paid_amount: 0, can_withdraw: true, withdrawals: [] },
+        summary: {}, items: [],
       }
       else if (url.pathname.endsWith('/provider-invites/me/')) data = { source: { ...source, kind: 'provider' }, enabled: true, reward_amount: 3000, qr_data: tiny, summary: [{ status: 'paid', count: 1, amount: 5000 }], items: [{ ...currentReward, invitee_phone_masked: '138****9002' }], pagination: { total: 1 } }
       else if (url.pathname.includes('/growth/provider-invites/')) return route.fulfill({ status: 404, json: { detail: '邀请已停用或不存在' } })
@@ -72,11 +95,12 @@ async function main() {
     page.on('pageerror', e => errors.push(e.message))
     for (const width of [320, 390, 430]) {
       await page.setViewportSize({ width, height: 844 })
-      await page.goto(`${servers[0].url}/#/pages/invitations/provider-register?code=${source.code}`)
+      await page.goto(`${servers[0].url}/#/pages/invitations/provider-register?code=${width === 320 ? 'ABCDEF123456' : source.code}`)
       try { await page.getByText('注册账号', { exact: true }).waitFor() }
       catch (e) { console.error({ url: page.url(), errors, body: await page.locator('body').innerText() }); throw e }
       assert.equal(await page.getByText('已有账号', { exact: false }).count(), 0)
       assert.equal(await page.locator('.source-name').innerText(), source.name)
+      assert.match(await page.locator('.source-code').innerText(), /A7K9/)
       assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), `overflow at ${width}`)
       assert.ok(await page.locator('.input').evaluateAll(nodes => nodes.every(n => n.getBoundingClientRect().height >= 44)))
       await shot(page, `invite-register-${width}.png`)
@@ -104,7 +128,7 @@ async function main() {
     await page.locator('.primary').click()
     await page.getByText('入驻意向已提交', { exact: true }).waitFor()
     assert.equal(registrations.length, 1)
-    assert.match(registrations[0], /ABCDEF123456/)
+    assert.match(registrations[0], /A7K9/)
     assert.match(registrations[0], /service_city_code/)
     assert.match(registrations[0], /application_birth_date/)
     console.log('PASS registration: full form, SMS, photo, consent and multipart payload')
@@ -212,11 +236,50 @@ async function main() {
     assert.equal(actions[1].transfer_reference, 'test-bank-receipt-001')
     assert.equal(actions[1].revision, 1)
     assert.ok(actions[1].paid_at.endsWith('Z'))
+    await page.getByRole('tab', { name: '邀请来源 / 门店二维码' }).click()
+    await page.getByRole('button', { name: '开通账号', exact: true }).click()
+    await page.locator('.el-dialog .el-input__inner').nth(0).fill('测试负责人')
+    await page.locator('.el-dialog .el-input__inner').nth(1).fill('13800009019')
+    await page.locator('.el-dialog').getByRole('button', { name: '开通账号', exact: true }).click()
+    await page.getByText('138****9019', { exact: false }).waitFor()
+    assert.deepEqual(storeBindings[0], { phone: '13800009019', real_name: '测试负责人', revision: 0 })
+    await page.getByRole('tab', { name: '奖励规则' }).click()
+    const storeRules = page.locator('.rule-section').first()
+    await storeRules.locator('.el-switch__core').nth(0).click()
+    await storeRules.locator('.el-switch__core').nth(1).click()
+    await storeRules.getByText('实付服务费比例', { exact: true }).click()
+    await storeRules.getByRole('spinbutton').fill('10')
+    await storeRules.getByRole('spinbutton').press('Tab')
+    await page.getByRole('button', { name: '保存规则', exact: true }).click()
+    await page.locator('.el-message-box').getByRole('button', { name: /确定|OK/ }).click()
+    await page.getByText('规则已保存', { exact: true }).waitFor()
+    assert.equal(configSaves[0].store_registration_enabled, false)
+    assert.deepEqual(configSaves[0].store_first_order, { enabled: true, mode: 'percentage', amount: 0, rate_bps: 1000 })
+    assert.equal(configSaves[0].provider_first_order.enabled, false)
+    await page.setViewportSize({ width: 390, height: 844 })
+    await page.goto(`${servers[2].url}/#/pages/auth/login`)
+    applicationStatus = 'store'
+    await page.getByText('使用短信验证码登录', { exact: true }).click()
+    await page.locator('.auth-field input').nth(0).fill('13800009019')
+    await page.locator('.auth-field input').nth(1).fill('123456')
+    await page.locator('.consent-toggle').click()
+    await page.locator('.auth-primary').click()
+    await page.getByText('门店工作台', { exact: true }).waitFor()
+    await page.getByText('DZY-FIRST', { exact: true }).waitFor()
+    assert.equal(workbenchCalls, 1, 'store login must not open the provider workbench')
+    await page.locator('.entry').filter({ hasText: '余额与提现' }).click()
+    await page.getByText('提现到本人银行卡', { exact: true }).waitFor()
+    assert.equal(await page.getByText('结算记录', { exact: true }).count(), 0)
+    console.log('PASS store: account binding, independent rules, SMS login, referral records and withdrawal entry')
     await context.addInitScript(() => {
       localStorage.setItem('dazzy.provider.accessToken', JSON.stringify({ type: 'string', data: 'test-only' }))
       localStorage.setItem('dazzy.provider.refreshToken', JSON.stringify({ type: 'string', data: 'test-only' }))
+      localStorage.setItem('dazzy.accessToken', JSON.stringify({ type: 'string', data: 'test-only' }))
     })
     await page.setViewportSize({ width: 390, height: 844 })
+    await page.goto(`${servers[0].url}/#/pages/providers/apply`)
+    await page.getByText('门店账号已开通', { exact: true }).waitFor()
+    assert.equal(await page.getByText('入驻意向', { exact: true }).count(), 0)
     await page.goto(`${servers[2].url}/#/pages/invitations/index`)
     await page.getByText('一起成为乐搭伴达人', { exact: true }).waitFor()
     assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1))

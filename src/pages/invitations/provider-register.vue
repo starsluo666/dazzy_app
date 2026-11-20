@@ -68,7 +68,7 @@ const message = (e: unknown) => e instanceof Error ? e.message : '操作失败�
 async function load() {
   loading.value = true; loadError.value = ''; invite.value = null
   try {
-    if (!/^[A-F0-9]{12}$/.test(sourceCode.value)) throw new Error('邀请链接无效，请重新扫描邀请人提供的二维码。')
+    if (!/^(?:[A-Z0-9]{4}|[A-F0-9]{12})$/.test(sourceCode.value)) throw new Error('邀请链接无效，请重新扫描邀请人提供的二维码。')
     invite.value = (await getProviderInvite(sourceCode.value)).data
   } catch (e) { loadError.value = message(e) }
   finally { loading.value = false }

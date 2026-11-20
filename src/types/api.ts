@@ -180,7 +180,7 @@ export interface NotificationListResponse extends ListResponse<UserNotification>
 }
 
 export interface ProviderApplication {
-  status: 'draft' | 'pending' | 'approved' | 'rejected' | 'suspended'
+  status: 'draft' | 'pending' | 'approved' | 'rejected' | 'suspended' | 'store'
   gender: CurrentUser['gender']
   application_real_name: string
   application_birth_date: string | null

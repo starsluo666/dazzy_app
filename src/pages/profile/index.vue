@@ -32,7 +32,7 @@
 
     <main class="profile-content dz-container">
       <section class="account-card panel">
-        <view class="provider-strip" hover-class="provider-strip--pressed" role="button" aria-label="申请成为达人" @tap="openProviderCenter">
+        <view class="provider-strip" hover-class="provider-strip--pressed" role="button" :aria-label="providerEntry.title" @tap="openProviderCenter">
           <view class="provider-copy">
             <strong>{{ providerEntry.title }}</strong>
             <text>{{ providerEntry.description }}</text>
@@ -123,6 +123,8 @@ const displayName = computed(() => profile.value?.nickname || '登录 / 注册')
 const maskedPhone = computed(() => profile.value?.phone.replace(/(\d{3})\d{4}(\d{4})/, '$1****$2') || '')
 const providerEntry = computed(() => {
   switch (providerApplication.value?.status) {
+    case 'store':
+      return { title: '门店账号', description: '请在达人端使用门店工作台', action: '查看说明' }
     case 'approved':
       return { title: '达人申请已通过', description: '请在达人端完成实名与资料', action: '查看说明' }
     case 'pending':

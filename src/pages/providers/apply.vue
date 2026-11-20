@@ -1,8 +1,8 @@
 <template>
   <view class="dz-page apply-page">
     <view class="hero">
-      <DzNavBar title="成为达人" :back-action="goBack" surface="integrated" :sticky="false" />
-      <section class="hero-poster dz-container">
+      <DzNavBar :title="isStore ? '门店账号' : '成为达人'" :back-action="goBack" surface="integrated" :sticky="false" />
+      <section v-if="!isStore" class="hero-poster dz-container">
         <view class="poster-frame">
           <image
             src="/static/providers/provider-application-hero-v1.webp"
@@ -24,7 +24,7 @@
       <template v-else-if="locked">
         <section class="status-card">
           <view class="status-icon">
-            {{ application?.status === 'approved' ? '✓' : '…' }}
+            {{ application?.status === 'approved' || isStore ? '✓' : '…' }}
           </view>
           <strong>{{ statusTitle }}</strong>
           <text>{{ statusText }}</text>
@@ -168,8 +168,9 @@ const form = reactive({
   invitation_code: '',
 })
 
+const isStore = computed(() => application.value?.status === 'store')
 const locked = computed(() =>
-  application.value?.status === 'pending'
+  isStore.value || application.value?.status === 'pending'
   || application.value?.status === 'approved'
   || application.value?.status === 'suspended',
 )
@@ -197,12 +198,14 @@ const heroText = computed(() =>
     : '提交入驻意向，审核通过后进入达人端认证',
 )
 const statusTitle = computed(() =>
-  application.value?.status === 'approved'
+  isStore.value ? '门店账号已开通'
+    : application.value?.status === 'approved'
     ? '入驻申请已通过'
     : application.value?.status === 'suspended' ? '达人资格已暂停' : '资料审核中',
 )
 const statusText = computed(() =>
-  application.value?.status === 'approved'
+  isStore.value ? '使用此手机号登录达人端，可查看门店邀请奖励及收款账户。'
+    : application.value?.status === 'approved'
     ? '请使用同一手机号登录达人端，完成实名认证、生活照和服务资料。'
     : application.value?.status === 'suspended'
       ? '请联系客服了解详情。'
