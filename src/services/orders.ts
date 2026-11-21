@@ -1,4 +1,5 @@
 import type { DataResponse, ListResponse, MyProviderOrderReview, ProviderOrder, ProviderOrderAfterSalesCase, ProviderOrderAfterSalesCreateType, ProviderOrderPaymentAuthorization, ProviderOrderPaymentSession, ProviderOrderQuote, UserCoupon } from '@/types/api'
+import type { ProviderOrderRenewalOptions, ProviderOrderRenewalSlot } from '@/types/api'
 import type { BookingDraft } from './bookingDraft'
 import { request, uploadFile } from './http'
 import { toBusinessDateTime } from '@/utils/businessTime'
@@ -31,6 +32,17 @@ export function createProviderOrder(draft: BookingDraft, couponId?: string | nul
 
 export function getProviderOrder(orderNo: string) {
   return request<DataResponse<ProviderOrder>>(`/provider-orders/${orderNo}/`)
+}
+
+export function getProviderOrderRenewalOptions(orderNo: string) {
+  return request<DataResponse<ProviderOrderRenewalOptions>>(`/provider-orders/${encodeURIComponent(orderNo)}/renewal/`)
+}
+
+export function createProviderOrderRenewal(orderNo: string, option: ProviderOrderRenewalSlot) {
+  return request<DataResponse<Pick<ProviderOrder, 'order_no' | 'status'>>>(
+    `/provider-orders/${encodeURIComponent(orderNo)}/renewal/`,
+    { method: 'POST', data: { duration_minutes: option.duration_minutes, payable_amount: option.payable_amount } },
+  )
 }
 
 export function getProviderOrders() {

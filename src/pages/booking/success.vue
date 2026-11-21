@@ -1,7 +1,23 @@
 <template>
   <view class="dz-page success-page">
     <DzNavBar title="支付成功" :back-action="viewOrder" />
-    <view v-if="order" class="success-content"><view class="success-orb">✓</view><strong class="success-title">支付成功</strong><text class="success-subtitle">订单已提交，等待达人接单</text><section class="order-card booking-card"><view class="booking-avatar"><image v-if="order.provider_avatar_url" :src="order.provider_avatar_url" mode="aspectFill" /><view v-else>{{ order.provider_name.slice(0,1) }}</view></view><view><strong>{{ order.provider_name }} · {{ order.service_name }}</strong><text>▣ {{ timeLabel }}</text><text>● {{ addressLabel }}</text></view><view class="paid">实付<strong>¥{{ money(order.payable_amount) }}</strong></view></section><view class="steps"><view class="done"><i>✓</i><text>已支付</text></view><b/><view class="active"><i/><text>待接单</text></view><b/><view><i/><text>待服务</text></view></view><text class="tip">达人将在30分钟内确认接单</text><button class="primary" @tap="viewOrder">查看订单</button><button class="secondary" @tap="goHome">返回首页</button></view>
+    <view v-if="order" class="success-content">
+      <view class="success-orb">✓</view>
+      <strong class="success-title">支付成功</strong>
+      <text class="success-subtitle">{{ order.renewal_of_order_no ? '续单已确认' : '订单已提交，等待达人接单' }}</text>
+      <section class="order-card booking-card">
+        <view class="booking-avatar"><image v-if="order.provider_avatar_url" :src="order.provider_avatar_url" mode="aspectFill" /><view v-else>{{ order.provider_name.slice(0,1) }}</view></view>
+        <view><strong>{{ order.provider_name }} · {{ order.service_name }}</strong><text>▣ {{ timeLabel }}</text><text>● {{ addressLabel }}</text></view>
+        <view class="paid">实付<strong>¥{{ money(order.payable_amount) }}</strong></view>
+      </section>
+      <view class="steps">
+        <view class="done"><i>✓</i><text>已支付</text></view><b/>
+        <view v-if="!order.renewal_of_order_no" class="active"><i/><text>待接单</text></view><b v-if="!order.renewal_of_order_no"/>
+        <view :class="{ active: order.renewal_of_order_no }"><i/><text>{{ order.renewal_of_order_no ? '待续服务' : '待服务' }}</text></view>
+      </view>
+      <text class="tip">{{ order.renewal_of_order_no ? '达人将按续单预约时间继续服务' : '达人将在30分钟内确认接单' }}</text>
+      <button class="primary" @tap="viewOrder">查看订单</button><button class="secondary" @tap="goHome">返回首页</button>
+    </view>
     <view v-else class="booking-empty">{{ error || '正在加载订单…' }}</view>
   </view>
 </template>

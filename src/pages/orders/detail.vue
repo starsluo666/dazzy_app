@@ -43,6 +43,8 @@
         <view class="map"><view class="roads" /><i>●</i></view>
         <view><i>▤</i><text>订单编号</text><strong class="muted">{{ order.order_no }}</strong><button aria-label="复制订单编号" @tap="copyOrderNo">▣</button></view>
         <view><i>▦</i><text>创建时间</text><strong class="muted">{{ createdLabel }}</strong></view>
+        <view v-if="order.renewal_of_order_no"><text>续单</text><strong /><button @tap="openOrder(order.renewal_of_order_no)">查看原订单</button></view>
+        <view v-if="order.next_renewal_order_no"><text>关联续单</text><strong /><button @tap="openOrder(order.next_renewal_order_no)">查看续单</button></view>
         <view v-if="order.status === 'pending_service' && order.timeout?.departure_deadline_at">
           <i>⌛</i><text>出发截止</text><strong class="muted">{{ formatDateTime(order.timeout.departure_deadline_at) }}</strong>
         </view>
@@ -61,8 +63,8 @@
 
       <section class="fees panel">
         <view><text>服务费</text><text>¥{{ money(order.service_fee_amount) }}</text></view>
-        <view><text>交通费</text><text>¥{{ money(order.transport_fee_amount) }}</text></view>
-        <view><text>优惠券</text><text class="discount">−¥{{ money(order.discount_amount) }}</text></view>
+        <view v-if="!order.renewal_of_order_no"><text>交通费</text><text>¥{{ money(order.transport_fee_amount) }}</text></view>
+        <view v-if="!order.renewal_of_order_no || order.discount_amount"><text>{{ order.renewal_of_order_no ? '优惠' : '优惠券' }}</text><text class="discount">−¥{{ money(order.discount_amount) }}</text></view>
         <view class="total"><text>{{ order.paid_at ? '实付' : '应付' }}</text><strong>¥{{ money(order.payable_amount) }}</strong></view>
       </section>
 
@@ -106,7 +108,7 @@
           </view>
           <b>查看 ›</b>
         </button>
-        <button v-else aria-label="集合地点照片尚未上传" @tap="showEvidencePending">
+        <button v-else-if="!order.renewal_of_order_no" aria-label="集合地点照片尚未上传" @tap="showEvidencePending">
           <i>▣</i>
           <view><strong>集合地点照片待上传</strong><text>{{ pendingEvidenceCopy }}</text></view>
           <b>›</b>
@@ -153,8 +155,9 @@
       <button v-if="order.status === 'pending_payment'" class="outline" @tap="cancel">取消订单</button>
       <button v-if="order.status === 'pending_payment'" class="primary" @tap="continuePay">继续支付</button>
       <button v-else class="outline" @tap="openAfterSales">{{ supportLabel }}</button>
+      <button v-if="canRenew" class="primary" @tap="openRenewal">续单</button>
       <button
-        v-if="contactableStatuses.includes(order.status)"
+        v-else-if="contactableStatuses.includes(order.status)"
         class="primary"
         @tap="showPending('联系达人')"
       >联系达人</button>
@@ -166,12 +169,32 @@
       >{{ confirming ? '确认中…' : '确认服务完成' }}</button>
       <button v-else-if="order.status === 'pending_review'" class="primary" @tap="openReview">去评价</button>
     </footer>
+
+    <DzBottomSheet :visible="renewalVisible" title="续单" @close="closeRenewal">
+      <view class="renewal-sheet">
+        <text v-if="renewalLoading" class="renewal-note">正在查询可续时段…</text>
+        <template v-else-if="renewalOptions.length">
+          <text class="renewal-note">原服务结束后接续，只收服务费。</text>
+          <button v-for="option in renewalOptions" :key="option.duration_minutes" class="renewal-option"
+            :class="{ selected: selectedRenewal === option }" @tap="selectedRenewal = option">
+            <view><strong>{{ option.duration_minutes }} 分钟</strong><text>续至 {{ formatDateTime(option.ends_at) }}</text></view>
+            <strong>¥{{ money(option.payable_amount) }}</strong>
+          </button>
+          <text class="renewal-note">续单开始前取消可全额退款。开始后因个人原因提前结束，需承担续单服务费。</text>
+          <button class="renewal-submit" :disabled="!selectedRenewal || renewalSubmitting" @tap="submitRenewal">
+            {{ renewalSubmitting ? '正在创建…' : '确认续单并去支付' }}
+          </button>
+        </template>
+        <text v-else class="renewal-note">{{ renewalError || '达人接下来暂无可续的服务时段。' }}</text>
+      </view>
+    </DzBottomSheet>
   </view>
 </template>
 
 <script setup lang="ts">
 import { navigateBackOr } from '@/utils/navigation'
 import DzNavBar from '@/components/DzNavBar.vue'
+import DzBottomSheet from '@/components/DzBottomSheet.vue'
 import TerminationRequestForm from '@/components/TerminationRequestForm.vue'
 import OrderCancellationCard from '@/components/OrderCancellationCard.vue'
 import { computed, ref } from 'vue'
@@ -182,13 +205,15 @@ import { BRAND_PRIMARY } from '@/utils/brand'
 import {
   cancelProviderOrder,
   confirmProviderOrderCompletion,
+  createProviderOrderRenewal,
   getProviderOrder,
+  getProviderOrderRenewalOptions,
   reviewProviderOrder,
   uploadReviewImage,
 } from '@/services/orders'
 import { orderStatusCopy } from '@/services/orderPresentation'
 import { isAuthenticated } from '@/services/session'
-import type { ProviderOrder } from '@/types/api'
+import type { ProviderOrder, ProviderOrderRenewalSlot } from '@/types/api'
 import { formatActivityTime, formatAmount, formatBusinessDateTime, formatOrderTimeRange, getErrorMessage } from '@/utils/formatters'
 
 const orderNo = ref('')
@@ -203,10 +228,22 @@ const reviewSubmitting = ref(false)
 const reviewUploading = ref(false)
 const reviewAnonymous = ref(false)
 const reviewImages = ref<Array<{ id: string; url: string }>>([])
+const renewalVisible = ref(false)
+const renewalLoading = ref(false)
+const renewalSubmitting = ref(false)
+const renewalOptions = ref<ProviderOrderRenewalSlot[]>([])
+const selectedRenewal = ref<ProviderOrderRenewalSlot | null>(null)
+const renewalError = ref('')
+const canRenew = computed(() => order.value?.status === 'in_service'
+  && !order.value.fulfillment_review_required && !order.value.next_renewal_order_no
+  && Date.parse(order.value.ends_at) > Date.now())
 const steps = ['已支付', '已接单', '待出发', '履约中', '待确认']
 const contactableStatuses = ['pending_acceptance', 'pending_service', 'departed', 'in_service']
 const statusCopy = computed(() => {
   const copy = orderStatusCopy(order.value?.status || '')
+  if (order.value?.renewal_of_order_no && order.value.status === 'pending_service') {
+    return { ...copy, title: '待续服务', description: '续单已支付，达人将按预约时间继续服务。' }
+  }
   if (order.value?.timeout?.timed_out_at) return {
     ...copy, title: order.value.timeout.reason,
     description: `${order.value.timeout.refund_label}。订单已取消，剩余实付款（含路费）按原支付路径退回，具体到账以退款结果为准。`,
@@ -303,6 +340,56 @@ function previewEvidence() {
 function copyOrderNo() { if (order.value) uni.setClipboardData({ data: order.value.order_no }) }
 function continuePay() {
   if (order.value) uni.navigateTo({ url: `/pages/booking/payment?orderNo=${order.value.order_no}` })
+}
+function openOrder(orderNumber: string | null | undefined) {
+  if (orderNumber) uni.navigateTo({ url: `/pages/orders/detail?orderNo=${encodeURIComponent(orderNumber)}` })
+}
+function openRenewalOrder(orderNumber: string, status: string) {
+  if (status === 'pending_payment') {
+    uni.navigateTo({ url: `/pages/booking/payment?orderNo=${encodeURIComponent(orderNumber)}` })
+  } else {
+    openOrder(orderNumber)
+  }
+}
+function closeRenewal() {
+  if (!renewalSubmitting.value) renewalVisible.value = false
+}
+async function openRenewal() {
+  if (!order.value || renewalLoading.value) return
+  renewalVisible.value = true
+  renewalLoading.value = true
+  renewalError.value = ''
+  renewalOptions.value = []
+  selectedRenewal.value = null
+  try {
+    const { data } = await getProviderOrderRenewalOptions(order.value.order_no)
+    if (!renewalVisible.value) return
+    if (data.existing_order_no) {
+      renewalVisible.value = false
+      openRenewalOrder(data.existing_order_no, data.existing_order_status || '')
+      return
+    }
+    renewalOptions.value = data.options
+    selectedRenewal.value = renewalOptions.value[0] || null
+  } catch (reason) {
+    renewalError.value = getErrorMessage(reason, '暂时无法查询续单时段。')
+  } finally {
+    renewalLoading.value = false
+  }
+}
+async function submitRenewal() {
+  if (!order.value || !selectedRenewal.value || renewalSubmitting.value) return
+  renewalSubmitting.value = true
+  try {
+    const { data } = await createProviderOrderRenewal(order.value.order_no, selectedRenewal.value)
+    renewalVisible.value = false
+    openRenewalOrder(data.order_no, data.status)
+  } catch (reason) {
+    uni.showToast({ title: getErrorMessage(reason, '续单失败，请重试。'), icon: 'none' })
+    await openRenewal()
+  } finally {
+    renewalSubmitting.value = false
+  }
 }
 function cancel() {
   if (!order.value) return
@@ -416,6 +503,16 @@ onShow(() => { if (isAuthenticated()) load() })
 <style lang="scss" scoped>
 @use '../../styles/tokens.scss' as *;
 @use '../../styles/booking.scss';
+
+.renewal-sheet{padding:0 24rpx 26rpx}
+.renewal-note{display:block;margin:12rpx 0;color:$dz-text-secondary;font-size:$dz-fs-caption;line-height:1.55}
+.renewal-option{display:flex;align-items:center;justify-content:space-between;width:100%;margin:12rpx 0;padding:16rpx 20rpx;border:1rpx solid $dz-border-subtle;border-radius:$dz-radius-sm;background:$dz-surface-card;font-size:$dz-fs-caption;line-height:1.5;text-align:left}
+.renewal-option.selected{border-color:$dz-brand-primary;background:$dz-brand-soft}
+.renewal-option text{display:block;color:$dz-text-secondary;font-size:$dz-fs-micro}
+.renewal-option>strong{color:$dz-price-primary}
+.renewal-option::after,.renewal-submit::after{display:none}
+.renewal-submit{margin-top:18rpx;border:0;border-radius:$dz-radius-full;background:$dz-gradient-brand;color:$dz-text-inverse;font-size:$dz-fs-caption;line-height:84rpx}
+.renewal-submit[disabled]{opacity:.55}
 .reward-report-link { display: flex; align-items: center; justify-content: space-between; gap: 14rpx; margin-top: 18rpx; padding: 22rpx; }
 .reward-report-link view { display: flex; flex-direction: column; gap: 6rpx; }
 .reward-report-link strong { font-size: 25rpx; }.reward-report-link text { color: #7a8492; font-size: 20rpx; }

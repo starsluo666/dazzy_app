@@ -2,13 +2,13 @@
   <view class="dz-page result-page">
     <DzNavBar title="支付结果" :back-action="openOrder" />
     <main class="result-content">
-      <view class="result-orb" :class="state"><text v-if="state==='confirmed'">✓</text><text v-else-if="state==='failed'">!</text><view v-else class="spinner" /></view>
+      <view class="result-orb" :class="state"><text v-if="state==='confirmed'">✓</text><text v-else-if="state==='failed' || state==='refund'">!</text><view v-else class="spinner" /></view>
       <strong>{{ title }}</strong>
       <text>{{ description }}</text>
       <view v-if="order" class="order-summary booking-card"><text>订单号</text><strong>{{ order.order_no }}</strong><text>应付金额</text><b>¥{{ money(order.payable_amount) }}</b></view>
       <button v-if="state==='confirmed'" class="primary" @tap="openSuccess">查看支付结果</button>
       <button v-else-if="state==='failed'" class="primary" @tap="retryPayment">返回收银台</button>
-      <button v-else class="secondary" :disabled="checking" @tap="confirmStatus">{{ checking?'正在确认…':'刷新结果' }}</button>
+      <button v-else-if="state!=='refund'" class="secondary" :disabled="checking" @tap="confirmStatus">{{ checking?'正在确认…':'刷新结果' }}</button>
       <button class="link" @tap="openOrder">查看订单</button>
     </main>
   </view>
@@ -22,7 +22,7 @@ import { confirmProviderOrderPaymentStatus } from '@/services/orders'
 import type { ProviderOrder } from '@/types/api'
 import { formatAmount, getErrorMessage } from '@/utils/formatters'
 
-type ResultState = 'confirming' | 'processing' | 'confirmed' | 'failed'
+type ResultState = 'confirming' | 'processing' | 'confirmed' | 'failed' | 'refund'
 
 const orderNo = ref('')
 const order = ref<ProviderOrder | null>(null)
@@ -33,13 +33,14 @@ const money = formatAmount
 const statusPollAttempts = 12
 const statusPollIntervalMs = 5000
 const title = computed(() => ({
-  confirming: '正在确认支付结果', processing: '支付结果处理中', confirmed: '支付已确认', failed: '订单未支付',
+  confirming: '正在确认支付结果', processing: '支付结果处理中', confirmed: '支付已确认', failed: '订单未支付', refund: '续单已取消',
 })[state.value])
 const description = computed(() => ({
   confirming: '正在确认支付结果，请勿重复支付。',
   processing: '暂未收到最终结果，请稍后刷新；请勿重复支付。',
-  confirmed: '订单已进入待接单状态。',
+  confirmed: order.value?.renewal_of_order_no ? '续单已确认，达人将按预约时间继续服务。' : '订单已进入待接单状态。',
   failed: '订单已关闭或支付超时，请返回后重新下单。',
+  refund: '款项将原路退回，请在订单详情查看退款状态。',
 })[state.value])
 
 function wait(ms: number) { return new Promise(resolve => setTimeout(resolve, ms)) }
@@ -52,6 +53,11 @@ function openOrder() { uni.redirectTo({ url: `/pages/orders/detail?orderNo=${enc
 async function fetchStatus() {
   const current = (await confirmProviderOrderPaymentStatus(orderNo.value)).data
   order.value = current
+  if (current.renewal_of_order_no && ['cancelled', 'refunded'].includes(current.status) && isPaid(current)) {
+    state.value = 'refund'
+    uni.removeStorageSync('pendingProviderOrderNo')
+    return true
+  }
   if (isPaid(current)) { state.value = 'confirmed'; uni.removeStorageSync('pendingProviderOrderNo'); return true }
   if (isClosed(current)) { state.value = 'failed'; return true }
   return false

@@ -683,6 +683,8 @@ export interface MyInvitationSummary {
 }
 
 export interface ProviderOrder {
+  renewal_of_order_no?: string | null
+  next_renewal_order_no?: string | null
   cancellation?: import('./cancellation').CancellationSummary
   timeout?: {
     departure_deadline_at: string | null
@@ -739,6 +741,19 @@ export interface ProviderOrder {
   after_sales: ProviderOrderAfterSalesSummary | null
   manual_after_sales_required?: boolean
   created_at: string
+}
+
+export interface ProviderOrderRenewalSlot {
+  duration_minutes: number
+  ends_at: string
+  payable_amount: number
+}
+
+export interface ProviderOrderRenewalOptions {
+  starts_at?: string
+  existing_order_no?: string
+  existing_order_status?: string
+  options: ProviderOrderRenewalSlot[]
 }
 
 export interface ProviderOrderPaymentSummary {
