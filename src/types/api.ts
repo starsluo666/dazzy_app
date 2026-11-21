@@ -702,6 +702,7 @@ export interface ProviderOrder {
   provider_public_id: string
   provider_name: string
   provider_avatar_url: string | null
+  provider_contact_phone?: string | null
   service_name: string
   billing_type_snapshot: 'hourly' | 'per_session'
   unit_price_amount: number
@@ -710,6 +711,8 @@ export interface ProviderOrder {
   duration_minutes: number
   meeting_location_name: string
   meeting_address: string
+  meeting_longitude?: string | null
+  meeting_latitude?: string | null
   contact_name: string
   contact_gender: 'mr' | 'ms' | ''
   contact_gender_label: string
