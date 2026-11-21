@@ -19,7 +19,7 @@
             <small>{{ draft.billingType === 'hourly' ? '/小时' : '/次' }}</small>
           </strong>
         </view>
-        <view class="brand-card">DAZZY<br><b>搭子</b></view>
+        <view class="brand-card"><b>乐搭伴</b></view>
       </section>
 
       <view

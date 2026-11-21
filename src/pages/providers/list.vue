@@ -1,7 +1,7 @@
 <template>
   <view class="dz-page dz-page--with-tabbar">
     <DzNavBar mode="toolbar">
-      <text class="brand">DAZZY<text>搭子</text><i>◆</i></text>
+      <text class="brand">乐搭伴</text>
       <label class="search">
         <text>⌕</text>
         <input v-model="keyword" type="text" maxlength="50" confirm-type="search" placeholder="搜索达人或服务" @confirm="loadProviders" />
@@ -395,9 +395,7 @@ onUnload(() => { refreshVersion++; categoryVersion++; pageVersion++; invalidate(
 button { margin:0; padding:0; border:0; background:transparent; line-height:1; }
 button::after { display:none; }
 .header { display:flex; align-items:center; gap:18rpx; min-height:104rpx; }
-.brand { position:relative; flex:0 0 auto; color:$dz-text-primary; font-size:37rpx; font-style:italic; font-weight:$dz-fw-bold; letter-spacing:-2rpx; }
-.brand>text { margin-left:6rpx; font-size:$dz-fs-body-strong; font-style:normal; letter-spacing:0; }
-.brand i { position:absolute; right:42rpx; bottom:-8rpx; color:$dz-brand-primary; font-size:$dz-fs-micro; font-style:normal; }
+.brand { flex:0 0 auto; color:$dz-text-primary; font-size:$dz-fs-heading; font-weight:$dz-fw-bold; }
 .search { display:flex; align-items:center; flex:1; min-width:0; gap:12rpx; height:64rpx; padding:0 16rpx 0 22rpx; border:1rpx solid $dz-border-material; border-radius:$dz-radius-full; color:$dz-text-tertiary; background:$dz-surface-glass; box-shadow:inset 0 1rpx 0 $dz-surface-highlight,0 8rpx 24rpx rgba(31,65,72,.055); font-size:$dz-fs-caption; box-sizing:border-box; }
 .search>text:first-child { color:$dz-text-secondary; font-size:$dz-fs-body-strong; }
 .search input { flex:1; min-width:0; height:100%; color:$dz-text-primary; font-size:$dz-fs-caption; }
@@ -470,7 +468,6 @@ button::after { display:none; }
 @media screen and (max-width:360px) {
   .header { gap:10rpx; }
   .brand { font-size:$dz-fs-body-strong; }
-  .brand>text { font-size:$dz-fs-caption; }
   .filter-options.price-options { grid-template-columns:repeat(2,1fr); }
 }
 @media (prefers-reduced-motion:reduce) {

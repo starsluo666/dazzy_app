@@ -1,7 +1,7 @@
 <template>
   <view class="dz-page dz-page--with-tabbar">
     <DzNavBar mode="toolbar">
-      <text class="brand"><strong>DAZZY</strong><text>搭子</text></text>
+      <text class="brand">乐搭伴</text>
       <label class="search"><text>⌕</text><input v-model="keyword" maxlength="80" placeholder="搜索活动、地点或标签" confirm-type="search" @confirm="loadActivities" /></label>
       <view class="filter" role="button" @tap="clearFilters"><text>▽</text><text>{{ selectedTags.length ? `已选${selectedTags.length}` : '标签' }}</text></view>
     </DzNavBar>
@@ -164,9 +164,7 @@ onUnload(() => { refreshVersion++; invalidate() })
 @use '../../styles/tokens.scss' as *;
 
 .header { display:flex; align-items:center; gap:17rpx; min-height:104rpx; }
-.brand { flex:0 0 auto; color:#151c20; font-size:$dz-fs-body-strong; font-weight:$dz-fw-bold; }
-.brand strong { color:$dz-brand-deep; font-size:$dz-fs-heading; font-weight:$dz-fw-bold; letter-spacing:-2rpx; }
-.brand>text { margin-left:5rpx; }
+.brand { flex:0 0 auto; color:$dz-text-primary; font-size:$dz-fs-heading; font-weight:$dz-fw-bold; }
 .search { display:flex; align-items:center; flex:1; gap:12rpx; height:62rpx; padding:0 21rpx; border:1rpx solid #e1e6e8; border-radius:$dz-radius-lg; color:#929ca1; font-size:$dz-fs-caption; box-sizing:border-box; }
 .search>text:first-child { color:#3e494f; font-size:$dz-fs-heading; }
 .search input { min-width:0; flex:1; font-size:$dz-fs-caption; }
