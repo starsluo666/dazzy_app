@@ -316,9 +316,7 @@ function callProvider() {
   if (!phone || !/^1[0-9]{10}$/.test(phone)) {
     uni.showModal({
       title: '电话联系',
-      content: order.value.status === 'pending_acceptance'
-        ? '达人接单后，即可在这里拨打电话。'
-        : '暂时无法拨打达人的电话，如需帮助请联系客服。',
+      content: '暂时无法拨打达人的电话，如需帮助请联系客服。',
       showCancel: false,
     })
     return
