@@ -21,7 +21,7 @@
         <view class="header-actions">
           <button class="header-action notification-icon" role="button" tabindex="0" hover-class="header-action--pressed" :aria-label="unreadCount ? `通知中心，${unreadCount}条未读` : '通知中心'" @tap.stop="openNotifications" @keydown.enter.stop.prevent="openNotifications" @keydown.space.stop.prevent="openNotifications">
             <image src="/static/notifications/system.svg" mode="aspectFit" aria-hidden="true" />
-            <i v-if="unreadCount"><b>{{ unreadCount > 99 ? '99+' : unreadCount }}</b></i>
+            <text v-if="unreadCount" class="notification-badge" aria-hidden="true">{{ unreadCount > 99 ? '99+' : unreadCount }}</text>
           </button>
           <button class="header-action settings-icon" role="button" tabindex="0" hover-class="header-action--pressed" aria-label="设置" @tap.stop="openSettings" @keydown.enter.stop.prevent="openSettings" @keydown.space.stop.prevent="openSettings">
             <image src="/static/ui-icons/settings.svg" mode="aspectFit" aria-hidden="true" />
@@ -376,10 +376,28 @@ onShow(loadProfile)
 /* #endif */
 
 .settings-icon image { display: block; width: 42rpx; height: 42rpx; }
-.notification-icon { position:relative; }
+.notification-icon { position:relative; overflow:visible; }
 .notification-icon image { width:42rpx; height:42rpx; }
-.notification-icon i { position:absolute; right:-10rpx; top:-7rpx; display:flex; align-items:center; justify-content:center; min-width:25rpx; height:25rpx; padding:0 5rpx; border:3rpx solid #f3fdfe; border-radius:$dz-radius-sm; color:$dz-text-inverse; background:$dz-status-danger; box-sizing:border-box; font-style:normal; }
-.notification-icon i b { font-size:$dz-fs-micro; line-height:1; }
+.notification-badge {
+  position: absolute;
+  top: 8rpx;
+  right: 8rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28rpx;
+  height: 28rpx;
+  padding: 0 5rpx;
+  border: 2rpx solid #f3fdfe;
+  border-radius: $dz-radius-full;
+  color: $dz-text-inverse;
+  background: $dz-status-danger;
+  box-sizing: border-box;
+  font-size: $dz-fs-micro;
+  font-weight: $dz-fw-bold;
+  line-height: 1;
+  white-space: nowrap;
+}
 .profile-content {
   position: relative;
   margin-top: -64rpx;
