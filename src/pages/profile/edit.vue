@@ -14,7 +14,7 @@
       </section>
 
       <view v-for="item in contentReviews.filter(item => item.status !== 'approved')" :key="item.kind" class="review-notice">
-        <text>头像：{{ ['queued', 'processing', 'manual'].includes(item.status) ? '审核中，通过后展示新资料' : item.label }}</text>
+        <text>{{ item.kind === 'nickname' ? '昵称' : '头像' }}：{{ isPendingReview(item.status) ? '审核中，通过后展示新资料' : item.status === 'withdrawn' ? '已停止展示' : '审核未通过' }}</text>
         <text v-if="item.reason">{{ item.reason }}</text>
       </view>
 
@@ -89,6 +89,7 @@ import { useWechatBinding } from '@/composables/useWechatBinding'
 type Gender = CurrentUser['gender']
 
 const nickname = ref('')
+const publishedNickname = ref('')
 const phone = ref('')
 const gender = ref<Gender>('unspecified')
 const birthDate = ref('')
@@ -125,6 +126,10 @@ function returnToSettings() {
 function changeBirthDate(event: { detail: { value: string } }) { birthDate.value = event.detail.value }
 function selectGender(value: Gender) { gender.value = value; genderSheetVisible.value = false }
 function warn(title: string) { uni.showToast({ title, icon: 'none' }) }
+function isPendingReview(status: string) { return ['queued', 'processing', 'manual'].includes(status) }
+function applyReviewStatus(user: CurrentUser) {
+  contentReviews.value = (user.content_reviews || []).filter(item => item.kind === 'nickname' || item.kind === 'avatar')
+}
 function chooseAvatar() {
   uni.chooseImage({
     count: 1,
@@ -145,11 +150,13 @@ async function save() {
   if (!canSave.value) { warn('昵称至少填写1个字'); return }
   saving.value = true
   try {
-    await updateCurrentUser({
-      nickname: nickname.value.trim(), birth_date: birthDate.value || null,
+    const nicknameChanged = nickname.value.trim() !== publishedNickname.value
+    const { data: user } = await updateCurrentUser({
+      ...(nicknameChanged ? { nickname: nickname.value.trim() } : {}), birth_date: birthDate.value || null,
       ...(gender.value === 'male' || gender.value === 'female' ? { gender: gender.value } : {}),
     })
-    let pending = false
+    applyReviewStatus(user)
+    let pending = nicknameChanged && contentReviews.value.some(item => item.kind === 'nickname' && isPendingReview(item.status))
     if (avatarFilePath.value) {
       try { const uploaded = await uploadAvatar(avatarFilePath.value, avatarFile.value); pending ||= Boolean(uploaded.data.review_status) }
       catch (error) {
@@ -168,8 +175,8 @@ onLoad(async (query) => {
   try {
     const user = (await getCurrentUser()).data
     userId.value = user.public_id
-    contentReviews.value = (user.content_reviews || []).filter(item => item.kind === 'avatar')
-    nickname.value = user.nickname
+    applyReviewStatus(user)
+    nickname.value = publishedNickname.value = user.nickname
     phone.value = user.phone
     gender.value = user.gender
     birthDate.value = user.birth_date || ''
@@ -180,8 +187,14 @@ onLoad(async (query) => {
 })
 onShow(async () => {
   if (!profileLoaded.value) return
-  try { phone.value = (await getCurrentUser()).data.phone }
-  catch (error) { warn((error as Error).message || '手机号刷新失败') }
+  try {
+    const { data: user } = await getCurrentUser()
+    phone.value = user.phone
+    if (nickname.value === publishedNickname.value) nickname.value = user.nickname
+    publishedNickname.value = user.nickname
+    if (!avatarFilePath.value) avatarPreview.value = user.avatar_url || ''
+    applyReviewStatus(user)
+  } catch (error) { warn((error as Error).message || '资料刷新失败') }
   await wechat.refresh()
 })
 </script>

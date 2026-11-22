@@ -134,7 +134,7 @@
     <view v-if="reviewVisible" class="review-mask" @tap.self="reviewVisible = false">
       <view class="review-sheet">
         <view class="review-head"><strong>评价本次服务</strong><button @tap="reviewVisible = false">×</button></view>
-        <text class="review-tip">评价审核通过后公开展示，帮助其他用户更好地选择达人</text>
+        <text class="review-tip">只打星可直接发布，填写文字或上传图片需审核。</text>
         <view class="review-stars">
           <button v-for="star in 5" :key="star" :aria-label="`${star}星`" :class="{ active: star <= reviewRating }" @tap="reviewRating = star">★</button>
         </view>
@@ -517,7 +517,7 @@ async function submitReview() {
       is_anonymous: reviewAnonymous.value,
     })).data
     reviewVisible.value = false
-    uni.showToast({ title: '评价已提交，等待审核', icon: 'none' })
+    uni.showToast({ title: order.value.review?.audit_status === 'approved' ? '评价已发布' : '评价已提交，等待审核', icon: 'none' })
   } catch (reason) {
     uni.showToast({ title: getErrorMessage(reason, '评价提交失败'), icon: 'none' })
   } finally {
